@@ -76,7 +76,7 @@
   };
   LZ.sheet = function (html, o) {
     o = o || {}; LZ.closeSheet();
-    var d = document.createElement('div'); d.className = 'sheet'; d.innerHTML = '<div class="in">' + html + (o.noClose ? '' : '<button type="button" class="btn g" data-act="sheetClose">닫기</button>') + '</div>';
+    var d = document.createElement('div'); d.className = 'sheet'; d.innerHTML = '<div class="pane">' + html + (o.noClose ? '' : '<button type="button" class="btn g" data-act="sheetClose">닫기</button>') + '</div>';
     d.addEventListener('click', function (e) { if (e.target === d && !o.noClose) LZ.closeSheet(); });
     $('#layer').appendChild(d); return d;
   };
@@ -85,7 +85,7 @@
   LZ.dialog = function (o) {
     return new Promise(function (resolve) {
       var d = document.createElement('div'); d.className = 'dlg';
-      d.innerHTML = '<div class="in">' + (o.title ? '<h2>' + esc(o.title) + '</h2>' : '') + (o.html || (o.body ? '<p>' + esc(o.body) + '</p>' : '')) +
+      d.innerHTML = '<div class="pane">' + (o.title ? '<h2>' + esc(o.title) + '</h2>' : '') + (o.html || (o.body ? '<p>' + esc(o.body) + '</p>' : '')) +
         (o.buttons || [{ label: '확인', kind: 'y', value: true }]).map(function (b, i) { return '<button type="button" class="btn ' + (b.kind === 'y' ? '' : b.kind === 'r' ? 'red' : b.kind === 'o' ? 'o' : 'g') + '" data-dlg="' + i + '">' + esc(b.label) + '</button>'; }).join('') + '</div>';
       var done = function (v) { var vals = {}; $$('input,select,textarea', d).forEach(function (x) { if (x.id) vals[x.id] = x.type === 'checkbox' ? x.checked : x.value; }); LZ.dlgVals = vals; d.hidden = true; resolve(v); setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 0); };
       d.addEventListener('click', function (e) {

@@ -208,10 +208,10 @@ input::placeholder,textarea::placeholder{color:#A3ADA9}
 .price del{color:var(--sub);font-size:calc(var(--fs) - 3px)}.price b{display:block;font-size:calc(var(--fs) + 6px);font-weight:800}
 /* 아래 시트·대화창·토스트·바쁨 */
 .sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;z-index:10}
-.sheet .in{background:var(--card);width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:22px 20px calc(26px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
+.sheet .pane{background:var(--card);width:100%;max-width:480px;border-radius:24px 24px 0 0;padding:22px 20px calc(26px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
 .sheet h2{margin:0 0 6px;font-size:calc(var(--fs) + 5px);font-weight:800}
 .dlg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:11;padding:20px}
-.dlg .in{background:var(--card);width:100%;max-width:420px;border-radius:22px;padding:22px 20px;max-height:88vh;overflow:auto}
+.dlg .pane{background:var(--card);width:100%;max-width:420px;border-radius:22px;padding:22px 20px;max-height:88vh;overflow:auto}
 .dlg h2{margin:0 0 8px;font-size:calc(var(--fs) + 3px);font-weight:800}
 .dlg p{margin:0 0 6px;white-space:pre-line}
 .toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:#172026;color:#fff;padding:12px 18px;border-radius:14px;font-size:15px;opacity:0;transition:opacity .25s;z-index:20;width:max-content;max-width:88%;pointer-events:none;text-align:center}

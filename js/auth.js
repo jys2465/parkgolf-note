@@ -5,14 +5,15 @@
   var pin = '';
   function padHtml(len) { return '<div class="dots" id="dots">' + '<i></i>'.repeat(len) + '</div><div class="pad">' + ['1', '2', '3', '4', '5', '6', '7', '8', '9', '지우기', '0', ''].map(function (k) { return '<button type="button" class="' + (k.length > 1 ? 'fn' : '') + '" data-act="pk" data-v="' + k + '"' + (k ? '' : ' style="visibility:hidden"') + '>' + k + '</button>'; }).join('') + '</div>'; }
   function paintDots() { var ds = $$('#dots i'); ds.forEach(function (d, i) { d.classList.toggle('on', i < pin.length); }); }
-  function pinLen() { var nk = $('#nick'); if (nk) return LZ.stripNick(nk.value) === '관리자' ? 6 : 4; var ds = $('#dots'); return ds && ds.children.length ? ds.children.length : (S.user && S.user.pinLen) || 4; }
+  var pinForce = 0;
+  function pinLen() { var nk = $('#nick'); if (nk) return pinForce || (LZ.stripNick(nk.value) === '관리자' ? 6 : 4); var ds = $('#dots'); return ds && ds.children.length ? ds.children.length : (S.user && S.user.pinLen) || 4; }
   LZ.stripNick = function (s) { return String(s || '').replace(/[\s　​﻿]+/g, ''); };
   function setPadLen(len) { var ds = $('#dots'); if (ds && ds.children.length !== len) { ds.innerHTML = '<i></i>'.repeat(len); pin = pin.slice(0, len); paintDots(); } }
 
   LZ.screens.login = {
     nobar: true,
     show: async function (p, root) {
-      pin = '';
+      pin = ''; pinForce = 0;
       var keep = store.get('lz.keep') !== '0', last = store.get('lz.nick') || '', inv = store.get('lz.inv');
       root.innerHTML = '<button type="button" class="fsz" data-act="big">글씨 크게</button>' +
         '<div class="hero"><div class="img"></div><div class="shade"></div><div class="fade"></div><div class="ttl"><h1>파크골프 <b>공략수첩</b></h1><p>홀마다 내 공략을 적고, 클럽과 함께 나눠요</p></div></div>' +
@@ -24,7 +25,7 @@
         (inv ? '<div class="card" style="margin:0 16px 14px;background:var(--gl)"><b>클럽 초대를 받으셨어요</b><div class="muted">로그인하거나 가입하면 그 클럽에 가입 신청이 돼요.</div></div>' : '') +
         '<div class="card" style="margin:0 16px 20px;background:#FFF7ED;border:2px solid #FED7AA;display:flex;align-items:center;gap:12px"><div style="flex:1"><b>처음이세요?</b><div class="muted" style="color:#9A3412">7일 무료 체험으로 바로 시작</div></div><button type="button" class="sm2" style="background:var(--org);height:50px" data-go="join">가입하기</button></div>' +
         '<p class="hint center" style="padding-bottom:20px">앱 버전 ' + LZ.VER + '</p>';
-      var n = $('#nick'); n.addEventListener('input', function () { setPadLen(pinLen()); });
+      var n = $('#nick'); n.addEventListener('input', function () { pinForce = 0; setPadLen(pinLen()); });
       n.addEventListener('keydown', function (e) { if (e.key === 'Enter') n.blur(); });
       $('#keep').addEventListener('change', function (e) { store.set('lz.keep', e.target.checked ? '1' : '0'); });
       if (LZ.pinChangedNote) { LZ.pinChangedNote = false; LZ.dialog({ title: '비밀번호가 바뀌었어요', body: '다른 휴대폰에서 비밀번호를 새로 정해서 이 휴대폰은 로그아웃됐어요. 새 비밀번호로 로그인해 주세요.' }); }
@@ -48,11 +49,13 @@
       if (r.needRc) LZ.needRc = true;
       await LZ.refreshMe().catch(function () {});
       LZ.go('home', {}, { reset: true }); LZ.afterLogin('');
+      if (r.pin4) await LZ.dialog({ title: '비밀번호가 4자리가 됐어요', body: '명예회원은 숫자 4자리를 써요. 앞으로는 예전 비밀번호의 앞 4자리만 누르면 돼요. (내 정보 → 비밀번호 바꾸기에서 바꿀 수 있어요)' });
       if (r.needRc) LZ.rcIntro();
       else LZ.toast(nick + '님, 반가워요');
     } catch (e) {
       LZ.busy(false); pin = ''; paintDots();
       if (e.code === 'tmpold') { await LZ.dialog({ title: '임시 번호가 만료됐어요', body: e.message }); return; }
+      if (e.code === 'pin6') { pinForce = 6; setPadLen(6); LZ.toast(e.message, 6000); return; }
       LZ.toast(e.message, 4500);
     }
   };
