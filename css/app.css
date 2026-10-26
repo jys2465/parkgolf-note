@@ -234,7 +234,7 @@ input::placeholder,textarea::placeholder{color:#A3ADA9}
 .setrow .mini span{min-width:44px;text-align:center;font-weight:800}
 .chips{display:flex;gap:8px;overflow-x:auto;padding:4px 16px 10px;margin:0 -16px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
 .chips button{flex:none}
-.ntpop img,.ntbody img{max-width:100%;border-radius:12px}
+.ntpop img,.ntbody img,.card>img,.card img{max-width:100%;height:auto;border-radius:12px;display:block;margin:0 0 10px}
 .ntbody .big{font-size:calc(var(--fs) + 4px)}.ntbody .c-r{color:var(--red)}.ntbody .c-b{color:var(--blue)}.ntbody .c-g{color:var(--green)}
 .qr{display:flex;justify-content:center;margin:10px 0}.qr canvas,.qr img{width:200px;height:200px;background:#fff;padding:8px;border-radius:12px}
 .frow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}.frow .n{width:52px;font-weight:800}.frow .seg{flex:1}
