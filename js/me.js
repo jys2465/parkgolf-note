@@ -6,7 +6,10 @@
   LZ.refText = function () { return '⛳ 파크골프 공략수첩\n스크린 홀별 공략(좌우·타격감)을 적어 두고 클럽 회원과 함께 보는 앱이에요. 필드 라운드 점수판도 같이 써요.\n\n' + S.user.nick + '님의 초대로 가입하면 7일 무료 체험 바로 시작!\n👇 아래 링크를 눌러 가입하세요'; };
   /* 친구에게 알리기 카드(홈 아래·내 정보 위) */
   LZ.inviteCard = function (big) { if (S.user.kind === 'admin') return ''; return '<div class="card invite"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:34px">💛</span><div style="flex:1"><h3 style="margin:0">친구에게 알리기</h3><div class="muted">내 초대 링크로 가입하면 친구는 7일 무료 체험, 친구가 정회원이 되면 나에게 7일 추가</div></div></div><button type="button" class="btn kakao" data-act="inviteKakao">카카오톡으로 친구 초대하기</button>' + (big ? '<div class="row"><button type="button" class="btn g sm" data-act="copy" data-v="' + esc(LZ.refLink()) + '">링크 복사</button><button type="button" class="btn g sm" data-act="inviteQr">QR 보기</button></div>' : '') + '</div>'; };
-  LZ.act.inviteKakao = function () { return LZ.kakaoShare(LZ.refText(), LZ.refLink()); };
+  LZ.act.inviteKakao = async function () {
+    try { if (navigator.canShare) { var b = await (await fetch('assets/promo-invite.jpg')).blob(), f = new File([b], 'parkgolf.jpg', { type: 'image/jpeg' }); if (navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: '파크골프 공략수첩', text: LZ.refText() + '\n' + LZ.refLink() }); return; } } } catch (e) { if (e && e.name === 'AbortError') return; }
+    return LZ.kakaoShare(LZ.refText(), LZ.refLink());
+  };
   LZ.act.inviteQr = function () { LZ.sheet('<h2>내 초대 QR</h2><p class="muted center">친구가 휴대폰 카메라로 찍으면 가입 화면이 열려요.</p><div class="qr" id="iqr"></div><p class="center muted small">' + esc(LZ.refLink()) + '</p>'); LZ.qr($('#iqr'), LZ.refLink()); };
 
   LZ.screens.me = {

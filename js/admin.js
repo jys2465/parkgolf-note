@@ -39,7 +39,11 @@
     }
   };
   function promoText() { return $('#promoT').value; }
-  LZ.act.promoShare = function () { var t = promoText(), url = LZ.APP_URL + '?join=1'; return LZ.act.share(null, JSON.stringify({ title: '파크골프 공략수첩', text: t.indexOf(url) >= 0 ? t.replace(url, '').replace(/\s+$/, '') : t, url: url })); };
+  LZ.act.promoShare = async function () {
+    var t = promoText(), url = LZ.APP_URL + '?join=1';
+    try { if (navigator.canShare) { var b = await (await fetch('assets/promo-invite.jpg')).blob(), f = new File([b], 'parkgolf.jpg', { type: 'image/jpeg' }); if (navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: '파크골프 공략수첩', text: t.indexOf(url) >= 0 ? t : t + '\n' + url }); return; } } } catch (e) { if (e && e.name === 'AbortError') return; }
+    return LZ.act.share(null, JSON.stringify({ title: '파크골프 공략수첩', text: t.indexOf(url) >= 0 ? t.replace(url, '').replace(/\s+$/, '') : t, url: url }));
+  };
   LZ.act.promoCopy = function () { return LZ.act.copy(null, promoText()); };
   LZ.act.promoSms = function () { location.href = 'sms:?body=' + encodeURIComponent(promoText()); };
   LZ.act.promoReset = function () { store.del('lz.promo'); LZ.redraw(); };
