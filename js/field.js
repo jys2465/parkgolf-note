@@ -119,7 +119,7 @@
     sendT = setTimeout(async function () {
       var items = pend; pend = [];
       try { var r = await LZ.api('roundScore', { id: R.round.id, items: items }, { retry: 0, timeout: 12000 }); if (r.denied) LZ.toast('"본인 점수는 본인만" 설정이라 적을 수 없는 분이 있어요', 4000); var h = R.h; R.round = r.round; R.h = h; LZ.rt.rev = r.round.rev; LZ.rt.broadcast(r.round.rev); if (LZ.cur().name === 'round') { var b = $('#rsync'); if (b) { b.className = 'sync ok'; b.textContent = '✓ 모두 저장됨 · 실시간으로 함께 보는 중'; } } }
-      catch (e) { if (e.code === 'ended') { LZ.toast('끝난 라운드예요'); refreshRound(); return; } if (e.code === 'net' || e.code === 'server' || e.code === 'busy') { LZ.queue.push('roundScore', { id: R.round.id, items: items }); var b2 = $('#rsync'); if (b2) { b2.className = 'sync wait'; b2.textContent = '📶 신호 약함 · 휴대폰에 저장됨, 연결되면 보내요'; } } else LZ.toast(e.message, 4000); }
+      catch (e) { if (e.code === 'ended') { LZ.toast('끝난 라운드예요'); refreshRound(); return; } if (e.code === 'net' || e.code === 'server' || e.code === 'busy') { LZ.queue.push('roundScore', { id: R.round.id, items: items.map(function (x) { return Object.assign({ q: 1 }, x); }) }); var b2 = $('#rsync'); if (b2) { b2.className = 'sync wait'; b2.textContent = '📶 신호 약함 · 휴대폰에 저장됨, 연결되면 보내요'; } } else LZ.toast(e.message, 4000); }
     }, 350);
   }
   LZ.onFlushed = function () { if (LZ.cur().name === 'round') refreshRound(); };
@@ -324,13 +324,13 @@
         var ws = RT.ws = new WebSocket(url);
         ws.onopen = function () { RT.send('phx_join', { config: { broadcast: { self: false }, presence: { key: '' } } }); RT.hb = setInterval(function () { RT.send('heartbeat', {}, 'phoenix'); }, 25000); };
         ws.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.event === 'phx_reply' && m.payload && m.payload.status === 'ok' && m.topic === RT.topic) { RT.ok = true; RT.setPoll(); } if (m.event === 'broadcast' && m.payload && m.payload.event === 'rev') { var r = m.payload.payload && m.payload.payload.rev; if (r && r !== RT.rev && RT.onRev) RT.onRev(); } } catch (x) { /* 무시 */ } };
-        ws.onclose = function () { RT.ok = false; RT.setPoll(); }; ws.onerror = function () { RT.ok = false; };
+        ws.onclose = function () { if (ws !== RT.ws) return; RT.ok = false; RT.setPoll(); }; ws.onerror = function () { if (ws === RT.ws) RT.ok = false; };
       } catch (e) { RT.ws = null; }
     }
     RT.setPoll();
   };
   RT.send = function (ev, payload, topic) { try { if (RT.ws && RT.ws.readyState === 1) RT.ws.send(JSON.stringify({ topic: topic || RT.topic, event: ev, payload: payload, ref: String(++RT.ref) })); } catch (e) { /* 무시 */ } };
   RT.broadcast = function (rev) { RT.rev = rev; RT.send('broadcast', { type: 'broadcast', event: 'rev', payload: { rev: rev } }); };
-  RT.setPoll = function () { clearInterval(RT.poll); RT.poll = setInterval(function () { if (!document.hidden && RT.onRev) RT.onRev(); }, RT.ok ? 20000 : 4000); };
-  RT.stop = function () { clearInterval(RT.hb); clearInterval(RT.poll); RT.poll = null; try { if (RT.ws) RT.ws.close(); } catch (e) { /* 무시 */ } RT.ws = null; RT.topic = ''; RT.ok = false; };
+  RT.setPoll = function () { clearInterval(RT.poll); RT.poll = setInterval(function () { if (LZ.cur().name !== 'round') { RT.stop(); return; } if (!document.hidden && RT.onRev) RT.onRev(); }, RT.ok ? 20000 : 4000); };
+  RT.stop = function () { clearInterval(RT.hb); clearInterval(RT.poll); RT.poll = null; RT.onRev = null; var w = RT.ws; RT.ws = null; try { if (w) w.close(); } catch (e) { /* 무시 */ } RT.topic = ''; RT.ok = false; };
 })();
