@@ -19,9 +19,10 @@
       var list = r.courses.filter(function (c) { return !q || c.name.toLowerCase().indexOf(q.toLowerCase()) >= 0; });
       list.sort(function (a, b) { var v = sort === 'diff' ? b.stars - a.stars : sort === 'new' ? b.created - a.created : a.name.localeCompare(b.name, 'ko'); return desc ? v : -v; });
       root.innerHTML = LZ.hdr('📍 ' + r.store, { right: '<button type="button" class="ib" data-act="clubPick">바꾸기</button>' }) + '<div id="syncbar" class="sync wait" hidden></div><div class="wrap">' +
+        (r.canReg ? '<button type="button" class="btn o" style="margin:0 0 10px" data-go="reg">＋ 새 코스 등록</button>' : '') +
         '<input type="search" id="cq" value="' + esc(q) + '" placeholder="코스 이름 찾기"><div class="sort">' + [['diff', '난이도순'], ['new', '등록순'], ['name', '가나다순']].map(function (x) { return '<button type="button" class="' + (sort === x[0] ? 'on' : '') + '" data-act="sort" data-v="' + x[0] + '">' + x[1] + (sort === x[0] ? (desc ? ' ▼' : ' ▲') : '') + '</button>'; }).join('') + '</div>' +
         (list.length ? list.map(function (c) { return '<button type="button" class="course" data-go="holes" data-p=\'' + esc(JSON.stringify({ id: c.id })) + '\'><div class="t"><b>' + esc(c.name) + (c.stage !== 'done' ? ' <span class="chip gray">전반만</span>' : '') + '</b>' + LZ.stars(c.stars) + ' <span class="muted small">· 등록 ' + LZ.fmtDate(c.created) + '</span><div class="muted">내 기록 ' + c.mine + '/18' + (c.homeMine && !c.mine ? ' · 다른 곳에 ' + c.homeMine + '홀' : '') + (c.others ? ' · 회원님 기록 ' + c.others + '명' : '') + '</div><div class="bar"><i style="width:' + Math.round(c.mine / 18 * 100) + '%"></i></div></div><span style="font-size:24px;color:var(--g)">›</span></button>'; }).join('') : '<div class="empty">' + (q ? '찾는 코스가 없어요.' : '아직 코스가 없어요. 첫 코스를 등록해 보세요.') + '</div>') +
-        (r.canReg ? '<button type="button" class="btn o" data-go="reg">＋ 새 코스 등록</button>' : '<p class="hint center">코스 등록은 정회원·명예회원부터 할 수 있어요.</p>') + '</div>';
+        (r.canReg ? '' : '<p class="hint center">코스 등록은 정회원·명예회원부터 할 수 있어요.</p>') + '</div>';
       LZ.paintSync();
       var cq = $('#cq'), tm = null; cq.addEventListener('input', function () { clearTimeout(tm); tm = setTimeout(function () { LZ.go('courses', { q: cq.value }, { replace: true }); }, 400); });
     }

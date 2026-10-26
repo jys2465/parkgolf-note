@@ -103,7 +103,7 @@
     o = o || {};
     return '<div class="top">' + (o.back ? '<button type="button" class="ib" data-act="back">‹ 뒤로</button>' : '') + '<h2>' + esc(title) + '</h2>' + (o.right || '') +
       (S.user && S.user.kind === 'admin' && !o.noBell ? '<button type="button" class="ib bell" data-go="noti">🔔' + (S.me && S.me.noti ? '<i>' + S.me.noti + '</i>' : '') + '</button>' : (S.user && !o.noBell && S.me && S.me.noti ? '<button type="button" class="ib bell" data-go="noti">🔔<i>' + S.me.noti + '</i></button>' : '')) +
-      (o.back ? '' : '<button type="button" class="home-btn" data-go="home">처음으로</button>') + '</div>';
+      '</div>';
   };
   LZ.skeleton = function (n) { var s = ''; for (var i = 0; i < (n || 4); i++) s += '<div class="sk" style="width:' + (60 + (i * 13) % 40) + '%"></div>'; return '<div class="wrap">' + s + '</div>'; };
   LZ.seg = function (opts, on, act, cls) { return '<div class="seg ' + (cls || '') + '">' + opts.map(function (x) { return '<button type="button" class="' + (on === x[0] ? 'on' : '') + '" data-act="' + act + '" data-v="' + esc(x[0]) + '">' + esc(x[1]) + '</button>'; }).join('') + '</div>'; };
