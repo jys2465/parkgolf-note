@@ -283,3 +283,13 @@ ol.help{margin:0 0 8px;padding-left:20px}ol.help li{margin:0 0 8px;line-height:1
 .steps{display:flex;gap:6px;margin:0 0 12px}.steps span{flex:1;text-align:center;font-size:var(--t0);font-weight:700;color:var(--sub);padding:6px 0;border-bottom:3px solid var(--line)}.steps span.on{color:var(--g);border-color:var(--g)}
 .chips.wrap2{flex-wrap:wrap;overflow:visible;margin:0;padding:4px 0}.chips.wrap2 button{margin:0 0 6px}
 .pill{background:var(--soft);border-radius:10px;padding:4px 8px;font-size:var(--t0)}
+
+/* 콤보박스 대신 큰 목록 단추 */
+.pickbtn{display:flex;align-items:center;width:100%;height:56px;border:2px solid var(--line);border-radius:var(--r-in);background:var(--card);color:var(--ink);padding:0 14px 0 16px;font-size:var(--t3);font-weight:700;text-align:left;margin:0}
+.pickbtn span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pickbtn i{font-style:normal;color:var(--g);font-size:var(--t3)}
+.pickbtn.sm{height:44px;font-size:var(--t1)}
+.sheet.pick{z-index:12}.sheet.pick .opt{min-height:56px}
+input[type=checkbox]{width:26px;height:26px;accent-color:var(--g);flex:none}
+.dot{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-1px;margin-left:4px;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.08)}.dot.blue{background:#2563EB}.dot.red{background:#DC2626}.dot.gold{background:#F59E0B}.dot.black{background:#111827}.dot.admin{background:linear-gradient(135deg,#F59E0B,#DC2626)}
+.club .dot{border-color:rgba(255,255,255,.7)}
+details.acc summary{list-style:none;cursor:pointer;display:flex;align-items:center;-webkit-tap-highlight-color:transparent}details.acc summary::-webkit-details-marker{display:none}details.acc summary h3{margin:0;flex:1}details.acc summary::after{content:'▾';font-size:var(--t2);color:var(--muted);transition:transform .15s}details.acc[open] summary::after{transform:rotate(180deg)}details.acc .accb{padding-top:10px}

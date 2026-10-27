@@ -25,7 +25,7 @@
         (r.canReg ? '<button type="button" class="btn o" style="margin:0 0 10px" data-go="reg">＋ 새 코스 등록</button>' : '') +
         '<input type="search" id="cq" value="' + esc(q) + '" placeholder="코스 이름 찾기"><div class="sort">' + [['diff', '난이도순'], ['new', '등록순'], ['name', '가나다순']].map(function (x) { return '<button type="button" class="' + (sort === x[0] ? 'on' : '') + '" data-act="sort" data-v="' + x[0] + '">' + x[1] + (sort === x[0] ? (desc ? ' ▼' : ' ▲') : '') + '</button>'; }).join('') + '</div>' +
         (list.length ? list.map(function (c) { return '<button type="button" class="course" data-go="holes" data-p=\'' + esc(JSON.stringify({ id: c.id })) + '\'><div class="t"><b>' + esc(c.name) + (c.stage !== 'done' ? ' <span class="chip gray">전반만</span>' : '') + '</b>' + LZ.stars(c.stars) + ' <span class="muted small">· 등록 ' + LZ.fmtDate(c.created) + '</span><div class="muted">내 기록 ' + c.mine + '/18' + (c.homeMine && !c.mine ? ' · 다른 곳에 ' + c.homeMine + '홀' : '') + (c.others ? ' · 회원님 기록 ' + c.others + '명' : '') + '</div><div class="bar"><i style="width:' + Math.round(c.mine / 18 * 100) + '%"></i></div></div><span style="font-size:24px;color:var(--g)">›</span></button>'; }).join('') : '<div class="empty">' + (q ? '찾는 코스가 없어요.' : '아직 코스가 없어요. 첫 코스를 등록해 보세요.') + '</div>') +
-        (r.canReg ? '' : '<p class="hint center">코스 등록은 정회원·명예회원부터 할 수 있어요.</p>') + '</div>';
+        (r.canReg ? '' : '<p class="hint center">지금은 코스를 등록할 수 없어요.</p>') + '</div>';
       LZ.paintSync();
       var cq = $('#cq'); cq.addEventListener('input', function () { var v = cq.value.toLowerCase(); $$('.course', root).forEach(function (b) { b.hidden = v && b.textContent.toLowerCase().indexOf(v) < 0; }); });
       }
@@ -197,7 +197,7 @@
     try {
       var out = await LZ.api('save', { cid: d.course.id, items: [{ i: ED.i, rec: r }] });
       ED.dirty = false; ED.isNew = false; d.mine[ED.i] = Object.assign({}, r, { upd: out.upd }); CUR.at = Date.now();
-      if (out.bonus) { S.user = out.user; LZ.toast('🎁 첫 기록! 체험이 ' + out.bonus.days + '일 늘었어요 (' + LZ.fmtYmd(out.bonus.end) + '까지)', 5000); } else if (!quiet) LZ.toast('저장했어요');
+      if (!quiet) LZ.toast('저장했어요');
       return true;
     } catch (e) {
       if (e.code === 'net' || e.code === 'server') { LZ.queue.push('save', { cid: d.course.id, items: [{ i: ED.i, rec: r }], br: S.br }); ED.dirty = false; d.mine[ED.i] = Object.assign({}, r); LZ.toast('신호가 약해서 휴대폰에 저장했어요. 연결되면 보내요', 4000); return true; }
@@ -332,7 +332,7 @@
       root.innerHTML = LZ.hdr('코스 정보 고치기', { back: true }) + '<div class="wrap"><div class="card"><label class="lb" style="margin-top:0">코스 이름</label><input type="text" id="ceName" maxlength="30" value="' + esc(c.name) + '"' + (c.canEdit ? '' : ' disabled') + '><label class="lb">난이도 <span class="muted" style="font-weight:400">— 레저로 화면의 별 그대로</span></label>' + LZ.seg([['1', '★1'], ['2', '★2'], ['3', '★3'], ['4', '★4'], ['5', '★5']], String(c.stars), 'ceStars', 'star') + '<input type="hidden" id="ceStars" value="' + c.stars + '">' +
         (d.mode ? '<label class="lb">이 코스의 내 모드·발사각</label><p class="muted" style="margin:0 0 6px">바꾸면 이 코스의 내 기록을 같은 거리가 되도록 환산해요.</p>' + LZ.seg([['b', '아마추어'], ['p', '프로'], ['m', '마스터']], d.mode.g, 'ceG') + '<div style="height:6px"></div>' + LZ.seg(LZ.HLSEG, d.mode.h, 'ceH', 'hl') + '<input type="hidden" id="ceG" value="' + d.mode.g + '"><input type="hidden" id="ceH" value="' + d.mode.h + '">' : '') + '</div>' +
         '<div class="card"><h3>홀별 파·거리</h3>' + c.holes.map(function (h, i) { return '<div class="frow"><span class="n">' + (i + 1) + '홀</span>' + LZ.seg([['3', '3'], ['4', '4'], ['5', '5']], String(h[0]), 'cePar:' + i, 's') + '<input type="text" inputmode="decimal" data-ch="' + i + '" value="' + h[1] + '" style="width:90px;height:44px;padding:0 8px;text-align:center"' + (c.canEdit ? '' : ' disabled') + '></div>'; }).join('') + '</div>' +
-        (c.canEdit ? '<button type="button" class="btn" data-act="ceSave">저장</button>' : '<p class="hint center">코스 정보는 정회원·명예회원·관리자가 고칠 수 있어요.</p>') +
+        (c.canEdit ? '<button type="button" class="btn" data-act="ceSave">저장</button>' : '<p class="hint center">코스 정보는 이용 중인 회원님만 고칠 수 있어요.</p>') +
         '<div class="card"><h3>수정 이력</h3>' + (c.edits.length ? c.edits.map(function (e) { return '<div class="muted" style="padding:4px 0;border-bottom:1px solid var(--line)">' + LZ.fmtDate(e.at, true) + ' · <b>' + esc(e.nick) + '님</b> · ' + esc(e.what) + '</div>'; }).join('') : '<p class="muted" style="margin:0">아직 고친 적이 없어요.</p>') + '</div>' +
         (S.user.kind === 'admin' ? '<button type="button" class="btn g" data-act="ceDel">코스 지우기(관리자)</button>' : '') + '</div>';
       CUR.pars = c.holes.map(function (h) { return h[0]; });

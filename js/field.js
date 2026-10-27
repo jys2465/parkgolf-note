@@ -78,7 +78,7 @@
     LZ.qr($('#rqr'), url);
   }
   LZ.act.roundShare = function () { shareSheet(R.round); };
-  LZ.act.roundJoinS = function () { LZ.sheet('<h2>라운드 함께하기</h2><p class="muted">같은 조 분께 라운드 번호 4자리를 받아 넣어요. 카톡 링크나 QR로도 들어올 수 있어요.</p><input type="tel" id="jcode" inputmode="numeric" maxlength="4" placeholder="예: 7351"><button type="button" class="btn" data-act="roundJoin">들어가기</button>'); setTimeout(function () { var c = $('#jcode'); if (c) c.focus(); }, 100); };
+  LZ.act.roundJoinS = function () { LZ.sheet('<h2>라운드 들어가기</h2><p class="muted">같은 조 분께 라운드 번호 4자리를 받아 넣어요. 카톡 링크나 QR로도 들어올 수 있어요.</p><input type="tel" id="jcode" inputmode="numeric" maxlength="4" placeholder="예: 7351"><button type="button" class="btn" data-act="roundJoin">들어가기</button>'); setTimeout(function () { var c = $('#jcode'); if (c) c.focus(); }, 100); };
   LZ.act.roundJoin = async function (el, code) {
     code = code || $('#jcode').value.replace(/\D/g, ''); if (code.length !== 4) { LZ.toast('번호 4자리를 넣어 주세요'); return; }
     try { var r = await LZ.api('roundJoin', { code: code }); LZ.closeSheet(); LZ.go('round', { id: r.round.id, fresh: 1 }); } catch (e) { LZ.toast(e.message, 5000); }

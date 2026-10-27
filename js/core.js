@@ -65,6 +65,8 @@
   LZ.mark = function (p, s) { var d = p - s; if (Math.abs(d) < 0.5) return '<span class="mk ok">●</span>'; return '<span class="mk ' + (d > 0 ? 'up' : 'dn') + '">' + (d > 0 ? '▲' : '▼') + '</span>'; };
   LZ.markOf = function (r, hm) { return LZ.mark(r.p, LZ.sugOf(hm, r.g || 'p', r.h || 'm')); };
   LZ.pp = function (d) { return '<span class="pp ' + (d < 0 ? 'u' : d > 0 ? 'o' : 'e') + '">' + (d > 0 ? '+' + d : d === 0 ? 'E' : d) + '</span>'; };
+  /* 등급 동그라미: 🔵 블루 · 🔴 레드 · 🟡 골드 · ⚫ 블랙 */
+  LZ.dot = function (u) { var t = u && (u.tier || ({ hon: 'gold', gold: 'gold', trial: 'blue', blue: 'blue', month: 'red', year: 'red', red: 'red', black: 'black', admin: 'admin' })[u.kind]) || 'blue'; return '<i class="dot ' + t + '" title="' + ({ blue: '블루', red: '레드', gold: '골드', black: '블랙', admin: '관리자' })[t] + '"></i>'; };
   LZ.stars = function (n) { n = Math.max(1, Math.min(5, n | 0)) || 3; return '<span class="star">' + '★'.repeat(n) + '<s>' + '★'.repeat(5 - n) + '</s></span>'; };
 
   /* ───── 공통 화면 요소 ───── */
@@ -75,12 +77,29 @@
     clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove('on'); }, ms || 2600);
   };
   LZ.sheet = function (html, o) {
-    o = o || {}; LZ.closeSheet();
+    o = o || {}; if (!o.stack) LZ.closeSheet();
     var d = document.createElement('div'); d.className = 'sheet'; d.innerHTML = '<div class="pane">' + html + (o.noClose ? '' : '<button type="button" class="btn g" data-act="sheetClose">닫기</button>') + '</div>';
     d.addEventListener('click', function (e) { if (e.target === d && !o.noClose) LZ.closeSheet(); });
-    $('#layer').appendChild(d); return d;
+    $('#layer').appendChild(d); LZ.enhance(d); return d;
   };
   LZ.closeSheet = function () { $$('#layer .sheet').forEach(function (x) { x.parentNode.removeChild(x); }); };
+  /* 콤보박스(select) → 큰 목록 창: 화면·시트가 그려질 때마다 자동으로 바꿔요 */
+  LZ.enhance = function (root) {
+    $$('select', root || document).forEach(function (sel) {
+      if (sel.dataset.pick) return; sel.dataset.pick = '1'; sel.hidden = true;
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'pickbtn' + (sel.classList.contains('in') ? '' : ' sm');
+      var paint = function () { var o = sel.options[sel.selectedIndex]; b.innerHTML = '<span>' + esc(o ? o.textContent : '') + '</span><i>▾</i>'; };
+      paint(); sel.parentNode.insertBefore(b, sel.nextSibling);
+      b.addEventListener('click', function () {
+        var opts = Array.prototype.map.call(sel.options, function (o) { return o; });
+        var d = document.createElement('div'); d.className = 'sheet pick';
+        d.innerHTML = '<div class="pane"><h2>' + esc(sel.dataset.title || (sel.previousElementSibling && sel.previousElementSibling.classList.contains('lb') ? sel.previousElementSibling.textContent : '고르기')) + '</h2>' + opts.map(function (o, i) { return '<button type="button" class="opt ' + (i === sel.selectedIndex ? 'on' : '') + '" data-i="' + i + '"><b>' + esc(o.textContent) + '</b>' + (i === sel.selectedIndex ? '<span>✓ 지금</span>' : '') + '</button>'; }).join('') + '<button type="button" class="btn g" data-pickclose="1">닫기</button></div>';
+        d.addEventListener('click', function (e) { var x = e.target.closest('[data-i]'); if (x) { sel.selectedIndex = +x.dataset.i; paint(); sel.dispatchEvent(new Event('change', { bubbles: true })); d.remove(); LZ.buzz(); return; } if (e.target === d || e.target.closest('[data-pickclose]')) d.remove(); });
+        $('#layer').appendChild(d);
+      });
+      sel.addEventListener('change', paint);
+    });
+  };
   /** 대화창: buttons [{label, kind, value}] → Promise(value). cancel = 바깥 누르면 돌려줄 값(없으면 못 닫음) */
   LZ.dialog = function (o) {
     return new Promise(function (resolve) {
@@ -92,7 +111,7 @@
         var b = e.target.closest('[data-dlg]'); if (b) { done((o.buttons || [{ value: true }])[+b.dataset.dlg].value); return; }
         if (e.target === d && o.cancel !== undefined) done(o.cancel);
       });
-      $('#layer').appendChild(d);
+      $('#layer').appendChild(d); LZ.enhance(d);
       if (o.focus) { var f = $(o.focus, d); if (f) setTimeout(function () { f.focus(); }, 50); }
     });
   };
@@ -217,7 +236,7 @@
     root.classList.toggle('nobar', !!s.nobar); LZ.tabs(s.tab);
     if (s.wake) LZ.wake.on(); else LZ.wake.off();
     if (!s.rt && LZ.rt) LZ.rt.stop();
-    try { await s.show(cur.p || {}, root, alive); }
+    try { await s.show(cur.p || {}, root, alive); if (alive()) LZ.enhance(root); }
     catch (e) {
       if (!alive()) return;
       if (e && e.code === 'auth') return;
