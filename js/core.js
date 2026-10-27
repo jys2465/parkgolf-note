@@ -44,8 +44,8 @@
   LZ.LBL = function (i) { return (i + 1) + '홀'; };
 
   /* ───── 타격감 계산(서버와 같은 공식) ───── */
-  LZ.MODE = { b: '비기너', p: '프로', m: '마스터' }; LZ.HL = { h: '높게', m: '보통', l: '낮게', x: '더낮게' }; LZ.HLSEG = [['h', '높게'], ['m', '보통'], ['l', '낮게'], ['x', '더낮게']];
-  LZ.DEF_PW = { b: { base: 15, step: 6 }, p: { base: 17, step: 5 }, m: { base: 19, step: 4 }, hl: 0.5 };
+  LZ.MODE = { b: '아마추어', p: '프로', m: '마스터' }; LZ.HL = { h: '높게', m: '보통', l: '낮게', x: '더낮게' }; LZ.HLSEG = [['h', '높게'], ['m', '보통'], ['l', '낮게'], ['x', '더낮게']];
+  LZ.DEF_PW = { b: { base: 15, step: 6 }, p: { base: 17, step: 5 }, m: { base: 19, step: 4 }, hl: 0.3 };
   LZ.pw = function () { return S.pw || LZ.DEF_PW; };
   LZ.half = function (x) { return Math.round(Number(x) * 2) / 2; };
   LZ.clampP = function (x) { return Math.max(8, Math.min(40, x)); };
