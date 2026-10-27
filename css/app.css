@@ -278,3 +278,8 @@ ol.help{margin:0 0 8px;padding-left:20px}ol.help li{margin:0 0 8px;line-height:1
 /* 서버 요청 중 위쪽 가는 막대 */
 #pbar{position:fixed;top:0;left:0;right:0;height:3px;z-index:50;pointer-events:none;opacity:0;transition:opacity .2s}#pbar.on{opacity:1}
 #pbar::before{content:"";position:absolute;top:0;left:-40%;width:40%;height:100%;background:var(--y);animation:pb 1s linear infinite}@keyframes pb{to{left:100%}}
+
+/* 단체 */
+.steps{display:flex;gap:6px;margin:0 0 12px}.steps span{flex:1;text-align:center;font-size:var(--t0);font-weight:700;color:var(--sub);padding:6px 0;border-bottom:3px solid var(--line)}.steps span.on{color:var(--g);border-color:var(--g)}
+.chips.wrap2{flex-wrap:wrap;overflow:visible;margin:0;padding:4px 0}.chips.wrap2 button{margin:0 0 6px}
+.pill{background:var(--soft);border-radius:10px;padding:4px 8px;font-size:var(--t0)}

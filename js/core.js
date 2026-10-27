@@ -311,7 +311,7 @@
     if (q.get('inv')) store.set('lz.inv', q.get('inv'));
     if (q.get('ref')) store.set('lz.ref', q.get('ref'));
     if (q.get('r')) store.set('lz.joinRound', q.get('r'));
-    if (q.get('e')) store.set('lz.joinEvent', q.get('e'));
+    if (q.get('e')) store.set('lz.joinEvent', q.get('e') + (q.get('t') ? ':' + q.get('t') : ''));
     if (q.get('join')) store.set('lz.joinNow', '1');                                   // 홍보 안내문 링크: 가입 화면 바로
     var kakaoCode = store.get('lz.kakaoBack') === '1' && q.get('code') ? q.get('code') : '';   // 카카오 연결에서 돌아옴
     if (kakaoCode) store.del('lz.kakaoBack');
@@ -328,14 +328,14 @@
       }
     }
     if (!S.user && store.get('lz.joinNow') === '1') { store.del('lz.joinNow'); LZ.stack = [{ name: 'join', p: {} }]; }
-    if (q.get('s') || q.get('u') || q.get('inv') || q.get('r') || q.get('e') || q.get('ref') || q.get('join') || q.get('code') || q.get('state') || q.get('error')) { try { history.replaceState(null, '', location.pathname + (hash ? '#' + hash : '')); } catch (e) { /* 무시 */ } }
+    if (q.get('s') || q.get('u') || q.get('inv') || q.get('r') || q.get('e') || q.get('t') || q.get('ref') || q.get('join') || q.get('code') || q.get('state') || q.get('error')) { try { history.replaceState(null, '', location.pathname + (hash ? '#' + hash : '')); } catch (e) { /* 무시 */ } }
     await render();
     if (S.user) { if (kakaoCode && LZ.kakaoReturn) { LZ.kakaoReturn(kakaoCode); return; } LZ.afterLogin(hash); }
   };
   LZ.afterLogin = function (hash) {
     Q.flush();
     var jr = store.get('lz.joinRound'); if (jr) { store.del('lz.joinRound'); LZ.go('round', { code: jr }); return; }
-    var je = store.get('lz.joinEvent'); if (je) { store.del('lz.joinEvent'); LZ.go('event', { code: je }); return; }
+    var je = store.get('lz.joinEvent'); if (je) { store.del('lz.joinEvent'); var jp = je.split(':'); LZ.go('evEnter', { code: jp[0], t: jp[1] ? +jp[1] : 0 }); return; }
     var inv = store.get('lz.inv'); if (inv && S.user) { store.del('lz.inv'); LZ.go('find', { inv: inv }); return; }
     if (hash) LZ.goTo(decodeURIComponent(hash));
     LZ.noticePopup && LZ.noticePopup();
