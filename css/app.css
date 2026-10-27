@@ -45,7 +45,7 @@ a{color:var(--g)}
 .muted{color:var(--sub);font-size:var(--t1)}
 .small{font-size:var(--t0)}
 label.lb,.lb{display:block;font-weight:700;margin:12px 0 8px;font-size:var(--t1)}
-.in,input[type=text],input[type=tel],input[type=number],input[type=search],textarea,select{width:100%;height:56px;border:2px solid var(--line);border-radius:var(--r-in);padding:0 16px;font-size:var(--t3);outline:none;background:var(--card);color:var(--ink)}
+.in,input[type=text],input[type=tel],input[type=number],input[type=search],input[type=url],input[type=password],textarea,select{width:100%;height:56px;border:2px solid var(--line);border-radius:var(--r-in);padding:0 16px;font-size:var(--t3);outline:none;background:var(--card);color:var(--ink)}
 textarea{height:auto;min-height:110px;padding:12px 16px;line-height:1.5;resize:vertical}
 input:focus,textarea:focus,select:focus{border-color:var(--g3)}
 input::placeholder,textarea::placeholder{color:#A3ADA9}.btn{display:block;width:100%;height:58px;border:0;border-radius:var(--r-btn);background:var(--g);color:#fff;font-size:var(--t3);font-weight:700;margin-top:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 10px}
@@ -117,7 +117,7 @@ input::placeholder,textarea::placeholder{color:#A3ADA9}.btn{display:block;width:
 :root[data-theme="dark"] .cont{background:#2E2A14;border-color:#5C4A12}:root[data-theme="dark"] .cont .muted{color:#D9C27A}
 :root[data-theme="dark"] .cont.red{background:#3B1D1D;border-color:#7F1D1D}:root[data-theme="dark"] .cont.red .muted{color:#FCA5A5}
 /* 코스 목록 */
-.sort{display:flex;gap:6px;margin:0}.sort button{flex:none;height:34px;padding:0 10px;border-radius:12px;border:2px solid var(--line);background:var(--card);font-weight:700;font-size:var(--t0);color:var(--ink)}
+.sort{display:flex;gap:8px;margin:0 0 10px}.sort button{flex:1;height:44px;padding:0 8px;white-space:nowrap;border-radius:12px;border:2px solid var(--line);background:var(--card);font-weight:700;font-size:var(--t0);color:var(--ink)}
 .sort button.on{border-color:var(--g);background:var(--gl);color:var(--g)}
 .course{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:var(--r-card);padding:16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.04);width:100%;border:0;text-align:left;color:var(--ink)}
 .course .t{flex:1;min-width:0}.course b{display:block;font-size:var(--t3)}
@@ -274,3 +274,26 @@ details.more{background:var(--soft);border-radius:var(--r-in);padding:8px 12px;m
 .news2{font-size:var(--t1);padding:4px 0;color:var(--ink)}
 img.av{object-fit:cover;padding:0;background:var(--line)}.av.big{width:72px;height:72px;font-size:var(--t5)}
 .avbtn{position:relative;background:none;border:0;padding:0;flex:none}.avedit{position:absolute;right:-2px;bottom:-2px;width:24px;height:24px;border-radius:50%;background:var(--g);color:#fff;font-size:var(--t0);display:flex;align-items:center;justify-content:center;border:2px solid var(--card)}
+.frow.pwr .n{width:64px;text-align:left;white-space:nowrap}.frow.pwr input.num{width:72px;text-align:center;margin:0 4px}input.num{text-align:center}.frow .n{text-align:left}
+.tbl td:first-child,.tbl th:first-child{text-align:left}.tbl td.l,.tbl th.l{text-align:left}input[type=number],input[type=tel],input[inputmode=numeric]{text-align:center}input[type=tel].left{text-align:left}
+.pwr2{display:grid;grid-template-columns:72px 1fr 1fr;align-items:center;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}.pwr2 b{text-align:left;font-size:var(--t2)}.pwr2>div{display:flex;flex-direction:column;align-items:center;gap:4px}.pwr2 input.num{width:84px;height:48px;text-align:center;margin:0;font-size:var(--t3);-moz-appearance:textfield}.pwr2 input::-webkit-outer-spin-button,.pwr2 input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+/* ───── 정렬 규칙(v6.0.2): 글자 왼쪽 · 숫자 가운데 · 단위는 숫자 옆 같은 줄 ───── */
+input,select,textarea{box-sizing:border-box;max-width:100%;min-width:0}
+.card h3{text-align:left}.lb{text-align:left}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.kv>div{text-align:center;padding:10px 4px}.kv b{white-space:nowrap}.kv span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip{white-space:nowrap;vertical-align:middle}
+.it .t{min-width:0;text-align:left}.it .t>span.muted{display:block}
+.step{display:grid;grid-template-columns:56px 1fr 56px;align-items:center}.step .v{text-align:center}.step .v small{display:block;white-space:nowrap}
+.row>*{min-width:0}
+.seg button{white-space:nowrap;padding:0 8px}
+.tbl{table-layout:auto}.tbl th{white-space:nowrap;text-align:center}.tbl td{white-space:nowrap}
+.muted.small,.hint{text-align:left}
+.frow .n{text-align:left}.frow .seg{margin:0;flex:1}
+.reg .hn{text-align:left}.reg input{text-align:center;margin:0}
+.box{text-align:left}
+.cont{align-items:center}.cont b,.cont span.muted{text-align:left;display:block}
+.top .ib,.top .ib.help,.top .bell{display:inline-flex;align-items:center;justify-content:center;line-height:1}
+.seg button{font-size:var(--t1);padding:0 6px;min-width:0}.seg.s button{font-size:var(--t0)}
+.sm2{white-space:nowrap}
+.card.invite{margin-top:14px}
+.chips{gap:8px}.chips button{white-space:nowrap}

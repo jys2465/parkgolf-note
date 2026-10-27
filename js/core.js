@@ -45,7 +45,7 @@
 
   /* ───── 타격감 계산(서버와 같은 공식) ───── */
   LZ.MODE = { b: '아마추어', p: '프로', m: '마스터' }; LZ.HL = { h: '높게', m: '보통', l: '낮게', x: '더낮게' }; LZ.HLSEG = [['h', '높게'], ['m', '보통'], ['l', '낮게'], ['x', '더낮게']];
-  LZ.DEF_PW = { b: { base: 15, step: 6 }, p: { base: 17, step: 5 }, m: { base: 19, step: 4 }, hl: 0.3 };
+  LZ.DEF_PW = { b: { base: 15, step: 5.5 }, p: { base: 17, step: 5 }, m: { base: 19, step: 4.5 }, hl: 0.3 };
   LZ.pw = function () { return S.pw || LZ.DEF_PW; };
   LZ.half = function (x) { return Math.round(Number(x) * 2) / 2; };
   LZ.clampP = function (x) { return Math.max(8, Math.min(40, x)); };
@@ -60,7 +60,7 @@
   /* 좌우: 0 = "그대로"(희미하게) · 오른쪽은 빨강 · 왼쪽은 파랑 */
   LZ.lrPlain = function (r) { var n = r.n | 0; return !n ? '그대로' : (r.d === 'L' ? '좌 ' : '우 ') + n; };
   LZ.lrTxt = function (r) { var n = r.n | 0; return '<span class="lrv ' + (!n ? 'c' : r.d === 'L' ? 'l' : 'r') + '">' + LZ.lrPlain(r) + '</span>'; };
-  LZ.refTxt = function (r) { return (r.r === 'c' ? '홀컵' : r.r === 'u' ? (r.t || '직접') : '첫화면') + '에서'; };
+  LZ.refTxt = function (r) { return r.r === 'c' ? '홀컵' : r.r === 'u' ? (r.t || '직접') : '첫화면'; };
   /** ● 평균과 같음 · ▲ 더 크게 · ▼ 더 작게 (적을 때의 모드 기준) */
   LZ.mark = function (p, s) { var d = p - s; if (Math.abs(d) < 0.5) return '<span class="mk ok">●</span>'; return '<span class="mk ' + (d > 0 ? 'up' : 'dn') + '">' + (d > 0 ? '▲' : '▼') + '</span>'; };
   LZ.markOf = function (r, hm) { return LZ.mark(r.p, LZ.sugOf(hm, r.g || 'p', r.h || 'm')); };
