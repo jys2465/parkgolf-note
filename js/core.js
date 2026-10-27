@@ -44,12 +44,12 @@
   LZ.LBL = function (i) { return (i + 1) + '홀'; };
 
   /* ───── 타격감 계산(서버와 같은 공식) ───── */
-  LZ.MODE = { b: '비기너', p: '프로', m: '마스터' }; LZ.HL = { h: '높게', m: '보통', l: '낮게' };
+  LZ.MODE = { b: '비기너', p: '프로', m: '마스터' }; LZ.HL = { h: '높게', m: '보통', l: '낮게', x: '더낮게' }; LZ.HLSEG = [['h', '높게'], ['m', '보통'], ['l', '낮게'], ['x', '더낮게']];
   LZ.DEF_PW = { b: { base: 15, step: 6 }, p: { base: 17, step: 5 }, m: { base: 19, step: 4 }, hl: 0.5 };
   LZ.pw = function () { return S.pw || LZ.DEF_PW; };
   LZ.half = function (x) { return Math.round(Number(x) * 2) / 2; };
   LZ.clampP = function (x) { return Math.max(8, Math.min(40, x)); };
-  LZ.stepOf = function (g, h) { var pw = LZ.pw(); return pw[g].step + (h === 'h' ? pw.hl : h === 'l' ? -pw.hl : 0); };
+  LZ.stepOf = function (g, h) { var pw = LZ.pw(); return pw[g].step + (h === 'h' ? pw.hl : h === 'l' ? -pw.hl : h === 'x' ? -2 * pw.hl : 0); };
   LZ.distOf = function (p, g, h) { return Math.round(50 + (p - LZ.pw()[g].base) * LZ.stepOf(g, h)); };
   LZ.distRaw = function (p, g, h) { return 50 + (p - LZ.pw()[g].base) * LZ.stepOf(g, h); };
   LZ.sugOf = function (m, g, h) { return LZ.clampP(LZ.half(LZ.pw()[g].base + (m - 50) / LZ.stepOf(g, h))); };
@@ -102,6 +102,7 @@
   LZ.hdr = function (title, o) {
     o = o || {};
     return '<div class="top">' + (o.back ? '<button type="button" class="ib" data-act="back">‹ 뒤로</button>' : '') + '<h2>' + esc(title) + '</h2>' + (o.right || '') +
+      (LZ.HELP && LZ.HELP[LZ.cur().name] ? '<button type="button" class="ib help" data-act="help" aria-label="사용 안내">?</button>' : '') +
       (S.user && S.user.kind === 'admin' && !o.noBell ? '<button type="button" class="ib bell" data-go="noti">🔔' + (S.me && S.me.noti ? '<i>' + S.me.noti + '</i>' : '') + '</button>' : (S.user && !o.noBell && S.me && S.me.noti ? '<button type="button" class="ib bell" data-go="noti">🔔<i>' + S.me.noti + '</i></button>' : '')) +
       '</div>';
   };
@@ -261,6 +262,17 @@
     Promise.resolve(fn(a, a.dataset.v, e)).catch(function (err) { LZ.toast(LZ.errText(err), 4500); });
   });
   LZ.act.back = function () { LZ.back(); };
+  /* 꾹 누르면 연속으로(좌우·타격감·점수 단추) */
+  var HOLD = /^(edLr|edP|sc|regLr:|regP:|shotFb)/, holdT = null, holdI = null, held = false;
+  function holdStop() { clearTimeout(holdT); clearInterval(holdI); holdT = holdI = null; }
+  document.addEventListener('pointerdown', function (e) {
+    var a = e.target.closest('[data-act]'); if (!a || !HOLD.test(a.dataset.act) || a.disabled) return;
+    held = false; holdStop();
+    holdT = setTimeout(function () { holdI = setInterval(function () { held = true; var fn = LZ.act[a.dataset.act] || (a.dataset.act.indexOf(':') > 0 ? null : null); if (fn) { LZ.buzz(); Promise.resolve(fn(a, a.dataset.v, e)).catch(function () {}); } else a.click(); }, 130); }, 450);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { document.addEventListener(ev, function () { holdStop(); }, true); });
+  document.addEventListener('click', function (e) { if (held) { held = false; var a = e.target.closest('[data-act]'); if (a && HOLD.test(a.dataset.act)) { e.stopImmediatePropagation(); e.preventDefault(); } } }, true);
+  LZ.act.help = function () { var h = LZ.HELP[LZ.cur().name]; if (!h) return; LZ.sheet('<h2>' + esc(h.t) + '</h2>' + (h.img ? '<img src="assets/guide/' + h.img + '.webp" alt="" style="width:100%;border-radius:14px;border:1px solid var(--line);margin:4px 0 10px">' : '') + h.html); };
   LZ.act.sheetClose = function () { LZ.closeSheet(); };
   LZ.act.retry = function () { render(); };
   LZ.act.theme = function () { LZ.theme.set(!LZ.theme.get()); LZ.redraw(); };
