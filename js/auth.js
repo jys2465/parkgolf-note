@@ -22,8 +22,9 @@
         '<label class="lb" style="display:flex;gap:10px;align-items:center;margin-top:14px;font-weight:400"><input type="checkbox" id="keep" ' + (keep ? 'checked' : '') + ' style="width:24px;height:24px;accent-color:var(--g)"> 이 휴대폰에서 로그인 유지</label>' +
         '<button type="button" class="btn" data-act="login">로그인</button>' +
         '<div style="display:flex;justify-content:space-between;margin-top:14px"><a href="#" data-act="forgot" style="font-weight:700;text-decoration:none">비밀번호를 잊었어요</a><a href="#" data-go="guide" style="font-weight:700;text-decoration:none">사용 안내</a></div></div>' +
+        '<button type="button" class="cont" style="margin:0 16px 14px;width:auto" data-go="awards" data-p=\'{"demo":1}\'><span style="font-size:var(--t5)">🏆</span><div style="flex:1"><b>시상식 미리보기</b><span class="muted">라운드가 끝나면 우승·행운상까지 바로 시상 · 결과 그림을 카톡으로</span></div><span>›</span></button>' +
         (inv ? '<div class="card" style="margin:0 16px 14px;background:var(--gl)"><b>클럽 초대를 받으셨어요</b><div class="muted">로그인하거나 가입하면 그 클럽에 가입 신청이 돼요.</div></div>' : '') +
-        '<div class="card" style="margin:0 16px 20px;background:#FFF7ED;border:2px solid #FED7AA;display:flex;align-items:center;gap:12px"><div style="flex:1"><b>처음이세요?</b><div class="muted" style="color:#9A3412">🔵 블루 회원 무료 · 바로 시작</div></div><button type="button" class="sm2" style="background:var(--org);height:50px" data-go="join">가입하기</button></div>' +
+        '<div class="card" style="margin:0 16px 20px;background:#FFF7ED;border:2px solid #FED7AA;display:flex;align-items:center;gap:12px"><div style="flex:1"><b>처음이세요?</b><div class="muted" style="color:#9A3412">가입 무료 · 바로 시작</div></div><button type="button" class="sm2" style="background:var(--org);height:50px" data-go="join">가입하기</button></div>' +
         '<p class="hint center" style="padding-bottom:20px">앱 버전 ' + LZ.VER + '</p>';
       var n = $('#nick'); n.addEventListener('input', function () { pinForce = 0; setPadLen(pinLen()); });
       n.addEventListener('keydown', function (e) { if (e.key === 'Enter') n.blur(); });
@@ -91,9 +92,9 @@
         '<div class="card"><label class="lb" style="margin-top:0" for="jnick">닉네임</label><input type="text" id="jnick" placeholder="한글·영문·숫자 2~8자 (스크린에서 쓰는 이름)" maxlength="8"><p class="hint" id="jhint">스크린 파크골프 기계에 적는 닉네임과 같게 하면 좋아요.</p>' +
         '<label class="lb">비밀번호 숫자 4자리</label>' + padHtml(4) +
         '<div class="box" style="margin:14px 0 6px"><b>🔑 비밀 질문 — 나의 절친 이름과 전화번호 뒷자리 4개</b><div class="muted" style="margin-top:4px">메모 없이도 늘 머릿속에 있는 답이에요. 비밀번호를 잊으면 이 두 가지로 바로 새로 정해요.</div></div><div class="row"><input type="text" id="sqName" maxlength="10" placeholder="절친 이름"><input type="tel" id="sqNum" inputmode="numeric" maxlength="4" placeholder="전화 뒷자리 4"></div>' +
-        '<label class="lb" style="display:flex;gap:10px;align-items:flex-start;font-weight:400;margin-top:14px"><input type="checkbox" id="agree" style="width:24px;height:24px;accent-color:var(--g);flex:none"><span class="muted">가입은 무료(🔵 블루)이고 한 분당 하나예요. 닉네임·기록은 클럽 회원님께 보일 수 있어요. 비밀번호는 암호화해서 저장돼요.</span></label>' +
+        '<label class="lb" style="display:flex;gap:10px;align-items:flex-start;font-weight:400;margin-top:14px"><input type="checkbox" id="agree" style="width:24px;height:24px;accent-color:var(--g);flex:none"><span class="muted">가입은 무료이고 한 분당 하나예요. 닉네임·기록은 클럽 회원님께 보일 수 있어요. 비밀번호는 암호화해서 저장돼요.</span></label>' +
         '<button type="button" class="btn org" data-act="joinOk">가입하기</button></div>' +
-        '<p class="hint">가입하면 바로 <b>🔵 블루</b> 회원님 — 기록·라운드·클럽 가입(3개)·클럽 만들기(1개, 5명) 무료. 연회비 1만 원으로 <b>🔴 레드</b>가 되면 클럽 5개(각 20명)와 방세 결제가 돼요.</p></div>';
+        '<p class="hint">가입은 무료예요. 기록·라운드·시상식·클럽 가입이 바로 돼요.</p></div>';
       pin = '';
       var n = $('#jnick'), chk = null;
       n.addEventListener('input', function () { clearTimeout(chk); chk = setTimeout(async function () { var v = LZ.stripNick(n.value); if (v.length < 2) return; try { var r = await LZ.api('joinCheck', { nick: v }, { noAuth: true, retry: 0 }); $('#jhint').innerHTML = r.res ? '<span class="err">' + esc(r.res.msg) + '</span>' : '<span style="color:var(--green);font-weight:700">쓸 수 있는 닉네임이에요 ✓</span>'; } catch (e) { /* 무시 */ } }, 500); });
@@ -186,7 +187,7 @@
   LZ.screens.offline = {
     nobar: true,
     show: function (p, root) {
-      root.innerHTML = '<div class="wrap" style="padding-top:60px"><div class="card center"><div style="font-size:48px">📶</div><h3>서버에 연결하지 못했어요</h3><p class="muted">' + esc(LZ.errText(p.err)) + '</p><button type="button" class="btn" data-act="retryBoot">다시 시도</button><button type="button" class="btn g" data-act="logoutLocal">다른 닉네임으로 로그인</button></div></div>';
+      root.innerHTML = '<div class="wrap" style="padding-top:60px"><div class="card center"><div style="font-size:var(--t7)">📶</div><h3>서버에 연결하지 못했어요</h3><p class="muted">' + esc(LZ.errText(p.err)) + '</p><button type="button" class="btn" data-act="retryBoot">다시 시도</button><button type="button" class="btn g" data-act="logoutLocal">다른 닉네임으로 로그인</button></div></div>';
     }
   };
   LZ.act.retryBoot = function () { location.reload(); };

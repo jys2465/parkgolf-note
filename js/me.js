@@ -1,11 +1,11 @@
-/* 내 정보: 등급·결제·방세·환불 · 비밀번호·비밀 질문 · 보기 설정 · 친구에게 알리기 · 명예회원(체험회원 만들기·7일 선물) · 알림 설정(푸시·카카오) · 의견 */
+/* 내 정보: 등급·결제·방세·환불 · 비밀번호·비밀 질문 · 보기 설정 · 친구 초대하기 · 명예회원(체험회원 만들기·7일 선물) · 알림 설정(푸시·카카오) · 의견 */
 (function () {
   'use strict';
   var LZ = window.LZ, S = LZ.S, $ = LZ.$, $$ = LZ.$$, esc = LZ.esc, store = LZ.store;
   LZ.refLink = function () { return LZ.APP_URL + '?ref=' + S.user.uid; };
-  LZ.refText = function () { return '⛳ 파크골프 공략수첩\n스크린 홀별 공략(좌우·타격감)을 적어 두고 클럽 회원과 함께 보는 앱이에요. 필드 라운드 점수판도 같이 써요.\n\n' + S.user.nick + '님의 초대로 가입하면 7일 무료 체험 바로 시작!\n👇 아래 링크를 눌러 가입하세요'; };
-  /* 친구에게 알리기 카드(홈 아래·내 정보 위) */
-  LZ.inviteCard = function (big) { if (S.user.kind === 'admin') return ''; return '<div class="card invite"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:34px">💛</span><div style="flex:1"><h3 style="margin:0">친구에게 알리기</h3><div class="muted">내 초대 링크로 가입하면 친구는 7일 무료 체험, 친구가 정회원이 되면 나에게 7일 추가</div></div></div><button type="button" class="btn kakao" data-act="inviteKakao">카카오톡으로 친구 초대하기</button>' + (big ? '<div class="row"><button type="button" class="btn g sm" data-act="copy" data-v="' + esc(LZ.refLink()) + '">링크 복사</button><button type="button" class="btn g sm" data-act="inviteQr">QR 보기</button></div>' : '') + '</div>'; };
+  LZ.refText = function () { return '⛳ 파크골프 공략수첩\n스크린 파크골프 칠 때 홀마다 어디로 얼마나 칠지 적어 두는 수첩이에요. 가입은 무료고, 아래 링크로 들어오면 ' + S.user.nick + '님 클럽과 바로 연결돼요.\n같이 기록하고 같이 시상식 해요 🏆\n👇 아래 링크를 눌러 가입하세요'; };
+  /* 친구 초대하기 카드(홈 아래·내 정보 아래) */
+  LZ.inviteCard = function (big) { if (S.user.kind === 'admin') return ''; return '<div class="card invite"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:var(--t6)">💛</span><div style="flex:1"><h3 style="margin:0">친구 초대하기</h3><div class="muted">내 링크로 가입하면 내 클럽에 바로 연결돼요. 친구가 연회비를 내면 나에게 <b>레드 30일</b></div></div></div><button type="button" class="btn kakao" data-act="inviteKakao">카카오톡으로 친구 초대하기</button>' + (big ? '<div class="row"><button type="button" class="btn g sm" data-act="copy" data-v="' + esc(LZ.refLink()) + '">링크 복사</button><button type="button" class="btn g sm" data-act="inviteQr">QR 보기</button><button type="button" class="btn g sm" data-act="posterJoin">안내장 그림</button></div>' : '') + '</div>'; };
   LZ.act.inviteKakao = async function () {
     try { if (navigator.canShare) { var b = await (await fetch('assets/promo-invite.jpg')).blob(), f = new File([b], 'parkgolf.jpg', { type: 'image/jpeg' }); if (navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: '파크골프 공략수첩', text: LZ.refText() + '\n' + LZ.refLink() }); return; } } } catch (e) { if (e && e.name === 'AbortError') return; }
     return LZ.kakaoShare(LZ.refText(), LZ.refLink());
@@ -18,11 +18,12 @@
       if (!S.me) { root.innerHTML = LZ.hdr('내 정보') + LZ.skeleton(5); await LZ.refreshMe(); if (!alive()) return; }
       if (S.pub === undefined) { try { S.pub = (await LZ.api('prefs', {})).pub; } catch (e) { S.pub = 1; } if (!alive()) return; }
       var u = S.user, m = S.me, dark = LZ.theme.get(), big = LZ.big.get(), buzz = store.get('lz.buzz') !== '0';
-      var period = u.tier === 'gold' ? '골드 · 1년씩 자동 연장' : u.tier === 'admin' ? '관리자' : u.tier === 'red' ? '레드 · ' + LZ.fmtYmd(u.end) + '까지 (' + u.left + '일 남음)' : (u.wasRed ? '레드 기간이 끝나 블루예요 · 연회비를 내면 다시 레드' : '블루 · 무료');
+      var ym = function (ts) { var d = new Date(ts || Date.now()); return d.getFullYear() + '.' + (d.getMonth() + 1 < 10 ? '0' : '') + (d.getMonth() + 1); };
+      var period = u.tier === 'gold' ? '골드 · ' + (u.end ? LZ.fmtYmd(u.end) + '까지' : '') : u.tier === 'admin' ? '관리자' : u.tier === 'red' ? '레드 · ' + LZ.fmtYmd(u.end) + '까지' : u.tier === 'black' ? '블랙' : '블루 · ' + ym(u.created) + '부터';
       root.innerHTML = LZ.hdr('내 정보') + '<div class="wrap">' +
-        '<div class="hello"><div class="av">' + esc(u.nick.charAt(0)) + '</div><div style="flex:1"><b style="font-size:var(--t3)">' + esc(u.nick) + '님</b>' + LZ.dot(u) + '<div class="muted">' + esc(period) + '</div></div><button type="button" class="sm2 g" data-act="nickChange">닉네임</button></div>' +
-        (u.kind === 'admin' ? '<button type="button" class="cont" data-go="dash"><span style="font-size:26px">🛠</span><div style="flex:1"><b>관리자</b><span class="muted">결제 ' + ((m.admin || {}).pay || 0) + ' · 환불 ' + ((m.admin || {}).refund || 0) + ' · 비밀번호 ' + ((m.admin || {}).pw || 0) + ' · 문의 ' + ((m.admin || {}).qna || 0) + '</span></div><span>›</span></button>' : '') +
-        (u.tier !== 'admin' && u.tier !== 'gold' ? '<div class="card price"><div style="display:flex;align-items:center"><h3 style="flex:1;margin:0">' + (u.tier === 'red' ? '🔴 레드 회원님' : '🔴 레드가 되면') + '</h3>' + (m.pending ? '<span class="chip">승인 기다림</span>' : '') + '</div><p class="muted" style="margin:0 0 8px">연회비 <b>1만 원 / 1년</b> · 클럽 5개(각 20명) · 방세 결제 · 단체 주최 · 모든 기록 기능</p><button type="button" class="btn" data-go="pay">' + (m.pending ? '결제 확인 상태 보기' : u.tier === 'red' ? (u.left <= 30 ? '연회비 연장하기' : '결제·방세 보기') : '연회비 결제하기') + '</button>' + (m.refund && (m.refund.can || m.refund.req) ? '<button type="button" class="btn g sm" data-go="refund">' + (m.refund.req ? '환불 신청 중 · 보기' : '환불 신청') + '</button>' : '') + '</div>' : '') +
+        '<div class="hello"><button type="button" class="avbtn" data-act="avatarMenu">' + LZ.avatar(u, 'big') + '<span class="avedit">✎</span></button><div style="flex:1"><b style="font-size:var(--t3)">' + esc(u.nick) + ' 회원님</b> <span class="tier">' + esc(period) + '</span>' + (u.tier === 'red' && u.left !== null && u.left <= 30 ? '<div class="muted">' + (u.left === 0 ? '오늘까지예요' : u.left + '일 남았어요') + '</div>' : u.wasRed && u.tier === 'blue' ? '<div class="muted">레드 기간이 끝났어요 · 연회비를 내면 다시 레드</div>' : '') + '</div><button type="button" class="sm2 g" data-act="nickChange">닉네임</button></div>' +
+        (u.kind === 'admin' ? '<button type="button" class="cont" data-go="dash"><span style="font-size:var(--t5)">🛠</span><div style="flex:1"><b>관리자</b><span class="muted">결제 ' + ((m.admin || {}).pay || 0) + ' · 환불 ' + ((m.admin || {}).refund || 0) + ' · 비밀번호 ' + ((m.admin || {}).pw || 0) + ' · 문의 ' + ((m.admin || {}).qna || 0) + '</span></div><span>›</span></button>' : '') +
+        (u.tier !== 'admin' && u.tier !== 'gold' ? '<div class="card"><div style="display:flex;align-items:center;gap:8px"><h3 style="flex:1;margin:0">' + (u.tier === 'red' ? '연회비' : '연회비를 내면') + '</h3>' + (m.pending ? '<span class="chip">승인 기다림</span>' : '<span class="muted">1만 원 / 1년</span>') + '</div><p class="muted" style="margin:6px 0 10px">클럽 5개(각 20명) · 방세 결제 · 단체 주최</p><button type="button" class="btn" data-go="pay" style="margin:0">' + (m.pending ? '결제 확인 상태 보기' : u.tier === 'red' ? (u.left <= 30 ? '연회비 연장하기' : '결제·방세 보기') : '연회비 결제하기') + '</button>' + (m.refund && (m.refund.can || m.refund.req) ? '<button type="button" class="btn g sm" data-go="refund">' + (m.refund.req ? '환불 신청 중 · 보기' : '환불 신청') + '</button>' : '') + '</div>' : '') +
         LZ.inviteCard(true) +
         '<div class="card"><h3>보기</h3>' +
         '<div class="tgl"><span>글씨 크게</span>' + LZ.sw(big, 'big') + '</div><div class="tgl"><span>어두운 화면</span>' + LZ.sw(dark, 'theme') + '</div><div class="tgl"><span>단추 누를 때 진동</span>' + LZ.sw(buzz, 'buzz') + '</div>' +
@@ -39,6 +40,23 @@
     var v = await LZ.dialog({ title: '닉네임 바꾸기', html: '<p class="muted">한글·영문·숫자 2~8자 · 7일에 한 번 · 예전 이름은 7일 동안 남이 못 써요.</p><input type="text" id="nn" class="in" maxlength="8" value="' + esc(S.user.nick) + '">', cancel: null, focus: '#nn', buttons: [{ label: '바꾸기', kind: 'y', value: 'ok' }, { label: '취소', kind: 'g', value: null }] }).then(function (x) { return x === 'ok' ? $('#nn').value : null; });
     if (v === null) return;
     try { var r = await LZ.api('setNick', { nick: v }); S.user = r.user || S.user; await LZ.refreshMe(); LZ.toast('닉네임을 바꿨어요'); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e), 5000); }
+  };
+  LZ.act.avatarMenu = function () {
+    LZ.sheet('<h2>프로필 사진</h2><p class="muted">정사각형으로 잘라 작게 저장돼요(256px). 클럽 회원님과 점수판에 보여요.</p><label class="btn" style="display:flex;align-items:center;justify-content:center;cursor:pointer"><input type="file" id="avFile" accept="image/*" hidden>사진 고르기</label><label class="btn o" style="display:flex;align-items:center;justify-content:center;cursor:pointer"><input type="file" id="avCam" accept="image/*" capture="user" hidden>지금 찍기</label>' + (S.user.img ? '<button type="button" class="btn g" data-act="avatarDel">사진 지우기</button>' : ''));
+    ['#avFile', '#avCam'].forEach(function (id) { var f = $(id); if (f) f.addEventListener('change', function () { if (f.files[0]) avatarUpload(f.files[0]); }); });
+  };
+  async function avatarUpload(file) {
+    LZ.busy(true, '사진을 줄이는 중…');
+    try { var data = await LZ.shrinkSquare(file, 256, 0.8); var r = await LZ.api('avatarPut', { data: data }); S.user = r.user; LZ.busy(false); LZ.closeSheet(); LZ.toast('프로필 사진을 바꿨어요'); LZ.redraw(); }
+    catch (e) { LZ.busy(false); LZ.toast(LZ.errText(e) || '사진을 올리지 못했어요', 4500); }
+  }
+  LZ.act.avatarDel = async function () { try { var r = await LZ.api('avatarDel', {}); S.user = r.user; LZ.closeSheet(); LZ.toast('지웠어요'); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e), 4000); } };
+  LZ.shrinkSquare = function (file, size, q) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image(), url = URL.createObjectURL(file);
+      img.onload = function () { var w = img.width, h = img.height, m = Math.min(w, h), sx = (w - m) / 2, sy = (h - m) / 2, cv = document.createElement('canvas'); cv.width = size; cv.height = size; cv.getContext('2d').drawImage(img, sx, sy, m, m, 0, 0, size, size); URL.revokeObjectURL(url); var out = cv.toDataURL('image/webp', q); if (out.indexOf('data:image/webp') !== 0) out = cv.toDataURL('image/jpeg', q); resolve(out); };
+      img.onerror = function () { reject(new Error('사진을 읽지 못했어요')); }; img.src = url;
+    });
   };
   LZ.act.sqChange = async function () {
     var v = await LZ.dialog({ title: '🔑 비밀 질문 바꾸기', html: '<p class="muted">나의 절친 이름과 전화번호 뒷자리 4개. 늘 머릿속에 있는 답으로 정하세요.</p>' + (S.user.sq ? '<label class="lb" style="margin-top:0">지금 비밀번호</label><input type="password" id="sqPin" inputmode="numeric" maxlength="' + (S.user.pinLen || 4) + '">' : '') + '<div class="row" style="margin-top:8px"><input type="text" id="sqN" maxlength="10" placeholder="절친 이름"><input type="tel" id="sqD" inputmode="numeric" maxlength="4" placeholder="뒷자리 4"></div>', cancel: null, buttons: [{ label: '저장', kind: 'y', value: 'ok' }, { label: '취소', kind: 'g', value: null }] }).then(function (x) { return x === 'ok' ? { pin: ($('#sqPin') || {}).value || '', name: $('#sqN').value, num: $('#sqD').value } : null; });
@@ -71,7 +89,7 @@
       root.innerHTML = LZ.hdr('결제', { back: true }) + '<div class="wrap">' +
         (pend ? '<div class="card" style="background:var(--yl)"><h3>⏳ 입금 확인을 기다려요</h3><p style="margin:0">' + esc(pend.planName) + ' ' + won(pend.amount) + ' · ' + (pend.method === 'bank' ? '계좌이체' : '카카오페이') + ' · 보낸 분 이름 <b>' + esc(pend.depositor) + '</b></p><p class="muted">관리자가 확인하면 바로 적용되고 알림이 와요. 보통 하루 안에 처리돼요.</p><button type="button" class="btn g sm" data-act="payCancel">신청 취소</button></div>' : '') +
         (pend ? '' : '<div class="card"><h3>무엇을 낼까요?</h3>' +
-          '<button type="button" class="opt ' + (sel === 'red' ? 'on' : '') + '" data-act="paySel" data-v="red"' + (d.pay.ok ? '' : ' disabled') + '><b>🔴 레드 연회비 · ' + won(d.red.price) + ' / 1년</b><span>' + (d.pay.ok ? '클럽 5개(각 20명) · 방세 결제 · ' + LZ.fmtYmd(d.red.preview.start) + '부터 1년' : esc(d.pay.why)) + '</span></button>' +
+          '<button type="button" class="opt ' + (sel === 'red' ? 'on' : '') + '" data-act="paySel" data-v="red"' + (d.pay.ok ? '' : ' disabled') + '><b>레드 연회비 · ' + won(d.red.price) + ' / 1년</b><span>' + (d.pay.ok ? '클럽 5개(각 20명) · 방세 결제 · ' + LZ.fmtYmd(d.red.preview.start) + '부터 1년' : esc(d.pay.why)) + '</span></button>' +
           d.clubs.map(function (c) { return '<button type="button" class="opt ' + (sel === 'club:' + c.id ? 'on' : '') + '" data-act="paySel" data-v="club:' + esc(c.id) + '"><b>🏠 ' + esc(c.name) + ' 방세</b><span>지금 한도 ' + c.cap + '명 · 회원 ' + c.members + '명' + (c.capEnd ? ' · ' + LZ.fmtYmd(c.capEnd) + '까지' : '') + '</span></button>'; }).join('') +
           (!d.clubs.length ? '<p class="hint">내가 캡틴인 클럽이 있으면 여기서 방세(한도 올리기·연장)를 내요. 20명까지는 레드 연회비에 포함이에요.</p>' : '') + '</div>' +
           (club ? '<div class="card"><h3>한도 고르기</h3><p class="muted" style="margin:0 0 8px">50명 ' + won(d.fee[50]) + ' · 100명 ' + won(d.fee[100]) + ' · 200명 ' + won(d.fee[200]) + ' · 이후 100명마다 +' + won(d.fee.step) + ' (1년). 기간 안에 연장하면 50% 할인, 올리기는 차액만.</p><div class="chips wrap2">' + club.quotes.map(function (q) { return '<button type="button" class="sm2 ' + (capSel === q.cap ? '' : 'g') + '" data-act="payCap" data-v="' + q.cap + '">' + q.cap + '명 ' + (q.amount ? won(q.amount) : '포함') + (q.kind === 'renew' ? ' 연장' : q.kind === 'up' ? ' 올리기' : '') + '</button>'; }).join('') + '</div></div>' : '') +

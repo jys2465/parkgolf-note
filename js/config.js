@@ -4,6 +4,6 @@
 window.LZ_CONFIG = {
   API: 'https://achlxwcfcqaffazlxuxe.supabase.co/functions/v1/api',
   RT: 'wss://achlxwcfcqaffazlxuxe.supabase.co/realtime/v1/websocket?apikey=sb_publishable_Hf1XtEPGi3Q30VhWz39cpg_qA2SgZYG&vsn=1.0.0',
-  APP_URL: 'https://jys2465.github.io/lezuro-jade-yangju/'
+  APP_URL: 'https://jys2465.github.io/parkgolf-note/'
 };
-window.LZ_VER = '5.0.0';
+window.LZ_VER = '6.0.0';

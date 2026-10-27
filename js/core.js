@@ -61,12 +61,32 @@
   LZ.lrPlain = function (r) { var n = r.n | 0; return !n ? '그대로' : (r.d === 'L' ? '좌 ' : '우 ') + n; };
   LZ.lrTxt = function (r) { var n = r.n | 0; return '<span class="lrv ' + (!n ? 'c' : r.d === 'L' ? 'l' : 'r') + '">' + LZ.lrPlain(r) + '</span>'; };
   LZ.refTxt = function (r) { return (r.r === 'c' ? '홀컵' : r.r === 'u' ? (r.t || '직접') : '첫화면') + '에서'; };
-  /** ● 제안과 같음 · ▲ 더 크게 · ▼ 더 작게 (적을 때의 모드 기준) */
+  /** ● 평균과 같음 · ▲ 더 크게 · ▼ 더 작게 (적을 때의 모드 기준) */
   LZ.mark = function (p, s) { var d = p - s; if (Math.abs(d) < 0.5) return '<span class="mk ok">●</span>'; return '<span class="mk ' + (d > 0 ? 'up' : 'dn') + '">' + (d > 0 ? '▲' : '▼') + '</span>'; };
   LZ.markOf = function (r, hm) { return LZ.mark(r.p, LZ.sugOf(hm, r.g || 'p', r.h || 'm')); };
   LZ.pp = function (d) { return '<span class="pp ' + (d < 0 ? 'u' : d > 0 ? 'o' : 'e') + '">' + (d > 0 ? '+' + d : d === 0 ? 'E' : d) + '</span>'; };
   /* 등급 동그라미: 🔵 블루 · 🔴 레드 · 🟡 골드 · ⚫ 블랙 */
   LZ.dot = function (u) { var t = u && (u.tier || ({ hon: 'gold', gold: 'gold', trial: 'blue', blue: 'blue', month: 'red', year: 'red', red: 'red', black: 'black', admin: 'admin' })[u.kind]) || 'blue'; return '<i class="dot ' + t + '" title="' + ({ blue: '블루', red: '레드', gold: '골드', black: '블랙', admin: '관리자' })[t] + '"></i>'; };
+  /* ───── 코치마크: 처음 몇 번만, 화면 요소를 동그랗게 비추고 한 줄 설명 ─────
+     steps = [{ sel: CSS 선택자, text, pos: 'below'|'above' }] · 요소가 없으면 건너뜀 */
+  LZ.coach = function (key, steps) {
+    if (store.get('lz.coach.' + key) === '1') return; var i = 0, ov;
+    function end() { store.set('lz.coach.' + key, '1'); if (ov) ov.remove(); ov = null; }
+    function show() {
+      while (i < steps.length && !document.querySelector(steps[i].sel)) i++;
+      if (i >= steps.length) { end(); return; }
+      var st = steps[i], el = document.querySelector(st.sel), r = el.getBoundingClientRect(), pad = 8;
+      if (!ov) { ov = document.createElement('div'); ov.className = 'coach'; document.body.appendChild(ov); }
+      var below = st.pos !== 'above' && r.bottom + 140 < window.innerHeight;
+      ov.innerHTML = '<div class="coach-hole" style="left:' + (r.left - pad) + 'px;top:' + (r.top - pad) + 'px;width:' + (r.width + pad * 2) + 'px;height:' + (r.height + pad * 2) + 'px"></div>' +
+        '<div class="coach-tip" style="' + (below ? 'top:' + (r.bottom + pad + 12) + 'px' : 'bottom:' + (window.innerHeight - r.top + pad + 12) + 'px') + '"><div class="coach-n">' + (i + 1) + '/' + steps.length + '</div><p>' + st.text + '</p><div class="row"><button type="button" class="sm2 g" data-coach="skip">그만 보기</button><button type="button" class="sm2" data-coach="next">' + (i === steps.length - 1 ? '알겠어요' : '다음') + '</button></div></div>';
+    }
+    document.addEventListener('click', function h(e) { var b = e.target.closest('[data-coach]'); if (!b || !ov) return; e.preventDefault(); e.stopPropagation(); if (b.dataset.coach === 'skip') { end(); document.removeEventListener('click', h, true); return; } i++; if (i >= steps.length) { end(); document.removeEventListener('click', h, true); } else show(); }, true);
+    setTimeout(show, 350);
+  };
+  /* 프로필: 사진이 있으면 사진, 없으면 닉네임 첫 글자(닉네임마다 색이 정해짐) */
+  var AVC = ['#0B5D4B', '#1D4ED8', '#B45309', '#7C3AED', '#BE185D', '#0F766E', '#4338CA', '#9A3412'];
+  LZ.avatar = function (x, cls) { x = x || {}; var nick = x.nick || x.n || '?', h = 0; for (var i = 0; i < nick.length; i++) h = (h * 31 + nick.charCodeAt(i)) % 9973; return x.img ? '<img class="av ' + (cls || '') + '" data-img="' + esc(x.img) + '" alt="">' : '<div class="av ' + (cls || '') + '" style="background:' + AVC[h % AVC.length] + '">' + esc(nick.charAt(0)) + '</div>'; };
   LZ.stars = function (n) { n = Math.max(1, Math.min(5, n | 0)) || 3; return '<span class="star">' + '★'.repeat(n) + '<s>' + '★'.repeat(5 - n) + '</s></span>'; };
 
   /* ───── 공통 화면 요소 ───── */
@@ -236,7 +256,7 @@
     root.classList.toggle('nobar', !!s.nobar); LZ.tabs(s.tab);
     if (s.wake) LZ.wake.on(); else LZ.wake.off();
     if (!s.rt && LZ.rt) LZ.rt.stop();
-    try { await s.show(cur.p || {}, root, alive); if (alive()) LZ.enhance(root); }
+    try { await s.show(cur.p || {}, root, alive); if (alive()) { LZ.enhance(root); if (LZ.fillImgs) LZ.fillImgs(root); } }
     catch (e) {
       if (!alive()) return;
       if (e && e.code === 'auth') return;
@@ -330,7 +350,8 @@
     if (q.get('inv')) store.set('lz.inv', q.get('inv'));
     if (q.get('ref')) store.set('lz.ref', q.get('ref'));
     if (q.get('r')) store.set('lz.joinRound', q.get('r'));
-    if (q.get('e')) store.set('lz.joinEvent', q.get('e') + (q.get('t') ? ':' + q.get('t') : ''));
+    if (q.get('e') && q.get('tv')) { LZ.tvCode = q.get('e'); }
+    else if (q.get('e')) store.set('lz.joinEvent', q.get('e') + (q.get('t') ? ':' + q.get('t') : ''));
     if (q.get('join')) store.set('lz.joinNow', '1');                                   // 홍보 안내문 링크: 가입 화면 바로
     var kakaoCode = store.get('lz.kakaoBack') === '1' && q.get('code') ? q.get('code') : '';   // 카카오 연결에서 돌아옴
     if (kakaoCode) store.del('lz.kakaoBack');
@@ -348,6 +369,7 @@
     }
     if (!S.user && store.get('lz.joinNow') === '1') { store.del('lz.joinNow'); LZ.stack = [{ name: 'join', p: {} }]; }
     if (q.get('s') || q.get('u') || q.get('inv') || q.get('r') || q.get('e') || q.get('t') || q.get('ref') || q.get('join') || q.get('code') || q.get('state') || q.get('error')) { try { history.replaceState(null, '', location.pathname + (hash ? '#' + hash : '')); } catch (e) { /* 무시 */ } }
+    if (LZ.tvCode) LZ.stack = [{ name: 'tv', p: { code: LZ.tvCode } }];
     await render();
     if (S.user) { if (kakaoCode && LZ.kakaoReturn) { LZ.kakaoReturn(kakaoCode); return; } LZ.afterLogin(hash); }
   };
