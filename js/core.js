@@ -5,7 +5,7 @@
   var C = window.LZ_CONFIG || {};
   LZ.API = C.API || '';
   LZ.APP_URL = C.APP_URL || (location.origin + location.pathname.replace(/[^\/]*$/, ''));
-  LZ.VER = '4.0.0';
+  LZ.VER = window.LZ_VER || '4.0.0';
   var S = LZ.S = { user: null, token: '', me: null, br: '', store: '', pw: null, unit: 'p', g: 'p', h: 'm' };
   var $ = LZ.$ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = LZ.$$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
@@ -130,9 +130,11 @@
         throw new ApiError((d && d.err) || 'server', (d && d.msg) || '서버에 문제가 생겼어요. 잠시 뒤에 다시 해 주세요.', d);
       });
   }
+  var inflight = 0; function bar(on) { inflight += on ? 1 : -1; var b = $('#pbar'); if (!b) { b = document.createElement('div'); b.id = 'pbar'; document.body.appendChild(b); } b.classList.toggle('on', inflight > 0); }
   LZ.api = async function (a, body, o) {
     o = o || {}; var tries = o.retry === undefined ? 1 : o.retry;
-    for (var i = 0; ; i++) {
+    bar(true);
+    try { for (var i = 0; ; i++) {
       try { return await post(a, body, o); }
       catch (e) {
         if (e.code === 'queue') { await LZ.queueWait(e.data); continue; }
@@ -141,7 +143,7 @@
         if ((e.code === 'net' || e.code === 'server' || e.code === 'busy') && i < tries) { await LZ.sleep(800 + i * 700); continue; }
         throw e;
       }
-    }
+    } } finally { bar(false); }
   };
   LZ.queueWait = function (d) {
     if (waiting) return waiting;
@@ -170,10 +172,15 @@
     if (was) { if (e && e.data && e.data.pinChanged) await LZ.dialog({ title: '비밀번호가 바뀌었어요', body: '다른 휴대폰에서 비밀번호를 새로 정해서 이 휴대폰은 로그아웃됐어요. 새 비밀번호로 다시 로그인해 주세요.' }); else LZ.toast(e && e.message ? e.message : '다시 로그인해 주세요.', 4000); }
     LZ.go('login', {}, { reset: true });
   };
-  LZ.clearSession = function () { S.user = null; S.token = ''; S.me = null; store.del('lz.t'); LZ.rt && LZ.rt.stop(); };
+  LZ.clearSession = function () { LZ.cacheDrop(); store.del('lz.k.me'); S.user = null; S.token = ''; S.me = null; store.del('lz.t'); LZ.rt && LZ.rt.stop(); };
   LZ.setSession = function (r) { S.token = r.token; S.user = r.user; store.set('lz.t', r.token); if (r.pw) S.pw = r.pw; };
-  LZ.refreshMe = async function () { var r = await LZ.api('me', {}); S.me = r; S.user = r.user; S.br = r.br; S.store = r.store; S.pw = r.pw; S.unit = r.user.unit || 'p'; return r; };
+  function applyMe(r) { S.me = r; S.user = r.user; S.br = r.br; S.store = r.store; S.pw = r.pw; S.unit = r.user.unit || 'p'; }
+  LZ.refreshMe = async function () { var r = await LZ.api('me', {}); applyMe(r); try { store.setJSON('lz.k.me', { t: Date.now(), d: r }); } catch (e) { /* 무시 */ } return r; };
 
+  /* ───── 마지막 응답 저장: 화면을 열 때 먼저 보여 주고 뒤에서 새로 받음 ───── */
+  LZ.cacheGet = function (k) { try { var x = store.json('lz.k.' + (S.user ? S.user.uid : '') + '.' + k); return x && Date.now() - x.t < 7 * 86400000 ? x.d : null; } catch (e) { return null; } };
+  LZ.cacheSet = function (k, d) { try { store.setJSON('lz.k.' + (S.user ? S.user.uid : '') + '.' + k, { t: Date.now(), d: d }); } catch (e) { /* 용량 */ } };
+  LZ.cacheDrop = function () { try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('lz.k.') === 0) localStorage.removeItem(k); }); } catch (e) { /* 무시 */ } };
   /* ───── 오프라인 큐: 신호가 약할 때 저장을 모아 두었다가 보냄 ───── */
   var Q = LZ.queue = {
     list: function () { return store.json('lz.q') || []; },
@@ -228,7 +235,7 @@
       LZ.guard = null; LZ.closeSheet();
       if (o.reset) { LZ.stack = [{ name: name, p: p || {} }]; history.replaceState({ i: 0 }, '', location.pathname + location.search); }
       else if (o.replace) { LZ.stack[LZ.stack.length - 1] = { name: name, p: p || {} }; history.replaceState({ i: LZ.stack.length - 1 }, '', location.pathname + location.search); }
-      else { LZ.stack.push({ name: name, p: p || {} }); history.pushState({ i: LZ.stack.length - 1 }, '', location.pathname + location.search); }
+      else { LZ.cur().y = window.scrollY; LZ.stack.push({ name: name, p: p || {} }); history.pushState({ i: LZ.stack.length - 1 }, '', location.pathname + location.search); }
     } finally { navBusy = false; }
     await render(); return true;
   };
@@ -236,7 +243,7 @@
   window.addEventListener('popstate', async function () {
     if (LZ.stack.length <= 1) return;
     if (LZ.guard && LZ.guard.dirty && LZ.guard.dirty()) { var ok = await LZ.guard.ask(); if (!ok) { history.pushState({ i: LZ.stack.length - 1 }, '', location.pathname + location.search); return; } }
-    LZ.guard = null; LZ.closeSheet(); LZ.stack.pop(); await render();
+    LZ.guard = null; LZ.closeSheet(); LZ.stack.pop(); var y = LZ.cur().y || 0; await render(); if (y) requestAnimationFrame(function () { window.scrollTo(0, y); });
   });
   /* 아래 탭 */
   var TABS = [['home', '홈', '<svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v10H3z"/><path d="M9 21v-7h6v7"/></svg>'], ['courses', '스크린 공략', '<svg viewBox="0 0 24 24"><path d="M4 21V4"/><path d="M4 5h12l-3 4 3 4H4"/><circle cx="17" cy="19" r="2"/></svg>'], ['field', '필드 라운드', '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M12 11v4l-4 6"/><path d="M12 15l4 6"/><path d="M5 21h14"/></svg>'], ['me', '내 정보', '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>']];
@@ -275,9 +282,10 @@
   LZ.act.help = function () { var h = LZ.HELP[LZ.cur().name]; if (!h) return; LZ.sheet('<h2>' + esc(h.t) + '</h2>' + (h.img ? '<img src="assets/guide/' + h.img + '.webp" alt="" style="width:100%;border-radius:14px;border:1px solid var(--line);margin:4px 0 10px">' : '') + h.html); };
   LZ.act.sheetClose = function () { LZ.closeSheet(); };
   LZ.act.retry = function () { render(); };
-  LZ.act.theme = function () { LZ.theme.set(!LZ.theme.get()); LZ.redraw(); };
-  LZ.act.big = function () { LZ.big.set(!LZ.big.get()); LZ.toast(LZ.big.get() ? '글씨를 크게 했어요' : '보통 글씨로 했어요'); LZ.redraw(); };
-  LZ.act.buzz = function () { store.set('lz.buzz', store.get('lz.buzz') === '0' ? '1' : '0'); LZ.redraw(); };
+  LZ.flip = function (el) { if (el && el.classList.contains('sw')) { el.classList.toggle('on'); el.setAttribute('aria-pressed', el.classList.contains('on')); return true; } return false; };
+  LZ.act.theme = function (el) { LZ.theme.set(!LZ.theme.get()); if (!LZ.flip(el)) LZ.redraw(); };
+  LZ.act.big = function (el) { LZ.big.set(!LZ.big.get()); LZ.toast(LZ.big.get() ? '글씨를 크게 했어요' : '보통 글씨로 했어요'); if (!LZ.flip(el)) LZ.redraw(); };
+  LZ.act.buzz = function (el) { store.set('lz.buzz', store.get('lz.buzz') === '0' ? '1' : '0'); if (!LZ.flip(el)) LZ.redraw(); };
   LZ.act.logout = async function () { if (!(await LZ.confirm('로그아웃할까요?', '다시 들어올 때 닉네임과 비밀번호를 넣어요.', '로그아웃'))) return; try { await post('logout', {}); } catch (e) { /* 무시 */ } LZ.clearSession(); LZ.go('login', {}, { reset: true }); };
   LZ.act.copy = async function (el, v) { try { await navigator.clipboard.writeText(v); LZ.toast('복사했어요'); } catch (e) { LZ.toast('복사하지 못했어요. 길게 눌러 복사해 주세요.'); } };
   LZ.act.share = async function (el, v) { var o = JSON.parse(v); try { if (navigator.share) { await navigator.share(o); return; } } catch (e) { if (e && e.name === 'AbortError') return; } try { await navigator.clipboard.writeText((o.text ? o.text + '\n' : '') + (o.url || '')); LZ.toast('내용을 복사했어요. 카톡에 붙여 넣어 주세요.'); } catch (e2) { LZ.toast('공유하지 못했어요.'); } };
@@ -310,8 +318,14 @@
     LZ.stack = [{ name: 'login', p: {} }];
     if (t) {
       S.token = t;
-      try { await LZ.refreshMe(); LZ.stack = [{ name: 'home', p: {} }]; }
-      catch (e) { if (e.code === 'auth') { LZ.clearSession(); if (e.data && e.data.pinChanged) LZ.pinChangedNote = true; } else { S.token = t; LZ.stack = [{ name: 'offline', p: { err: e } }]; } }
+      var cm = store.json('lz.k.me');
+      if (cm && cm.d && cm.d.user && Date.now() - cm.t < 7 * 86400000) {                      // 저장해 둔 내 정보로 바로 열고, 뒤에서 새로 받음
+        applyMe(cm.d); LZ.stack = [{ name: 'home', p: {} }];
+        LZ.refreshMe().then(function () { if (LZ.cur().name === 'home') LZ.redraw(); else LZ.paintBell(); }).catch(function (e) { if (e.code === 'auth') LZ.sessionLost(e); });
+      } else {
+        try { await LZ.refreshMe(); LZ.stack = [{ name: 'home', p: {} }]; }
+        catch (e) { if (e.code === 'auth') { LZ.clearSession(); if (e.data && e.data.pinChanged) LZ.pinChangedNote = true; } else { S.token = t; LZ.stack = [{ name: 'offline', p: { err: e } }]; } }
+      }
     }
     if (!S.user && store.get('lz.joinNow') === '1') { store.del('lz.joinNow'); LZ.stack = [{ name: 'join', p: {} }]; }
     if (q.get('s') || q.get('u') || q.get('inv') || q.get('r') || q.get('e') || q.get('ref') || q.get('join') || q.get('code') || q.get('state') || q.get('error')) { try { history.replaceState(null, '', location.pathname + (hash ? '#' + hash : '')); } catch (e) { /* 무시 */ } }
