@@ -15,7 +15,7 @@
   /* ───── 기기 저장소 ───── */
   var store = LZ.store = {
     get: function (k) { try { var v = localStorage.getItem(k); if (v === null && k === 'lz.t') v = sessionStorage.getItem(k); return v; } catch (e) { return null; } },
-    set: function (k, v) { try { if (k === 'lz.t' && store.get('lz.keep') === '0') { sessionStorage.setItem(k, v); localStorage.removeItem(k); return true; } localStorage.setItem(k, v); return true; } catch (e) { return false; } },
+    set: function (k, v) { try { if (false) { sessionStorage.setItem(k, v); localStorage.removeItem(k); return true; } localStorage.setItem(k, v); return true; } catch (e) { return false; } },
     del: function (k) { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (e) { /* 무시 */ } },
     json: function (k) { try { return JSON.parse(store.get(k)); } catch (e) { return null; } },
     setJSON: function (k, v) { return store.set(k, JSON.stringify(v)); }
@@ -38,8 +38,10 @@
   };
   LZ.big = { get: function () { return document.body.classList.contains('big'); }, set: function (on) { document.body.classList.toggle('big', !!on); store.set('lz.big', on ? '1' : '0'); } };
   LZ.buzz = function () { if (store.get('lz.buzz') === '0') return; try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) { /* 무시 */ } };
-  LZ.fmtDate = function (ts, withTime) { if (!ts) return ''; var d = new Date(Number(ts) || ts); if (isNaN(d)) return String(ts); var s = (d.getMonth() + 1) + '월 ' + d.getDate() + '일'; if (withTime) s += ' ' + d.getHours() + ':' + ('0' + d.getMinutes()).slice(-2); return s; };
-  LZ.fmtYmd = function (ymd) { if (!ymd) return ''; var p = String(ymd).split('-'); return p.length === 3 ? (+p[1]) + '월 ' + (+p[2]) + '일' : ymd; };
+  var p2 = function (n) { return (n < 10 ? '0' : '') + n; };
+  /* 날짜는 항상 연도까지: 2026-10-27 (시간이 붙으면 2026-10-27 14:05) */
+  LZ.fmtDate = function (ts, withTime) { if (!ts) return ''; var d = new Date(Number(ts) || ts); if (isNaN(d)) return String(ts); var s = d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); if (withTime) s += ' ' + p2(d.getHours()) + ':' + p2(d.getMinutes()); return s; };
+  LZ.fmtYmd = function (ymd) { if (!ymd) return ''; var p = String(ymd).split('-'); return p.length === 3 ? p[0] + '-' + p2(+p[1]) + '-' + p2(+p[2]) : ymd; };
   LZ.won = function (n) { return (Number(n) || 0).toLocaleString('ko-KR') + '원'; };
   LZ.LBL = function (i) { return (i + 1) + '홀'; };
 
@@ -87,6 +89,40 @@
   /* 프로필: 사진이 있으면 사진, 없으면 닉네임 첫 글자(닉네임마다 색이 정해짐) */
   var AVC = ['#0B5D4B', '#1D4ED8', '#B45309', '#7C3AED', '#BE185D', '#0F766E', '#4338CA', '#9A3412'];
   LZ.avatar = function (x, cls) { x = x || {}; var nick = x.nick || x.n || '?', h = 0; for (var i = 0; i < nick.length; i++) h = (h * 31 + nick.charCodeAt(i)) % 9973; return x.img ? '<img class="av ' + (cls || '') + '" data-img="' + esc(x.img) + '" alt="">' : '<div class="av ' + (cls || '') + '" style="background:' + AVC[h % AVC.length] + '">' + esc(nick.charAt(0)) + '</div>'; };
+  /* ───── 간단 글 편집기(공지·소식·문의): 굵게 · 크게 · 빨강/파랑/초록 · 지우기. 서버가 허용하는 태그(b, span.big/c-r/c-b/c-g, br)로만 저장 ───── */
+  LZ.richEditor = function (id, html, placeholder) {
+    return '<div class="rtb"><button type="button" data-rt="bold"><b>굵게</b></button><button type="button" data-rt="big"><span style="font-size:1.15em">크게</span></button><button type="button" data-rt="c-r" style="color:var(--red)">●</button><button type="button" data-rt="c-b" style="color:var(--blue)">●</button><button type="button" data-rt="c-g" style="color:var(--green)">●</button><button type="button" data-rt="clear">지우기</button></div>' +
+      '<div class="rte" id="' + id + '" contenteditable="true" data-ph="' + esc(placeholder || '') + '">' + (html || '') + '</div>';
+  };
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-rt]'); if (!b) return; e.preventDefault();
+    var ed = b.parentNode.nextElementSibling; if (!ed || !ed.isContentEditable) return; ed.focus();
+    var k = b.dataset.rt; try {
+      if (k === 'bold') document.execCommand('bold');
+      else if (k === 'clear') document.execCommand('removeFormat');
+      else if (k === 'big') document.execCommand('fontSize', false, '5');
+      else document.execCommand('foreColor', false, { 'c-r': '#DC2626', 'c-b': '#2563EB', 'c-g': '#15803D' }[k]);
+    } catch (x) { /* 지원 안 되는 브라우저 */ }
+  });
+  LZ.richRead = function (id) {
+    var ed = $('#' + id); if (!ed) return '';
+    function walk(n) {
+      if (n.nodeType === 3) return esc(n.nodeValue);
+      if (n.nodeType !== 1) return '';
+      var tag = n.tagName.toLowerCase(), inner = Array.prototype.map.call(n.childNodes, walk).join('');
+      if (tag === 'br') return '<br>';
+      if (tag === 'b' || tag === 'strong') return '<b>' + inner + '</b>';
+      if (tag === 'div' || tag === 'p') return (inner === '<br>' ? '' : inner) + '<br>';
+      var cls = '', st = n.getAttribute('style') || '', col = (n.getAttribute('color') || '').toLowerCase(), size = n.getAttribute('size'), cl = n.getAttribute('class') || '';
+      if (/\bbig\b/.test(cl) || size === '5' || size === '6' || size === '7' || /font-size:\s*(x-large|xx-large|large|1\.[2-9]|[2-9]\d)/.test(st)) cls = 'big';
+      if (/c-r/.test(cl) || col === '#dc2626' || /color:\s*(rgb\(220, 38, 38\)|#dc2626)/i.test(st)) cls = 'c-r';
+      else if (/c-b/.test(cl) || col === '#2563eb' || /color:\s*(rgb\(37, 99, 235\)|#2563eb)/i.test(st)) cls = 'c-b';
+      else if (/c-g/.test(cl) || col === '#15803d' || /color:\s*(rgb\(21, 128, 61\)|#15803d)/i.test(st)) cls = 'c-g';
+      if (/font-weight:\s*(bold|[6-9]00)/.test(st)) inner = '<b>' + inner + '</b>';
+      return cls ? '<span class="' + cls + '">' + inner + '</span>' : inner;
+    }
+    return Array.prototype.map.call(ed.childNodes, walk).join('').replace(/(<br>)+$/, '');
+  };
   LZ.stars = function (n) { n = Math.max(1, Math.min(5, n | 0)) || 3; return '<span class="star">' + '★'.repeat(n) + '<s>' + '★'.repeat(5 - n) + '</s></span>'; };
 
   /* ───── 공통 화면 요소 ───── */
@@ -138,12 +174,15 @@
   LZ.confirm = function (title, body, yes, kind) { return LZ.dialog({ title: title, body: body, cancel: false, buttons: [{ label: yes || '확인', kind: kind || 'y', value: true }, { label: '취소', kind: 'g', value: false }] }); };
   LZ.busy = function (on, msg) { var b = $('#busy'); if (b) b.parentNode.removeChild(b); if (!on) return; b = document.createElement('div'); b.id = 'busy'; b.className = 'busy'; b.innerHTML = '<div class="spin" style="border-color:rgba(255,255,255,.4);border-top-color:#fff"></div><div>' + esc(msg || '잠시만요…') + '</div>'; $('#layer').appendChild(b); };
   LZ.errText = function (e) { return (e && e.message) || '문제가 생겼어요. 잠시 뒤에 다시 해 주세요.'; };
+  /* 상단 막대는 단순하게: 뒤로 · 화면 이름 · ? · 🔔 만. 긴 제목(코스·클럽 이름)과 동작 단추는 막대 아래 줄(.subh)로 내려요 */
+  var BAR = { holes: '코스', play: 'PLAY', edit: '홀 기록', courseEdit: '코스 정보', courses: '스크린 공략', club: '클럽', round: '점수판', rall: '전체 점수', rres: '라운드 결과', event: '상황판', evInvite: '초대', awards: '시상식', members: '회원', notices: '공지·소식', faqAdmin: '자주 묻는 질문', reg: '새 코스 등록', capDash: '캡틴 대시보드', tv: 'TV' };
   LZ.hdr = function (title, o) {
     o = o || {};
-    return '<div class="top">' + (o.back ? '<button type="button" class="ib" data-act="back">‹ 뒤로</button>' : '') + '<h2>' + esc(title) + '</h2>' + (o.right || '') +
-      (LZ.HELP && LZ.HELP[LZ.cur().name] ? '<button type="button" class="ib help" data-act="help" aria-label="사용 안내">?</button>' : '') +
+    var name = LZ.cur().name, sub = !o.inBar && (!!o.right || String(title).length > 9), bar = sub ? (o.bar || BAR[name] || title) : title;
+    return '<div class="top">' + (o.back ? '<button type="button" class="ib" data-act="back">‹ 뒤로</button>' : '') + '<h2>' + esc(bar) + '</h2>' + (o.inBar ? o.right || '' : '') +
+      (LZ.HELP && LZ.HELP[name] ? '<button type="button" class="ib help" data-act="help" aria-label="사용 안내">?</button>' : '') +
       (S.user && S.user.kind === 'admin' && !o.noBell ? '<button type="button" class="ib bell" data-go="noti">🔔' + (S.me && S.me.noti ? '<i>' + S.me.noti + '</i>' : '') + '</button>' : (S.user && !o.noBell && S.me && S.me.noti ? '<button type="button" class="ib bell" data-go="noti">🔔<i>' + S.me.noti + '</i></button>' : '')) +
-      '</div>';
+      '</div>' + (sub ? '<div class="subh">' + (bar !== title ? '<h2>' + esc(title) + '</h2>' : '') + (o.right ? '<div class="acts">' + o.right + '</div>' : '') + '</div>' : '');
   };
   LZ.skeleton = function (n) { var s = ''; for (var i = 0; i < (n || 4); i++) s += '<div class="sk" style="width:' + (60 + (i * 13) % 40) + '%"></div>'; return '<div class="wrap">' + s + '</div>'; };
   LZ.seg = function (opts, on, act, cls) { return '<div class="seg ' + (cls || '') + '">' + opts.map(function (x) { return '<button type="button" class="' + (on === x[0] ? 'on' : '') + '" data-act="' + act + '" data-v="' + esc(x[0]) + '">' + esc(x[1]) + '</button>'; }).join('') + '</div>'; };
@@ -294,7 +333,7 @@
   /* 깊은 링크: #club:id · #course:id · #round:id · #event:code · #inv=코드 · #pwreq 등 */
   LZ.goTo = function (to) {
     to = String(to || ''); var m = /^([a-z]+)(?::(.*))?$/.exec(to); if (!m) return;
-    var map = { home: ['home'], me: ['me'], pay: ['pay'], club: ['club', { id: m[2] }], reqs: ['club', { id: m[2], reqs: 1 }], course: ['holes', { id: m[2] }], round: ['round', { id: m[2] }], event: ['event', { code: m[2] }], find: ['find'], qna: ['qnaList'], notices: ['notices'], dash: ['dash'], members: ['members'], pwreq: ['pwreqs'], refund: ['refunds'], fb: ['feedbacks'] };
+    var map = { home: ['home'], me: ['me'], pay: ['pay'], join: ['join'], courses: ['courses'], club: ['club', { id: m[2] }], reqs: ['club', { id: m[2], reqs: 1 }], course: ['holes', { id: m[2] }], round: ['round', { id: m[2] }], event: ['event', { code: m[2] }], find: ['find'], qna: ['qnaList'], notices: ['notices'], dash: ['dash'], members: ['members'], pwreq: ['pwreqs'], refund: ['refunds'], fb: ['feedbacks'] };
     var x = map[m[1]]; if (x) LZ.go(x[0], x[1] || {});
   };
   /* 단추 공통 처리: data-go / data-tab / data-act */
@@ -309,14 +348,14 @@
   });
   LZ.act.back = function () { LZ.back(); };
   /* 꾹 누르면 연속으로(좌우·타격감·점수 단추) */
-  var HOLD = /^(edLr|edP|sc|regLr:|regP:|shotFb)/, holdT = null, holdI = null, held = false;
+  var HOLD = /^(edLr|edP|sc|regLr:|regP:)/, holdT = null, holdI = null, held = false;
   function holdStop() { clearTimeout(holdT); clearInterval(holdI); holdT = holdI = null; }
   document.addEventListener('pointerdown', function (e) {
     var a = e.target.closest('[data-act]'); if (!a || !HOLD.test(a.dataset.act) || a.disabled) return;
     held = false; holdStop();
-    holdT = setTimeout(function () { holdI = setInterval(function () { held = true; var fn = LZ.act[a.dataset.act] || (a.dataset.act.indexOf(':') > 0 ? null : null); if (fn) { LZ.buzz(); Promise.resolve(fn(a, a.dataset.v, e)).catch(function () {}); } else a.click(); }, 130); }, 450);
+    holdT = setTimeout(function () { holdI = setInterval(function () { held = true; var fn = LZ.act[a.dataset.act]; if (fn) { LZ.buzz(); Promise.resolve(fn(a, a.dataset.v, e)).catch(function () {}); } else { held = false; a.click(); held = true; } }, 160); }, 600);
   });
-  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { document.addEventListener(ev, function () { holdStop(); }, true); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) { document.addEventListener(ev, function () { holdStop(); if (held) setTimeout(function () { held = false; }, 400); }, true); });   // 길게 누른 뒤 click 이 안 오는 휴대폰에서 다음 탭이 먹히는 것 방지
   document.addEventListener('click', function (e) { if (held) { held = false; var a = e.target.closest('[data-act]'); if (a && HOLD.test(a.dataset.act)) { e.stopImmediatePropagation(); e.preventDefault(); } } }, true);
   LZ.act.help = function () { var h = LZ.HELP[LZ.cur().name]; if (!h) return; LZ.sheet('<h2>' + esc(h.t) + '</h2>' + (h.img ? '<img src="assets/guide/' + h.img + '.webp" alt="" style="width:100%;border-radius:14px;border:1px solid var(--line);margin:4px 0 10px">' : '') + h.html); };
   LZ.act.sheetClose = function () { LZ.closeSheet(); };
@@ -328,6 +367,15 @@
   LZ.act.logout = async function () { if (!(await LZ.confirm('로그아웃할까요?', '다시 들어올 때 닉네임과 비밀번호를 넣어요.', '로그아웃'))) return; try { await post('logout', {}); } catch (e) { /* 무시 */ } LZ.clearSession(); LZ.go('login', {}, { reset: true }); };
   LZ.act.copy = async function (el, v) { try { await navigator.clipboard.writeText(v); LZ.toast('복사했어요'); } catch (e) { LZ.toast('복사하지 못했어요. 길게 눌러 복사해 주세요.'); } };
   LZ.act.share = async function (el, v) { var o = JSON.parse(v); try { if (navigator.share) { await navigator.share(o); return; } } catch (e) { if (e && e.name === 'AbortError') return; } try { await navigator.clipboard.writeText((o.text ? o.text + '\n' : '') + (o.url || '')); LZ.toast('내용을 복사했어요. 카톡에 붙여 넣어 주세요.'); } catch (e2) { LZ.toast('공유하지 못했어요.'); } };
+  /** 초대 시트 하나: 글+링크를 카카오톡 / 문자 / QR 로. (그림은 안 붙임 — 링크 미리보기 카드가 그림을 보여 줌) */
+  LZ.inviteSheet = function (title, text, url, extra) {
+    var full = text + '\n' + url;
+    LZ.sheet('<h2>' + esc(title) + '</h2><div class="box" style="white-space:pre-wrap;font-size:var(--t1);margin-top:0">' + esc(full) + '</div>' +
+      '<button type="button" class="btn kakao" data-act="share" data-v=\'' + esc(JSON.stringify({ title: title, text: text, url: url })) + '\'>카카오톡으로 보내기</button>' +
+      '<div class="row" style="margin-top:8px"><a class="btn o" style="margin:0" href="sms:?&body=' + encodeURIComponent(full) + '">문자로</a><button type="button" class="btn o" style="margin:0" data-act="inviteQrShow" data-v="' + esc(url) + '">QR 보기</button></div>' +
+      '<button type="button" class="btn g sm" data-act="copy" data-v="' + esc(full) + '">글 복사</button>' + (extra || ''));
+  };
+  LZ.act.inviteQrShow = function (el, url) { LZ.sheet('<h2>QR</h2><p class="muted center">휴대폰 카메라로 찍으면 바로 열려요.</p><div class="qr" id="qrbox"></div><p class="center muted small">' + esc(url) + '</p>'); LZ.qr($('#qrbox'), url); };
   LZ.kakaoShare = function (text, url) { return LZ.act.share(null, JSON.stringify({ title: '파크골프 공략수첩', text: text, url: url })); };
 
   /* ───── 화면 켜짐 유지(기록·라운드 화면) ───── */

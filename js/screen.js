@@ -15,16 +15,16 @@
     show: async function (p, root, alive) {
       var sort = store.get('lz.sort') || 'diff', desc = store.get('lz.sortd') !== '0', q = p.q || '';
       var cachedR = LZ.cacheGet('courses:' + S.br);
-      if (cachedR) paint(cachedR); else root.innerHTML = LZ.hdr('📍 ' + (S.store || '…'), { right: '<button type="button" class="ib" data-act="clubPick">바꾸기</button>' }) + LZ.skeleton(5);
+      if (cachedR) paint(cachedR); else root.innerHTML = LZ.hdr('스크린 공략') + LZ.skeleton(5);
       var r = await LZ.api('courses', {}); if (!alive()) return; LZ.cacheSet('courses:' + S.br, r); paint(r);
       function paint(r) {
       S.unit = r.unit || S.unit;
       var list = r.courses.filter(function (c) { return !q || c.name.toLowerCase().indexOf(q.toLowerCase()) >= 0; });
       list.sort(function (a, b) { var v = sort === 'diff' ? b.stars - a.stars : sort === 'new' ? b.created - a.created : a.name.localeCompare(b.name, 'ko'); return desc ? v : -v; });
-      var recent = r.courses.filter(function (c) { return c.mineAt; }).sort(function (a, b) { return b.mineAt - a.mineAt; }).slice(0, 3), rid = {}; recent.forEach(function (c) { rid[c.id] = 1; });
-      var big = function (c) { return '<button type="button" class="course" data-go="holes" data-p=\'' + esc(JSON.stringify({ id: c.id })) + '\'><div class="t"><b>' + esc(c.name) + (c.stage !== 'done' ? ' <span class="chip gray">전반만</span>' : '') + '</b>' + LZ.stars(c.stars) + '<div class="muted">내 기록 ' + c.mine + '/18' + (c.others ? ' · 회원님 ' + c.others + '명' : '') + '</div><div class="bar"><i style="width:' + Math.round(c.mine / 18 * 100) + '%"></i></div></div><span style="font-size:var(--t5);color:var(--g)">›</span></button>'; };
-      var line = function (c) { return '<button type="button" class="course line" data-go="holes" data-p=\'' + esc(JSON.stringify({ id: c.id })) + '\'><div class="t"><b>' + esc(c.name) + '</b></div><span class="muted small">' + (c.mine ? c.mine + '/18' : '') + '</span>' + LZ.stars(c.stars) + '</button>'; };
-      root.innerHTML = LZ.hdr('📍 ' + r.store, { right: '<button type="button" class="ib" data-act="clubPick">바꾸기</button>' }) + '<div id="syncbar" class="sync wait" hidden></div><div class="wrap">' +
+      var recent = r.courses.filter(function (c) { return c.mineAt; }).sort(function (a, b) { return b.mineAt - a.mineAt; }).slice(0, 1), rid = {}; recent.forEach(function (c) { rid[c.id] = 1; });
+      var big = function (c) { return '<button type="button" class="course" data-go="holes" data-p=\'' + esc(JSON.stringify({ id: c.id })) + '\'><div class="t"><b>' + esc(c.name) + (c.stage !== 'done' ? ' <span class="chip gray">전반만</span>' : '') + '</b>' + LZ.stars(c.stars) + '<div class="muted">내 기록 ' + c.mine + '/' + (c.stage === 'done' ? 18 : 9) + (c.others ? ' · 회원님 ' + c.others + '명' : '') + ' · ' + LZ.fmtDate(c.created) + ' ' + esc(c.reg || '') + '님</div><div class="bar"><i style="width:' + Math.round(c.mine / (c.stage === 'done' ? 18 : 9) * 100) + '%"></i></div></div><span style="font-size:var(--t5);color:var(--g)">›</span></button>'; };
+      var line = function (c) { var n = c.stage === 'done' ? 18 : 9; return '<button type="button" class="course line" data-go="holes" data-p=\'' + esc(JSON.stringify({ id: c.id })) + '\'><div class="t"><b>' + esc(c.name) + '</b><span class="muted small">' + (c.stage !== 'done' ? '전반만 · ' : '') + LZ.fmtDate(c.created) + ' · ' + esc(c.reg || '') + '님' + (c.others ? ' · 회원님 ' + c.others + '명' : '') + '</span></div><span class="cnt' + (c.mine >= n ? ' full' : '') + '">' + c.mine + '/' + n + '</span>' + LZ.stars(c.stars) + '</button>'; };
+      root.innerHTML = LZ.hdr('스크린 공략') + '<div class="subh inline"><h2>📍 ' + esc(r.store) + '</h2><button type="button" class="ib" data-act="clubPick">바꾸기</button></div>' + '<div id="syncbar" class="sync wait" hidden></div><div class="wrap">' +
         (r.canReg ? '<button type="button" class="btn o" style="margin:0 0 10px" data-go="reg">＋ 새 코스 등록</button>' : '') + '<input type="search" id="cq" value="' + esc(q) + '" placeholder="코스 이름 찾기" style="margin-bottom:8px">' +
         (recent.length && !q ? '<p class="lb" style="margin:6px 0 4px">최근에 적은 코스</p>' + recent.map(big).join('') : '') +
         '<p class="lb" style="margin:10px 0 4px">' + (q ? '찾은 코스' : '모든 코스 ' + r.courses.length) + '</p><div class="sort">' + [['diff', '난이도'], ['new', '등록일'], ['name', '이름']].map(function (x) { return '<button type="button" class="' + (sort === x[0] ? 'on' : '') + '" data-act="sort" data-v="' + x[0] + '">' + x[1] + (sort === x[0] ? (desc ? ' ▼' : ' ▲') : '') + '</button>'; }).join('') + '</div>' +
@@ -78,13 +78,13 @@
         CUR.off = LZ.myOffset(d);
         var a = half * 9, b = a + 9, hv = store.get('lz.hview') || 'avg', mineOnly = hv === 'mine', peersOn = hv === 'all', badHoles = [];
         d.mine.forEach(function (r, i) { var h = c.holes[i]; if (r.r && h && Math.abs(r.p - LZ.sugOf(h[1], r.g, r.h)) >= 1) badHoles.push(i + 1); });
-        root.innerHTML = LZ.hdr(c.name, { back: true, right: '<button type="button" class="ib on" data-go="play" data-p=\'' + esc(JSON.stringify({ id: c.id, hole: a })) + '\'>▶ 현장</button>' }) +
+        root.innerHTML = LZ.hdr(c.name, { back: true, right: '<button type="button" class="ib on" data-go="play" data-p=\'' + esc(JSON.stringify({ id: c.id, hole: a })) + '\'>▶ PLAY</button>' }) +
           '<div class="ctx"><span class="cl">모드</span>' + LZ.seg([['b', '아마추어'], ['p', '프로'], ['m', '마스터']], v.g, 'viewG') + '<span class="cl">발사각</span>' + LZ.seg(LZ.HLSEG, v.h, 'viewH', 'hl') + '</div>' +
           '<div class="wrap"><p class="muted center" style="margin:0 0 2px">' + esc(d.store) + ' · ' + LZ.MODE[v.g] + '-' + LZ.HL[v.h] + ' 기준으로 보는 중' + (d.mode ? ' · 내 기록은 ' + LZ.MODE[d.mode.g] + '-' + LZ.HL[d.mode.h] + '로 적음' : '') + '</p>' +
           '<p class="muted center small" style="margin:0 0 6px">' + LZ.stars(c.stars) + ' · 등록 ' + esc(c.reg) + '님 ' + LZ.fmtDate(c.created) + (c.last ? ' · 최종 수정 <b>' + esc(c.last.nick) + '님 ' + LZ.fmtDate(c.last.at, true) + '</b> (' + esc(c.last.what) + ')' : '') + (c.canEdit ? ' · <a href="#" data-go="courseEdit" data-p=\'' + esc(JSON.stringify({ id: c.id })) + '\'>고치기</a>' : '') + '</p>' +
           (badHoles.length || CUR.off ? '<div class="box" style="margin:0 0 10px;padding:10px 14px">📊 ' + (CUR.off ? '이 코스는 기준보다 <b>평균 ' + LZ.fmtP(Math.abs(CUR.off)) + ' ' + (CUR.off > 0 ? '크게' : '작게') + '</b> 치고 계셔요' : '기준과 비슷하게 치고 계셔요') + (badHoles.length ? ' · 어긋난 홀 ' + badHoles.length + '개(' + badHoles.slice(0, 5).join('·') + '홀)' : '') + (CUR.off ? '<br><span class="muted">🎯 그래서 입력 화면의 <b>내 보정</b> = 기준 ' + (CUR.off > 0 ? '+' : '') + LZ.fmtP(CUR.off) + ' · 새 홀을 열면 이 값이 미리 들어가요</span>' : '') + '</div>' : '') +
           '<div class="halves"><button type="button" class="' + (half === 0 ? 'on' : '') + '" data-act="half" data-v="0">전반 9홀</button><button type="button" class="' + (half === 1 ? 'on' : '') + '" data-act="half" data-v="1"' + (c.stage !== 'done' ? ' disabled' : '') + '>후반 9홀</button></div>' +
-          '<div style="margin:0 0 8px">' + LZ.seg([['mine', '내 기록만'], ['avg', '평균까지'], ['all', '회원님까지']], hv, 'hview', 's') + '</div>' +
+          '<div style="margin:0 0 8px">' + LZ.seg([['mine', '내 기록만'], ['avg', '클럽 평균과 비교']], mineOnly ? 'mine' : 'avg', 'hview', 's') + (!mineOnly && d.authors && d.authors.length ? '<button type="button" class="sm2 g" style="margin-top:8px" data-act="hview" data-v="' + (peersOn ? 'avg' : 'all') + '">' + (peersOn ? '회원님 기록 닫기' : '회원님 한 분 기록도 보기') + '</button>' : '') + '</div>' +
           c.holes.slice(a, b).map(function (h, j) {
             var i = a + j, hm = h[1];
             return '<div class="hc"><div class="hh"><b>' + (i + 1) + '홀</b><span class="par">파 ' + h[0] + '</span><span class="dist">' + hm + 'm</span><span class="gl">' + sugLine(hm) + ' · ' + LZ.MODE[v.g] + '-' + LZ.HL[v.h] + '</span></div>' +
@@ -95,19 +95,16 @@
               '<button type="button" class="hr mine" data-go="edit" data-p=\'' + esc(JSON.stringify({ id: c.id, i: i })) + '\'>' + recLine(d.mine[i], '<b>내 기록</b>', h, true, hm).replace(/^<div class="hr mine">|<\/div>$/g, '') + '</button></div>';
         LZ.coach('holes', [{ sel: '.hr.mine', text: '<b>내 기록</b> 줄을 누르면 그 홀의 좌우·타격감을 적어요. 안 적은 홀은 희미하게 보여요.' }, { sel: '.hr:not(.mine)', text: '<b>클럽 평균</b> — 회원님들 기록을 모은 값. 내 기록 옆 ▲▼는 평균보다 크게/작게 친다는 뜻이에요.' }, { sel: '[data-go="play"]', text: '<b>▶ 현장</b> — 스크린 앞에서 한 화면으로 홀마다 넘기며 봐요.', pos: 'below' }]);
           }).join('') +
-          (d.pick && peersOn ? '<button type="button" class="btn o" data-act="importAll">' + esc(d.pick.nick) + '님 기록 가져오기(빈 홀만)</button>' : '') +
-          '<p class="hint center">옆으로 밀면 전반 ↔ 후반 · 내 기록 줄을 누르면 그 홀을 적어요</p></div>';
+          (peersOn && d.authors && d.authors.length ? '<button type="button" class="btn g sm" data-act="pickWho">비교할 회원님 고르기' + (d.pick ? ' · ' + esc(d.pick.nick) + (d.pick2 ? '·' + esc(d.pick2.nick) : '') : '') + '</button>' : '') + (d.pick && peersOn ? '<button type="button" class="btn o" data-act="importAll">' + esc(d.pick.nick) + '님 기록 가져오기(빈 홀만)</button>' : '') +
+          '<p class="hint center">내 기록 줄을 누르면 그 홀을 적어요</p></div>';
         store.set('lz.half.' + c.id, String(half));
         LZ.fillImgs(root);
-        var x0 = 0; root.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
-        root.addEventListener('touchend', function (e) { var dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 90 && c.stage === 'done') LZ.go('holes', { id: c.id, half: dx < 0 ? 1 : 0, vset: 1 }, { replace: true }); }, { passive: true });
       }
     }
   };
   LZ.act.viewG = function (el, v) { S.g = v; LZ.go(LZ.cur().name, Object.assign({}, LZ.cur().p, { vset: 1 }), { replace: true }); };
   LZ.act.viewH = function (el, v) { S.h = v; LZ.go(LZ.cur().name, Object.assign({}, LZ.cur().p, { vset: 1 }), { replace: true }); };
   LZ.act.half = function (el, v) { LZ.go('holes', Object.assign({}, LZ.cur().p, { half: +v, vset: 1 }), { replace: true }); };
-  LZ.act.unitSet = function (el, v) { if (v !== S.unit) LZ.act.unit(); };
   LZ.act.unit = async function () { S.unit = S.unit === 'p' ? 'm' : 'p'; LZ.toast(S.unit === 'm' ? '거리(m)를 크게 보여요' : '타격감을 크게 보여요'); LZ.go(LZ.cur().name, Object.assign({}, LZ.cur().p, { vset: 1 }), { replace: true }); try { await LZ.api('useBranch', { unit: S.unit }); } catch (e) { /* 무시 */ } };
   LZ.act.pickWho = function () {
     var d = CUR.d;
@@ -174,13 +171,6 @@
   LZ.act.edP = function (el, v) { ED.r.p = LZ.clampP(LZ.half(ED.r.p + (+v))); ED.dirty = true; rep(); };
   LZ.act.edUndo = function () { var hs = ED.r.hs, x = hs[hs.length - 1]; ED.r.p = x[1]; ED.r.d = x[2] < 0 ? 'L' : 'R'; ED.r.n = Math.abs(x[2]); ED.dirty = true; rep(); LZ.toast('예전 값으로 되돌렸어요. 저장을 눌러 주세요'); };
   LZ.act.edImport = function () { var o = ED.d.pick.recs[ED.i], r = ED.r; r.r = o.r; r.t = o.t; r.d = o.d; r.n = o.n; r.p = LZ.conv(o.p, o.g, o.h, r.g, r.h); r.o = o.o; ED.dirty = true; rep(); LZ.toast('가져왔어요. 내 손에 맞게 고치고 저장하세요'); LZ.api('use', { cid: ED.d.course.id, from: ED.d.pick.uid }).catch(function () {}); };
-  LZ.act.edVoice = function () {
-    var SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR) { LZ.toast('이 휴대폰은 말로 적기를 지원하지 않아요'); return; }
-    var rec = new SR(); rec.lang = 'ko-KR'; rec.interimResults = false; LZ.toast('말씀하세요… (16자까지 적혀요)', 4000);
-    rec.onresult = function (e) { var t = (e.results[0][0].transcript || '').replace(/[.。]/g, '').slice(0, 16); ED.r.o = t; ED.dirty = true; rep(); if (t.length >= 16) LZ.toast('16자까지만 적혔어요'); };
-    rec.onerror = function () { LZ.toast('잘 못 들었어요. 다시 눌러 주세요'); };
-    try { rec.start(); } catch (e) { LZ.toast('말로 적기를 시작하지 못했어요'); }
-  };
   LZ.shrink = function (file, max, q) {
     return new Promise(function (resolve, reject) {
       var img = new Image(), url = URL.createObjectURL(file);
@@ -208,26 +198,28 @@
   LZ.screens.play = {
     tab: 'courses', wake: true,
     show: async function (p, root, alive) {
-      root.innerHTML = LZ.hdr('현장 모드', { back: true }) + LZ.skeleton(3);
+      root.innerHTML = LZ.hdr('PLAY', { back: true }) + LZ.skeleton(3);
       var d = await loadCourse(p.id); if (!alive()) return;
       CUR.off = LZ.myOffset(d);
       var c = d.course, i = p.hole || 0, h = c.holes[i], r = d.mine[i], v = viewGH(), s = LZ.sugOf(h[1], v.g, v.h), last = c.stage === 'done' ? 17 : 8, say = store.get('lz.say') === '1';
       var pTxt = r.r ? (r.g === v.g && r.h === v.h ? LZ.fmtP(r.p) : LZ.convTxt(r.p, r.g, r.h, v.g, v.h)) : '', dm = r.r ? LZ.distOf(r.p, r.g, r.h) : 0;
       var big = S.unit === 'm' ? dm + '<small>m</small>' : pTxt, sub = S.unit === 'm' ? '타격감 ' + pTxt : dm + 'm';
-      root.innerHTML = LZ.hdr(c.name, { back: true, noBell: 1, right: '<button type="button" class="ib" data-act="unit">' + (S.unit === 'p' ? 'm' : '타격감') + '</button><button type="button" class="ib ' + (say ? 'on' : '') + '" data-act="say">' + (say ? '🔊' : '🔈') + '</button>' }) +
-        '<div class="wrap live">' +
+      root.innerHTML = LZ.hdr('PLAY', { back: true, noBell: 1 }) +
+        '<div class="wrap live"><div class="lt"><div class="cn">' + esc(c.name) + '</div><div class="acts"><button type="button" class="sm2 g" data-act="unit">' + (S.unit === 'p' ? '거리(m)로' : '타격감으로') + '</button><button type="button" class="sm2 ' + (say ? '' : 'g') + '" data-act="say">' + (say ? '🔊 소리 켜짐' : '🔈 소리 끔') + '</button></div></div>' +
         '<div class="lh"><b>' + (i + 1) + '홀</b><span>파 ' + h[0] + '</span><span class="d">' + h[1] + 'm</span><span class="muted">기준 ' + LZ.fmtP(s) + '</span></div>' +
-        (r.r ? '<div class="lvc"><div class="muted">' + esc(LZ.refTxt(r)) + (r.g !== v.g || r.h !== v.h ? ' · ' + LZ.MODE[r.g] + '-' + LZ.HL[r.h] + ' ' + LZ.fmtP(r.p) + '로 적음' : '') + '</div><div class="lr">' + LZ.lrTxt(r) + '</div><div class="pw">' + big + '</div><div class="muted">' + sub + ' · ' + LZ.markOf(r, h[1]) + '</div>' + (r.o || r.i ? '<div class="note">' + (r.o ? '📝 ' + esc(r.o) : '') + '</div>' : '') + '</div>' +
+        (r.r ? '<div class="lvc"><div class="muted">' + esc(LZ.refTxt(r)) + (r.g !== v.g || r.h !== v.h ? ' · ' + LZ.MODE[r.g] + '-' + LZ.HL[r.h] + ' ' + LZ.fmtP(r.p) + '로 적음' : '') + '</div><div class="lrpw"><div class="lr">' + LZ.lrTxt(r) + '</div><div class="pw">' + big + '</div></div><div class="muted">' + sub + ' · ' + LZ.markOf(r, h[1]) + '</div>' + (r.o ? '<div class="note">📝 ' + esc(r.o) + '</div>' : '') + '</div>' +
           '<div class="row fb"><button type="button" class="btn o" data-act="shotAdj" data-v="0.5">짧았다 ▲</button><button type="button" class="btn" data-act="shotAdj" data-v="0">맞았다 ●</button><button type="button" class="btn o" data-act="shotAdj" data-v="-0.5">길었다 ▼</button></div>'
           : '<div class="lvc"><div class="muted" style="margin:14px 0 4px">아직 기록이 없어요</div><div class="pw">기준 ' + LZ.fmtP(s) + '</div><div class="muted">' + LZ.distOf(s, v.g, v.h) + 'm</div></div><button type="button" class="btn" data-go="edit" data-p=\'' + esc(JSON.stringify({ id: c.id, i: i })) + '\'>이 홀 적기</button>') +
         '<div class="nav2"><button type="button" data-act="playNav" data-v="-1"' + (i <= 0 ? ' disabled' : '') + '>‹ 이전</button><button type="button" data-act="playNav" data-v="1"' + (i >= last ? ' disabled' : '') + '>다음 ›</button></div>' +
         '<div class="row"><button type="button" class="btn g sm" data-go="edit" data-p=\'' + esc(JSON.stringify({ id: c.id, i: i })) + '\'>고치기</button><button type="button" class="btn g sm" data-act="sayNow">🔊 읽어 주기</button></div></div>';
       LZ.fillImgs(root);
-      var x0 = 0; root.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
-      root.addEventListener('touchend', function (e) { var dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 60) LZ.act.playNav(null, dx < 0 ? 1 : -1); }, { passive: true });
       if (p.say) LZ.act.sayNow();
     }
   };
+  /* PLAY 화면에서만 옆으로 밀어 홀 넘기기(한 번만 등록, 다른 화면에는 영향 없음) */
+  var swX = 0, swY = 0;
+  document.addEventListener('touchstart', function (e) { swX = e.touches[0].clientX; swY = e.touches[0].clientY; }, { passive: true });
+  document.addEventListener('touchend', function (e) { if (LZ.cur().name !== 'play') return; if (e.target.closest('.chips, .tblwrap, input, textarea')) return; var dx = e.changedTouches[0].clientX - swX, dy = e.changedTouches[0].clientY - swY; if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 2) LZ.act.playNav(null, dx < 0 ? 1 : -1); }, { passive: true });
   LZ.speak = function (t) { try { var u = new SpeechSynthesisUtterance(t); u.lang = 'ko-KR'; u.rate = 0.95; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) { LZ.toast('이 휴대폰은 소리 읽기를 지원하지 않아요'); } };
   LZ.act.say = function () { var on = store.get('lz.say') !== '1'; store.set('lz.say', on ? '1' : '0'); LZ.toast(on ? '홀을 넘기면 소리로 읽어 드려요' : '소리를 껐어요'); LZ.redraw(); };
   LZ.act.sayNow = function () {
@@ -237,10 +229,6 @@
   };
   LZ.act.playNav = function (el, v) { var p = LZ.cur().p, last = CUR.d.course.stage === 'done' ? 17 : 8, n = Math.max(0, Math.min(last, (p.hole || 0) + (+v))); if (n === (p.hole || 0)) return; LZ.go('play', { id: p.id, hole: n, say: store.get('lz.say') === '1' ? 1 : 0 }, { replace: true }); };
   /* 샷 결과 3단추 → 내 보정(이 홀 기록의 타격감을 0.5 조정해 저장) */
-  LZ.act.shotFb = function () {
-    var p = LZ.cur().p, r = CUR.d.mine[p.hole || 0]; if (!r.r) { LZ.toast('먼저 이 홀을 적어 주세요'); return; }
-    LZ.sheet('<h2>방금 샷은요?</h2><p class="muted">짧았으면 타격감을 0.5 올리고, 길었으면 0.5 내려서 저장해요. 다음에 올 때 바로 맞게.</p><div class="row"><button type="button" class="btn o" data-act="shotAdj" data-v="0.5">짧았다 ▲</button><button type="button" class="btn" data-act="shotAdj" data-v="0">맞았다 ●</button><button type="button" class="btn o" data-act="shotAdj" data-v="-0.5">길었다 ▼</button></div>');
-  };
   LZ.act.shotAdj = async function (el, v) {
     var p = LZ.cur().p, i = p.hole || 0, d = CUR.d, r = Object.assign({}, d.mine[i]); LZ.closeSheet();
     if (!r.r) { LZ.toast('먼저 이 홀을 적어 주세요'); return; }
@@ -254,7 +242,7 @@
   function regRows(start, rows) {
     return rows.map(function (r, j) {
       var i = start + j, m = parseFloat(r.m), s = m > 0 ? LZ.sugOf(m, RG.g, RG.h) : null, p = r.p === null ? s : r.p;
-      return '<div class="regh"><div class="reg"><span class="hn">' + (i + 1) + '홀</span>' + LZ.seg([['3', '3'], ['4', '4'], ['5', '5'], ['6', '6']], String(r.par), 'regPar:' + j) + '<input type="text" inputmode="decimal" data-row="' + j + '" value="' + esc(r.m) + '" placeholder="63.4" aria-label="거리"><div class="sug" id="sg' + j + '">' + (s === null ? '<span style="color:#D1D5DB">—</span>' : LZ.fmtP(s) + '<small>' + LZ.distOf(s, RG.g, RG.h) + 'm</small>') + '</div></div><div id="rr' + j + '">' + regRec(j) + '</div></div>';
+      return '<div class="regh"><div class="reg"><span class="hn">' + (i + 1) + '홀</span>' + LZ.seg([['3', '3'], ['4', '4'], ['5', '5'], ['6', '6']], String(r.par), 'regPar:' + j) + '<input type="text" inputmode="decimal" data-row="' + j + '" value="' + esc(r.m) + '" placeholder="63.4" aria-label="거리"><div class="sug" id="sg' + j + '">' + (s === null ? '<span class="dim">—</span>' : LZ.fmtP(s) + '<small>' + LZ.distOf(s, RG.g, RG.h) + 'm</small>') + '</div></div><div id="rr' + j + '">' + regRec(j) + '</div></div>';
     }).join('');
   }
   function regRec(j) {
@@ -265,7 +253,7 @@
   }
   function regPaint(root) {
     var half = RG.half, title = half ? '후반 9홀 등록' : '새 코스 등록';
-    root.innerHTML = LZ.hdr(title, { back: true, right: '<span class="ib" style="background:rgba(255,209,102,.3)">☀ 켜짐 유지</span>' }) + '<div class="wrap">' +
+    root.innerHTML = LZ.hdr(title, { back: true }) + '<div class="wrap">' +
       (half ? '<div class="card tight"><b>' + esc(RG.name) + '</b><div class="muted">전반은 저장됐어요. 후반 9홀(10~18홀)을 넣어 주세요.</div></div>' :
         '<div class="card"><label class="lb" style="margin-top:0">코스 이름</label><input type="text" id="rgName" maxlength="30" value="' + esc(RG.name) + '" placeholder="예: 목행충주호파크골프AB"><p class="hint" id="rgHint">스크린 파크골프장 코스 이름과 같게 적어 주세요(띄어쓰기 없이). 레저로·GTR 모두 돼요.</p><label class="lb">난이도 <span class="muted" style="font-weight:400">— 스크린 해당 코스의 난이도를 그대로 선택</span></label>' + LZ.seg([['1', '★1'], ['2', '★2'], ['3', '★3'], ['4', '★4'], ['5', '★5']], String(RG.stars), 'regStars', 'star') +
         '<label class="lb">모드</label>' + LZ.seg([['b', '아마추어'], ['p', '프로'], ['m', '마스터']], RG.g, 'regG') + '<label class="lb">발사각 <span class="muted" style="font-weight:400">(발사 센서 높낮이 조절)</span></label>' + LZ.seg(LZ.HLSEG, RG.h, 'regH', 'hl') +
@@ -274,7 +262,7 @@
       '<p class="hint">참고사항·사진은 저장 뒤 홀 화면에서 더 적을 수 있어요. 등록하는 동안 화면이 꺼지지 않아요.</p><button type="button" class="btn" data-act="regSave">' + (half ? '후반 저장하고 등록 마치기' : '전반 저장하고 후반으로') + '</button></div>';
     root.addEventListener('input', function (e) {
       var t = e.target;
-      if (t.dataset.row !== undefined) { var j = +t.dataset.row; RG.rows[j].m = t.value; RG.rows[j].p = null; var m = parseFloat(t.value), s = m > 0 ? LZ.sugOf(m, RG.g, RG.h) : null; $('#sg' + j).innerHTML = s === null ? '<span style="color:#D1D5DB">—</span>' : LZ.fmtP(s) + '<small>' + LZ.distOf(s, RG.g, RG.h) + 'm</small>'; $('#rr' + j).innerHTML = regRec(j); }
+      if (t.dataset.row !== undefined) { var j = +t.dataset.row; RG.rows[j].m = t.value; RG.rows[j].p = null; var m = parseFloat(t.value), s = m > 0 ? LZ.sugOf(m, RG.g, RG.h) : null; $('#sg' + j).innerHTML = s === null ? '<span class="dim">—</span>' : LZ.fmtP(s) + '<small>' + LZ.distOf(s, RG.g, RG.h) + 'm</small>'; $('#rr' + j).innerHTML = regRec(j); }
       else if (t.dataset.t !== undefined) RG.rows[+t.dataset.t].t = t.value;
       else if (t.id === 'rgName') RG.name = t.value;
     });

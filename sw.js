@@ -1,11 +1,11 @@
 /* 서비스 워커 — 앱 껍데기를 기기에 저장해서 더 빨리 열리고, 푸시 알림을 받아요.
  * ★ 파일을 고쳐 GitHub 에 올릴 때마다 아래 VERSION 숫자를 올리세요. (모든 기기가 새 버전으로 바뀝니다) */
-const VERSION = '6.1.0';
+const VERSION = '6.7.0';
 const CACHE = 'lezuro-' + VERSION;
 const SHELL = [
   './', 'index.html', 'manifest.json', 'css/app.css',
   'js/config.js', 'js/core.js', 'js/auth.js', 'js/home.js', 'js/screen.js', 'js/field.js', 'js/event.js', 'js/me.js', 'js/admin.js', 'js/pwa.js', 'js/help.js', 'js/app.js', 'vendor/qrcode.js',
-  'assets/hero.webp', 'assets/logo-dark.png', 'assets/logo-light.png', 'assets/og-card-v4.jpg', 'assets/promo-invite.jpg', 'assets/nosleep.mp4', 'assets/nosleep.webm',
+  'assets/hero.webp', 'assets/logo-dark.png', 'assets/logo-light.png', 'assets/og-card-v6.jpg', 'assets/promo-join.jpg', 'assets/nosleep.mp4', 'assets/nosleep.webm',
   'assets/fonts/Pretendard-Regular.woff2', 'assets/fonts/Pretendard-Bold.woff2', 'assets/fonts/Pretendard-ExtraBold.woff2',
   'icons/icon-192.png', 'icons/icon-maskable-512.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png'
 ];

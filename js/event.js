@@ -12,7 +12,7 @@
       root.innerHTML = LZ.hdr('단체 라운드', { back: true }) + LZ.skeleton(3);
       var r = await LZ.api('eventMine', {}); if (!alive()) return;
       root.innerHTML = LZ.hdr('단체 라운드', { back: true }) + '<div class="wrap">' +
-        '<div class="card" style="background:#FFF7ED"><h3>🏆 단체 라운드 만들기</h3><p style="margin:0 0 4px">이름·날짜 → 구장·바퀴·순서 → 조 편성 → 카톡 초대. 회원님 누구나 주최할 수 있어요.</p><button type="button" class="btn org" data-go="evMake" data-p=\'{"step":1}\'>만들기</button></div>' +
+        '<div class="card org"><h3>🏆 단체 라운드 만들기</h3><p style="margin:0 0 4px">이름·날짜 → 구장·바퀴·순서 → 조 편성 → 카톡 초대. 회원님 누구나 주최할 수 있어요.</p><button type="button" class="btn org" data-go="evMake" data-p=\'{"step":1}\'>만들기</button></div>' +
         '<div class="card"><h3>코드로 입장</h3><p class="muted" style="margin:0 0 6px">주최자가 알려 준 단체 코드 2자리</p><div class="row"><input type="tel" id="ecode" inputmode="numeric" maxlength="2" placeholder="예: 52"><button type="button" class="btn" style="margin:0;flex:none;width:120px" data-act="evEnterCode">입장</button></div></div>' +
         (r.list.length ? '<div class="card"><h3>내 단체 라운드</h3><div class="list">' + r.list.map(function (e) { return itBtn('event', { code: e.code }, '<div class="t"><b>' + esc(e.name) + ' <span class="chip">' + esc(e.code) + '</span>' + (e.status === 'open' ? '<span class="chip cap">진행 중</span>' : '') + (e.isOwner ? '<span class="chip">주최</span>' : '') + '</b><span class="muted">' + esc(e.fname) + ' · ' + LZ.fmtDate(e.created) + '</span></div>'); }).join('') + '</div></div>' : '') + '</div>';
     }
@@ -120,7 +120,7 @@
     show: async function (p, root, alive) {
       if (!EV.d || EV.d.code !== p.code) { root.innerHTML = LZ.hdr('초대', { back: true }) + LZ.skeleton(3); var r = await LZ.api('eventGet', { code: p.code }); if (!alive()) return; EV.d = r.event; }
       var ev = EV.d;
-      root.innerHTML = LZ.hdr('초대하기', { back: true, right: '<button type="button" class="ib on" data-go="event" data-p=\'' + esc(JSON.stringify({ code: ev.code })) + '\'>상황판</button>' }) + '<div class="wrap"><div class="card"><div class="code">' + esc(ev.code) + '</div><p class="muted center" style="margin:0">단체 코드 · 참가자는 링크나 이 코드로 들어와요</p></div>' +
+      root.innerHTML = LZ.hdr('초대', { back: true, right: '<button type="button" class="ib on" data-go="event" data-p=\'' + esc(JSON.stringify({ code: ev.code })) + '\'>상황판</button>' }) + '<div class="wrap"><div class="card"><div class="code">' + esc(ev.code) + '</div><p class="muted center" style="margin:0">단체 코드 · 참가자는 링크나 이 코드로 들어와요</p></div>' +
         '<div class="card"><h3>편성표</h3><div class="tblwrap"><table class="tbl"><tr><th>조</th><th style="text-align:left">조원</th>' + (ev.nLaps > 1 ? '<th>순서</th>' : '') + '</tr>' + ev.teams.map(function (t) { return '<tr><td><b>' + t.n + '조</b></td><td style="text-align:left">' + (t.members.map(function (m) { return esc(m.nick); }).join(' · ') || '<span class="muted">비어 있음</span>') + '</td>' + (ev.nLaps > 1 ? '<td>' + t.order.map(function (li) { return segName(ev.laps, li); }).join('→') + '</td>' : '') + '</tr>'; }).join('') + '</table></div>' + (ev.nLaps > 1 ? '<p class="muted small" style="margin:6px 0 0">' + ev.laps.map(function (l, i) { return segLabel(i) + ' ' + esc(l.fname); }).join(' · ') + '</p>' : '') + '</div>' +
         '<button type="button" class="btn kakao" data-act="evInviteKakao">카카오톡으로 초대하기</button><div class="row"><button type="button" class="btn g sm" data-act="copy" data-v="' + esc(inviteText(ev) + '\n' + inviteUrl(ev)) + '">글 복사</button><button type="button" class="btn g sm" data-act="evInviteSms">문자로</button></div>' +
         '<div class="card" style="margin-top:14px"><h3>QR</h3><div class="qr" id="eqr"></div><p class="center muted small">' + esc(inviteUrl(ev)) + '</p></div>' +
@@ -257,7 +257,11 @@
     { k: 'eagle', i: '🦅', n: '이글상', d: '이글(−2)을 한 분 · 여러 번이면 많이 한 순', f: function (p) { return p.cnt(function (x, par) { return x - par === -2; }); }, asc: false, u: '개', need: 1 },
     { k: 'alba', i: '🐧', n: '알바트로스상', d: '알바트로스(−3)를 한 분', f: function (p) { return p.cnt(function (x, par) { return x - par === -3; }); }, asc: false, u: '개', need: 1 },
     { k: 'ace', i: '⛳', n: '홀인원상', d: '한 타에 넣은 분 · 당일 최고의 영광', f: function (p) { return p.cnt(function (x) { return x === 1; }); }, asc: false, u: '개', need: 1 },
-    { k: 'win', i: '🏆', n: '왕중왕', d: '합계 타수가 가장 적은 분 · 오늘의 챔피언', f: function (p) { return p.tot; }, asc: true, u: '타' }];
+    { k: 'third', i: '🥉', n: '장려상', d: '합계 타수 3위', f: function (p) { return p.tot; }, asc: true, u: '타', skip: 2 },
+    { k: 'second', i: '🥈', n: '준우승', d: '합계 타수 2위', f: function (p) { return p.tot; }, asc: true, u: '타', skip: 1 },
+    { k: 'win', i: '🏆', n: '우승', d: '합계 타수가 가장 적은 분 · 오늘의 챔피언', f: function (p) { return p.tot; }, asc: true, u: '타' }];
+  /* 처음 켜져 있는 개인상 8개(나머지는 캡틴이 시상 순서에서 켜요) */
+  var AW_ON = { win: 1, second: 1, third: 1, ace: 1, eagle: 1, birdie: 1, par: 1, luck: 1 };
   /* 조별 상: 행운상(추첨) → 다음에 잘 치자상 → 단합상 → 장려상(3위) → 준우승 → 우승 */
   var TW = [
     { k: 'tluck', i: '🍀', n: '행운상', d: '조 추첨 · 어느 조든 받을 수 있어요', luck: 1 },
@@ -269,14 +273,15 @@
   function hash(s) { var h = 7; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
   function awOf(k) { var m = /^luck(\d+)$/.exec(k); if (m) return Object.assign({}, AW[5], { k: k, n: '행운상' + m[1], seed: m[1] }); var a = AW.filter(function (x) { return x.k === k; })[0]; if (a && a.k === 'luck' && awOrder().some(function (x) { return /^luck\d+$/.test(x); })) return Object.assign({}, a, { n: '행운상1', seed: '1' }); return a; }
   function awOrder() { var ev = EV.d; return ev.awards && ev.awards.length ? ev.awards.filter(function (k) { return k.charAt(0) !== '-' && k.charAt(0) !== 't'; }) : AW.map(function (x) { return x.k; }); }
-  function awOff() { var off = {}; (EV.d.awards || []).forEach(function (k) { if (k.charAt(0) === '-') off[k.slice(1)] = 1; }); return off; }
+  function awOff() { var off = {}, l = EV.d.awards || []; if (!l.length) { AW.forEach(function (a) { if (!AW_ON[a.k]) off[a.k] = 1; }); return off; } l.forEach(function (k) { if (k.charAt(0) === '-') off[k.slice(1)] = 1; }); return off; }
   function twOrder() { var ev = EV.d, l = (ev.awards || []).filter(function (k) { return k.charAt(0) === 't' && k !== 'try'; }); return l.length ? l : TW.map(function (x) { return x.k; }); }
   function twOf(k) { var m = /^tluck(\d+)$/.exec(k); if (m) return Object.assign({}, TW[0], { k: k, n: '행운상' + m[1], seed: m[1] }); var a = TW.filter(function (x) { return x.k === k; })[0]; if (a && a.k === 'tluck' && twOrder().some(function (x) { return /^tluck\d+$/.test(x); })) return Object.assign({}, a, { n: '행운상1', seed: '1' }); return a; }
   function awList(a, exclude) {
-    var ev = EV.d, all = players(ev), ps = all.filter(function (p) { return !(exclude && exclude[p.n]) && (!a.full || p.full) && !(a.k === 'try' && !p.full && all.some(function (q) { return q.full; })); });
+    var ev = EV.d, all = players(ev), ps = all.filter(function (p) { return !(exclude && exclude[p.n] && !a.skip) && (!a.full || p.full) && !(a.k === 'try' && !p.full && all.some(function (q) { return q.full; })); });
     ps.forEach(function (p) { p.v = a.f(p, a.seed || ''); });
     ps.sort(function (x, y) { return (a.asc ? x.v - y.v : y.v - x.v) || (x.half(1) - y.half(1)) || (x.rel(3) - y.rel(3)); });
     if (a.need) ps = ps.filter(function (p) { return p.v >= 1; });
+    if (a.skip) ps = ps.slice(a.skip).filter(function (p) { return !(exclude && exclude[p.n]); });
     return ps;
   }
   function awActive() { var off = awOff(); return awOrder().map(awOf).filter(function (a) { return a && !off[a.k] && awList(a).length; }); }
@@ -331,7 +336,7 @@
           '<div class="card"><div class="list">' + (ps.length ? ps.slice(0, 8).map(function (p, i) { var isW = w2 && w2[a2.k] && w2[a2.k].n === p.n; return '<div class="it"><div class="av ' + (i === 0 ? 'y' : '') + '">' + (i + 1) + '</div><div class="t"><b>' + esc(p.n) + ' <span class="chip">' + esc(p.team) + '</span>' + (isW ? '<span class="chip cap">수상</span>' : '') + '</b><span class="muted">' + p.tot + '타 ' + LZ.pp(p.d) + (p.full ? '' : ' · 진행 중') + '</span></div><b style="font-size:var(--t3)">' + show(p.v) + '</b></div>'; }).join('') : '<div class="empty">해당자가 없어요.</div>') + '</div></div>' +
           (ev.isStaff ? '<div class="card"><h3>개인 시상 순서</h3><p class="muted" style="margin:0 0 8px">위에서부터 차례로. ▲▼로 순서, 스위치로 빼기. 해당자 없는 상은 건너뛰어요.</p><div class="list">' + ord.map(function (k, i) { var x = awOf(k), none = !awList(x).length, o = !!off[k] || none; return '<div class="it" style="padding:8px 4px;' + (o ? 'opacity:.45' : '') + '"><span class="muted" style="width:24px;font-weight:700">' + (o ? '—' : ++n2) + '</span><div class="t"><b>' + x.i + ' ' + esc(x.n) + (none ? ' <span class="chip gray">해당자 없음</span>' : '') + '</b><span class="muted small">' + esc(x.d) + '</span></div><div style="display:flex;flex-direction:column;gap:4px"><button type="button" class="sm2 g" style="height:30px;padding:0 10px;font-size:var(--t0)" data-act="awMove" data-v="' + i + ':-1">▲</button><button type="button" class="sm2 g" style="height:30px;padding:0 10px;font-size:var(--t0)" data-act="awMove" data-v="' + i + ':1">▼</button></div>' + LZ.sw(!off[k] && !none, 'awToggle', k, none) + '</div>'; }).join('') + '</div><button type="button" class="btn o" data-act="luckAdd">🍀 행운상 추가하기</button><div class="tgl" style="margin-top:6px"><span><b>중복 수상 불가</b><span class="muted">한 사람 한 상 · 좋은 상부터 확정하고 아래 상은 차순위에게</span></span>' + LZ.sw(ev.nodup, 'awNodup') + '</div></div>' : '');
       }
-      root.innerHTML = LZ.hdr('시상식', { back: true, right: (twActive().length || awActive().length) ? '<button type="button" class="ib on" data-go="ceremony" data-p=\'{"i":0}\'>▶ 시상 시작</button>' : '' }) + '<div class="wrap">' + (ev.local ? (ev.demo ? '<div class="card" style="background:#FFF7ED"><b>미리보기예요</b> · 샘플 조 4명(화천파크골프장 A·B 18홀)으로 꾸민 시상식이에요. 가입해서 라운드를 끝내면 내 조로 똑같이 열려요.</div>' : '<div class="card tight"><b>' + esc(ev.name) + '</b> · ' + esc(ev.date) + ' · ' + ev.teams[0].members.length + '명<div class="muted">상 순서·빼기·중복 수상은 이 휴대폰에만 저장돼요.</div></div>') : scope + LZ.seg([['team', '1부 · 조별'], ['person', '2부 · 개인']], part, 'awPart') + '<div style="height:10px"></div>') + body + '<button type="button" class="btn kakao" data-act="awShare" style="margin-top:14px">결과 그림 보내기</button></div>';
+      root.innerHTML = LZ.hdr('시상식', { back: true, right: (twActive().length || awActive().length) ? '<button type="button" class="ib on" data-go="ceremony" data-p=\'{"i":0}\'>▶ 시상 시작</button>' : '' }) + '<div class="wrap">' + (ev.local ? (ev.demo ? '<div class="card org"><b>미리보기예요</b> · 샘플 조 4명(화천파크골프장 A·B 18홀)으로 꾸민 시상식이에요. 가입해서 라운드를 끝내면 내 조로 똑같이 열려요.</div>' : '<div class="card tight"><b>' + esc(ev.name) + '</b> · ' + esc(ev.date) + ' · ' + ev.teams[0].members.length + '명<div class="muted">상 순서·빼기·중복 수상은 이 휴대폰에만 저장돼요.</div></div>') : scope + LZ.seg([['team', '1부 · 조별'], ['person', '2부 · 개인']], part, 'awPart') + '<div style="height:10px"></div>') + body + '<button type="button" class="btn kakao" data-act="awShare" style="margin-top:14px">결과 그림 보내기</button></div>';
       var ch = $('#awchips'); if (ch) ch.scrollLeft = sl;
     }
   };
@@ -397,5 +402,5 @@
     }
   };
   LZ.act.fullscreen = function () { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (e) { LZ.toast('이 기기는 전체 화면을 지원하지 않아요'); } };
-  LZ.act.ceremonyEnd = function () { LZ.go('event', { code: EV.d.code }, { reset: true }); LZ.toast('시상식 끝! 수고하셨어요 🎉', 4000); };
+  LZ.act.ceremonyEnd = function () { if (EV.d.local) LZ.go(EV.d.demo ? (S.user ? 'field' : 'login') : 'field', {}, { reset: true }); else LZ.go('event', { code: EV.d.code }, { reset: true }); LZ.toast('시상식 끝! 수고하셨어요 🎉', 4000); };
 })();
