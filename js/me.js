@@ -2,11 +2,19 @@
 (function () {
   'use strict';
   var LZ = window.LZ, S = LZ.S, $ = LZ.$, $$ = LZ.$$, esc = LZ.esc, store = LZ.store;
-  LZ.refLink = function () { return LZ.APP_URL + '?ref=' + S.user.uid; };
-  LZ.refText = function () { return '⛳ 파크골프 공략수첩\n스크린 파크골프 칠 때 홀마다 어디로 얼마나 칠지 적어 두는 수첩이에요. 가입은 무료고, 아래 링크로 들어오면 ' + S.user.nick + '님 클럽과 바로 연결돼요.\n같이 기록하고 같이 시상식 해요 🏆\n👇 아래 링크를 눌러 가입하세요'; };
+  /* 친구 초대: 내 클럽이 여럿이면 어느 클럽으로 부를지 고르고(안 부를 수도), 링크에 그 클럽 코드를 붙여요 */
+  LZ.refLink = function (m) { return LZ.APP_URL + '?ref=' + S.user.uid + (m ? '&inv=' + m.code : '&inv=0'); };
+  LZ.refText = function (m) { return '⛳ 파크골프 공략수첩\n스크린 파크골프 칠 때 홀마다 어디로 얼마나 칠지 적어 두는 수첩이에요. 가입은 무료' + (m ? '고, 아래 링크로 들어오면 ' + S.user.nick + '님의 "' + m.name + '" 클럽과 바로 연결돼요.\n같이 기록하고 같이 시상식 해요 🏆' : '예요.\n홀마다 적어 두면 다음에 칠 때 훨씬 편해요 🏆') + '\n👇 아래 링크를 눌러 가입하세요'; };
   /* 친구 초대하기 카드(홈 아래·내 정보 아래) */
-  LZ.inviteCard = function (big) { if (S.user.kind === 'admin') return ''; return '<div class="card invite"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:var(--t6)">💛</span><div style="flex:1"><h3 style="margin:0">친구 초대하기</h3><div class="muted">내 링크로 가입하면 내 클럽에 바로 연결돼요. 함께 치는 분이 많을수록 시상식이 즐거워요</div></div></div><button type="button" class="btn kakao" data-act="inviteKakao">친구 초대하기</button>' + '</div>'; };
-  LZ.act.inviteKakao = function () { LZ.inviteSheet('공략수첩 가입 초대', LZ.refText(), LZ.refLink()); };
+  LZ.inviteCard = function (big) { if (S.user.kind === 'admin') return ''; var n = (S.me && S.me.moims || []).length; return '<div class="card invite"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:var(--t6)">💛</span><div style="flex:1"><h3 style="margin:0">친구 초대하기</h3><div class="muted">' + (n > 1 ? '어느 클럽으로 부를지 고른 뒤 링크를 보내요. 클럽 없이 앱만 소개할 수도 있어요' : n === 1 ? '내 링크로 가입하면 내 클럽에 바로 연결돼요. 함께 치는 분이 많을수록 시상식이 즐거워요' : '내 링크로 가입하면 앱만 소개돼요(클럽에 들어오게 하려면 먼저 클럽을 만들거나 가입하세요)') + '</div></div></div><button type="button" class="btn kakao" data-act="inviteKakao">친구 초대하기</button>' + '</div>'; };
+  LZ.act.inviteKakao = function () {
+    var ms = (S.me && S.me.moims || []).filter(function (m) { return m.code; });
+    if (ms.length <= 1) { var m = ms[0] || null; LZ.inviteSheet('공략수첩 가입 초대', LZ.refText(m), LZ.refLink(m)); return; }
+    LZ.sheet('<h2>어느 클럽으로 부를까요?</h2><p class="muted">고른 클럽에 바로 연결돼요(캡틴 승인 설정에 따라 신청으로 들어갈 수도 있어요).</p>' +
+      ms.map(function (m, i) { return '<button type="button" class="opt" data-act="inviteFor" data-v="' + i + '"><b>' + esc(m.name) + '</b><span>' + (m.role === 'cap' ? '캡틴' : '회원') + ' · ' + m.members + '명</span></button>'; }).join('') +
+      '<button type="button" class="opt" data-act="inviteFor" data-v="-1"><b>클럽 없이 앱만 소개</b><span>어느 클럽에도 연결하지 않아요</span></button>');
+  };
+  LZ.act.inviteFor = function (el, v) { var ms = (S.me && S.me.moims || []).filter(function (m) { return m.code; }), m = +v >= 0 ? ms[+v] : null; LZ.closeSheet(); LZ.inviteSheet('공략수첩 가입 초대', LZ.refText(m), LZ.refLink(m)); };
 
   LZ.screens.me = {
     tab: 'me',
@@ -107,7 +115,7 @@
       root.innerHTML = LZ.hdr('환불', { back: true }) + '<div class="wrap">' +
         (st.req ? '<div class="card" style="background:var(--yl)"><h3>환불 신청 중</h3><p style="margin:0">' + esc(st.req.planName) + ' · 예상 ' + won(st.req.amount) + ' · ' + esc(st.req.bank) + ' ' + esc(st.req.acct) + '</p><p class="muted">' + esc(st.req.why) + '</p><button type="button" class="btn g sm" data-act="refundCancel">신청 취소</button></div>' :
           st.recent ? '<div class="card"><h3>' + (st.recent.status === 'done' ? '환불 완료' : '환불 안 됨') + '</h3><p style="margin:0">' + esc(st.recent.planName) + ' · ' + won(st.recent.amount) + (st.recent.note ? '<br>' + esc(st.recent.note) : '') + '</p></div>' : '') +
-        (d.calc && !st.req ? '<div class="card"><h3>환불 신청</h3><p style="margin:0">' + esc(d.pay.planName) + ' ' + won(d.pay.amount) + ' (' + esc(d.pay.start) + '~' + esc(d.pay.end) + ')</p><div class="box"><b>예상 환불 ' + won(d.calc.amount) + '</b><div class="muted">' + esc(d.calc.why) + '</div></div><label class="lb">은행</label><input type="text" id="rb" maxlength="20" placeholder="예: 카카오뱅크"><label class="lb">계좌번호</label><input type="tel" id="ra" maxlength="30"><label class="lb">예금주</label><input type="text" id="rh" maxlength="20"><label class="lb">사유(선택)</label><input type="text" id="rr" maxlength="100"><label class="tgl"><span>환불되면 이용권이 바로 끝나는 것을 확인했어요</span><input type="checkbox" id="rag"></label><button type="button" class="btn" data-act="refundReq">환불 신청</button></div>' : (!st.req && !st.recent ? '<div class="card"><p style="margin:0">환불할 수 있는 결제가 없어요.</p></div>' : '')) + '</div>';
+        (d.calc && !st.req ? '<div class="card"><h3>환불 신청</h3><p style="margin:0">' + esc(d.pay.planName) + ' ' + won(d.pay.amount) + ' (' + esc(d.pay.start) + '~' + esc(d.pay.end) + ')</p><div class="box"><b>예상 환불 ' + won(d.calc.amount) + '</b><div class="muted">' + esc(d.calc.why) + '</div></div><label class="lb">은행</label><input type="text" id="rb" maxlength="20" placeholder="예: 카카오뱅크"><label class="lb">계좌번호</label><input type="tel" id="ra" maxlength="30"><label class="lb">예금주</label><input type="text" id="rh" maxlength="20"><label class="lb">사유(선택)</label><input type="text" id="rr" maxlength="100"><label class="tgl"><span>환불되면 연회비 기간이 바로 끝나는 것을 확인했어요</span><input type="checkbox" id="rag"></label><button type="button" class="btn" data-act="refundReq">환불 신청</button></div>' : (!st.req && !st.recent ? '<div class="card"><p style="margin:0">환불할 수 있는 결제가 없어요.</p></div>' : '')) + '</div>';
     }
   };
   LZ.act.refundReq = async function () { try { await LZ.api('refundReq', { bank: $('#rb').value, acct: $('#ra').value, holder: $('#rh').value, reason: $('#rr').value, agree: $('#rag').checked ? 1 : 0 }); LZ.toast('환불 신청을 보냈어요', 4000); await LZ.refreshMe(); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e), 5000); } };
@@ -115,7 +123,7 @@
 
 
   /* 알림 설정 */
-  var NK = { pay: '결제 신청', refund: '환불 신청', qna: '문의', pw: '비밀번호 찾기 신청', mreq: '클럽 가입 신청', club: '클럽 소식', course: '코스 정보 변경', gift: '선물', round: '라운드', join: '새 회원', fb: '회원 의견', payok: '결제 승인', digest: '주간 점검·월간 요약' };
+  var NK = { pay: '결제 신청', refund: '환불 신청', qna: '문의', pw: '비밀번호 찾기 신청', mreq: '클럽 가입 신청', club: '클럽 소식', course: '코스 정보 변경', round: '라운드', join: '새 회원', fb: '회원 의견', payok: '결제 승인', digest: '주간 점검·월간 요약' };
   LZ.screens.notiCfg = {
     tab: 'me',
     show: async function (p, root, alive) {

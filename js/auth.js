@@ -48,7 +48,6 @@
       if (r.user.must) { LZ.go('pinFirst', {}, { reset: true }); return; }
       await LZ.refreshMe().catch(function () {});
       LZ.go('home', {}, { reset: true }); LZ.afterLogin('');
-      if (r.pin4) await LZ.dialog({ title: '비밀번호가 4자리가 됐어요', body: '이제 숫자 4자리를 써요. 앞으로는 예전 비밀번호의 앞 4자리만 누르면 돼요. (내 정보 → 비밀번호 바꾸기에서 바꿀 수 있어요)' });
       if (!r.user.sq) LZ.sqIntro(); else LZ.toast(nick + '님, 반가워요');
     } catch (e) {
       LZ.busy(false); pin = ''; paintDots();
@@ -86,7 +85,7 @@
       if (ref) { try { refNick = (await LZ.api('refName', { ref: ref }, { noAuth: true })).nick; } catch (e) { /* 무시 */ } }
       root.innerHTML = LZ.hdr('가입하기', { back: true, noBell: 1 }) + '<div class="wrap">' +
         (cfg && cfg.inv ? '<div class="box"><b>' + esc(cfg.inv.name) + '</b> 클럽 초대 · 캡틴 ' + esc(cfg.inv.captainNick) + '님 · 회원 ' + cfg.inv.members + '명<br><span class="muted">가입하면 이 클럽에 ' + (cfg.inv.auto ? '바로 들어가요' : '가입 신청이 돼요') + '</span></div>' : '') +
-        (refNick ? '<div class="box"><b>' + esc(refNick) + '</b>님의 초대로 오셨어요 🎁</div>' : '') +
+        (refNick ? '<div class="box"><b>' + esc(refNick) + '</b>님의 초대로 오셨어요 🎁' + (!(cfg && cfg.inv) && store.get('lz.noclub') !== '1' ? '<br><span class="muted">가입하면 ' + esc(refNick) + '님 클럽에 가입 신청이 들어가요</span>' : '') + '</div>' : '') +
         '<div class="card"><label class="lb" style="margin-top:0" for="jnick">닉네임</label><input type="text" id="jnick" placeholder="한글·영문·숫자 2~8자 (스크린에서 쓰는 이름)" maxlength="8"><p class="hint" id="jhint">스크린 파크골프 기계에 적는 닉네임과 같게 하면 좋아요.</p>' +
         '<label class="lb">비밀번호 숫자 4자리</label>' + padHtml(4) +
         '<div class="box" style="margin:14px 0 6px"><b>🔑 비밀번호 찾기 질문 — 나의 절친 이름과 전화번호 뒷자리 4개</b><div class="muted" style="margin-top:4px">메모 없이도 늘 머릿속에 있는 답이에요. 비밀번호를 잊으면 이 두 가지로 바로 새로 정해요.</div></div><div class="row"><input type="text" id="sqName" maxlength="10" placeholder="절친 이름"><input type="tel" id="sqNum" inputmode="numeric" maxlength="4" placeholder="전화 뒷자리 4"></div>' +
@@ -107,8 +106,8 @@
     if (sqName.length < 2 || sqNum.length !== 4) { LZ.toast('비밀번호 찾기 질문의 답(절친 이름, 전화 뒷자리 4개)을 적어 주세요'); $('#sqName').focus(); return; }
     LZ.busy(true, '가입하는 중…');
     try {
-      var r = await LZ.api('join', { nick: nick, pin: pin, agree: 1, dev: LZ.devId(), ref: store.get('lz.ref') || '', inv: store.get('lz.inv') || '', ua: LZ.devLabel(), sqName: sqName, sqNum: sqNum }, { noAuth: true, retry: 0 });
-      LZ.busy(false); pin = ''; store.set('lz.nick', nick); store.del('lz.inv'); store.del('lz.ref'); LZ.setSession(r);
+      var r = await LZ.api('join', { nick: nick, pin: pin, agree: 1, dev: LZ.devId(), ref: store.get('lz.ref') || '', inv: store.get('lz.inv') || (store.get('lz.noclub') === '1' ? '0' : ''), ua: LZ.devLabel(), sqName: sqName, sqNum: sqNum }, { noAuth: true, retry: 0 });
+      LZ.busy(false); pin = ''; store.set('lz.nick', nick); store.del('lz.inv'); store.del('lz.ref'); store.del('lz.noclub'); LZ.setSession(r);
       await LZ.refreshMe().catch(function () {});
       LZ.firstGuide = true;
       LZ.go('home', {}, { reset: true });

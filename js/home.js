@@ -54,7 +54,7 @@
           '<button type="button" class="opt" data-act="clubSet"><b>이름·지역·색</b><span>클럽 정보 바꾸기</span></button>' +
           '<button type="button" class="opt" data-act="clubQrPoster"><b>매장 QR 포스터</b><span>코스별 QR</span></button>' +
           '<button type="button" class="opt" data-go="notiCfg"><b>가입 신청 알림</b><span>앱 푸시 · 카카오톡</span></button>' +
-          '<div class="tgl"><span>클럽 찾기에 보이기</span>' + LZ.sw(m.pub, 'clubPub') + '</div><div class="tgl"><span>초대 링크로는 바로 가입<span class="muted">캡틴 승인 없이 들어와요</span></span>' + LZ.sw(m.auto, 'clubAuto') + '</div>' +
+          '<div class="tgl"><span>클럽 찾기에 보이기<span class="muted">끄면 비공개 · 클럽 코드·초대 링크로만 가입</span></span>' + LZ.sw(m.pub, 'clubPub') + '</div><div class="tgl"><span>초대 링크로는 바로 가입<span class="muted">캡틴 승인 없이 들어와요</span></span>' + LZ.sw(m.auto, 'clubAuto') + '</div>' +
           '<button type="button" class="opt" data-act="clubHand"><b>캡틴 바꾸기</b><span>레드·골드 회원님께 · 5명 이하 클럽은 블루도</span></button>' +
           '<button type="button" class="opt" data-act="clubClose"><b>클럽 닫기</b><span>혼자일 때만 · 내 기록은 내 기록장으로</span></button></div>' : '';
       var info = [];
@@ -202,7 +202,7 @@
   };
 
   /* ───── 알림함 ───── */
-  var NICON = { pay: '💳', refund: '↩', qna: '💬', pw: '🔑', mreq: '✋', club: '👥', course: '📍', gift: '🎁', round: '⛳', join: '🌱', fb: '📝', payok: '✅', digest: '📊' };
+  var NICON = { pay: '💳', refund: '↩', qna: '💬', pw: '🔑', mreq: '✋', club: '👥', course: '📍', round: '⛳', join: '🌱', fb: '📝', payok: '✅', digest: '📊' };
   LZ.screens.noti = {
     show: async function (p, root, alive) {
       root.innerHTML = LZ.hdr('알림', { back: true, noBell: 1 }) + LZ.skeleton(5);
@@ -246,7 +246,7 @@
     show: async function (p, root, alive) {
       root.innerHTML = LZ.hdr('사용 안내', { back: true, noBell: 1 }) + LZ.skeleton(5);
       var cfg = null; try { cfg = await LZ.api('cfg', {}, { noAuth: true }); } catch (e) { cfg = {}; } if (!alive()) return;
-      var R = cfg.rules || { trialDays: 7, firstRecDays: 3, moimMax: 5, moimTrial: 1, capMax: 3, reqDays: 7, roundMax: 8, roundHours: 12, tmpHours: 24, giftN: 5, giftDays: 7, giftLeft: 10, noteMax: 20, renewDays: 14, refundFullDays: 7, quietFrom: 22, quietTo: 7, refDays: 7 };
+      var R = cfg.rules || { editHours: 2, teamsMax: 50, moimMax: 5, capMax: 3, reqDays: 7, roundMax: 5, roundHours: 12, tmpHours: 24, noteMax: 20, renewDays: 14, refundFullDays: 7, quietFrom: 22, quietTo: 7 };
       var pr = cfg.prices || { red: 10000 }, fee = cfg.fee || { 50: 20000, 100: 30000, 200: 50000, step: 20000 }, won = function (n) { return Number(n).toLocaleString() + '원'; }, pw = cfg.pw || LZ.pw();
       if (cfg.pw) S.pw = cfg.pw;
       var hlRow = function (g) { return '<tr><td><b>' + LZ.MODE[g] + (g === 'p' ? '(기본)' : '') + '</b></td><td>' + LZ.fmtP(pw[g].base) + '</td><td>' + pw[g].step + 'm</td><td>+' + pw.hl + 'm</td><td>±0</td><td>−' + pw.hl + 'm</td><td>−' + (Math.round(pw.hl * 200) / 100) + 'm</td></tr>'; };
@@ -336,7 +336,7 @@
   };
   LZ.screens.qnaNew = {
     show: async function (p, root) {
-      var cats = { pay: '결제·이용권', course: '코스 정보', app: '앱 사용·오류', acct: '계정·비밀번호', branch: '클럽 관련', nick: '닉네임 확인 요청', etc: '기타' };
+      var cats = { pay: '결제·연회비', course: '코스 정보', app: '앱 사용·오류', acct: '계정·비밀번호', branch: '클럽 관련', nick: '닉네임 확인 요청', etc: '기타' };
       root.innerHTML = LZ.hdr('새 문의', { back: true }) + '<div class="wrap"><div class="card"><label class="lb" style="margin-top:0">분류</label><select id="qcat" class="in">' + Object.keys(cats).map(function (k) { return '<option value="' + k + '"' + (p.cat === k ? ' selected' : '') + '>' + cats[k] + '</option>'; }).join('') + '</select><label class="lb">제목</label><input type="text" id="qtitle" maxlength="30" value="' + esc(p.title || '') + '"><label class="lb">내용</label>' + LZ.richEditor('qhtml', '', '자세히 적어 주시면 빨리 도와드릴 수 있어요') + '<button type="button" class="btn" data-act="qnaAsk" data-v="' + esc(p.cid || '') + '">보내기</button></div><p class="hint">답변은 관리자가 해요. 답이 오면 알림으로 알려 드려요.</p></div>';
     }
   };

@@ -68,7 +68,7 @@
   LZ.markOf = function (r, hm) { return LZ.mark(r.p, LZ.sugOf(hm, r.g || 'p', r.h || 'm')); };
   LZ.pp = function (d) { return '<span class="pp ' + (d < 0 ? 'u' : d > 0 ? 'o' : 'e') + '">' + (d > 0 ? '+' + d : d === 0 ? 'E' : d) + '</span>'; };
   /* 등급 동그라미: 🔵 블루 · 🔴 레드 · 🟡 골드 · ⚫ 블랙 */
-  LZ.dot = function (u) { var t = u && (u.tier || ({ hon: 'gold', gold: 'gold', trial: 'blue', blue: 'blue', month: 'red', year: 'red', red: 'red', black: 'black', admin: 'admin' })[u.kind]) || 'blue'; return '<i class="dot ' + t + '" title="' + ({ blue: '블루', red: '레드', gold: '골드', black: '블랙', admin: '관리자' })[t] + '"></i>'; };
+  LZ.dot = function (u) { var t = u && (u.tier || ({ gold: 'gold', blue: 'blue', red: 'red', black: 'black', admin: 'admin' })[u.kind]) || 'blue'; return '<i class="dot ' + t + '" title="' + ({ blue: '블루', red: '레드', gold: '골드', black: '블랙', admin: '관리자' })[t] + '"></i>'; };
   /* ───── 코치마크: 처음 몇 번만, 화면 요소를 동그랗게 비추고 한 줄 설명 ─────
      steps = [{ sel: CSS 선택자, text, pos: 'below'|'above' }] · 요소가 없으면 건너뜀 */
   LZ.coach = function (key, steps) {
@@ -395,7 +395,7 @@
   LZ.boot = async function () {
     if (store.get('lz.big') === '1' || (store.get('lz.big') === null)) document.body.classList.add('big');   // 처음엔 글씨 크게
     var t = store.get('lz.t'), hash = location.hash.replace(/^#/, ''), q = new URLSearchParams(location.search);
-    if (q.get('inv')) store.set('lz.inv', q.get('inv'));
+    if (q.get('inv') === '0') { store.del('lz.inv'); store.set('lz.noclub', '1'); } else if (q.get('inv')) { store.set('lz.inv', q.get('inv')); store.del('lz.noclub'); }
     if (q.get('ref')) store.set('lz.ref', q.get('ref'));
     if (q.get('r')) store.set('lz.joinRound', q.get('r'));
     if (q.get('e') && q.get('tv')) { LZ.tvCode = q.get('e'); }
