@@ -252,7 +252,7 @@
   };
   LZ.clearSession = function () { LZ.cacheDrop(); store.del('lz.k.me'); S.user = null; S.token = ''; S.me = null; store.del('lz.t'); LZ.rt && LZ.rt.stop(); };
   LZ.setSession = function (r) { S.token = r.token; S.user = r.user; store.set('lz.t', r.token); if (r.pw) S.pw = r.pw; };
-  function applyMe(r) { S.me = r; S.user = r.user; S.br = r.br; S.store = r.store; S.pw = r.pw; S.unit = r.user.unit || 'p'; }
+  function applyMe(r) { S.me = r; S.user = r.user; S.br = r.br; S.store = r.store; S.pw = r.pw; S.unit = r.user.unit || 'p'; if (r.appVer && LZ.pwa && LZ.pwa.verCheck) LZ.pwa.verCheck(r.appVer); }
   LZ.refreshMe = async function () { var r = await LZ.api('me', {}); applyMe(r); try { store.setJSON('lz.k.me', { t: Date.now(), d: r }); } catch (e) { /* 무시 */ } return r; };
 
   /* ───── 마지막 응답 저장: 화면을 열 때 먼저 보여 주고 뒤에서 새로 받음 ───── */
@@ -428,6 +428,7 @@
     var inv = store.get('lz.inv'); if (inv && S.user) { store.del('lz.inv'); LZ.go('find', { inv: inv }); return; }
     if (hash) LZ.goTo(decodeURIComponent(hash));
     LZ.noticePopup && LZ.noticePopup();
+    if (LZ.pwa && LZ.pwa.installNudge) LZ.pwa.installNudge();
     LZ.pushCheck && LZ.pushCheck();
   };
   document.addEventListener('DOMContentLoaded', function () { LZ.boot(); });

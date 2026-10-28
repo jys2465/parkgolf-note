@@ -388,3 +388,6 @@ img.av{background:var(--line)}
 .hr.mine{background:#FCF8EE}
 :root[data-theme="dark"] .hr.mine,:root[data-theme="dark"] .cont{background:#2A2619}
 .toast{background:#0B3A2E;border:1px solid rgba(217,182,92,.45)}
+/* 링크를 단추처럼 쓸 때(문자로·기본 브라우저로 열기·송금 앱): 글자를 가운데에, 밑줄 없이 */
+a.btn{display:flex;align-items:center;justify-content:center;text-decoration:none;line-height:1.2}
+a.btn.o{color:var(--g)}

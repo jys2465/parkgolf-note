@@ -18,6 +18,36 @@
   };
   /* 카카오톡 안 브라우저로 들어왔으면 한 번만 안내(가입·로그인은 되지만 홈 화면 추가·알림이 안 됨) */
   P.inAppNote = function () { if (!P.inApp() || store.get('lz.inappNote') === '1') return; store.set('lz.inappNote', '1'); var x = P.externalUrl(); LZ.toast('카카오톡 안에서 열렸어요. ' + (x ? '"홈 화면에 추가"하려면 내 정보에서 기본 브라우저로 열어 주세요' : '기본 브라우저로 열면 더 편해요'), 6000); };
+  /* 버전 확인: 서버가 알려 준 앱 버전이 내 것보다 높으면 저장된 껍데기를 모두 지우고 새로 받음(10분에 한 번만 시도, 두 번 안 되면 손으로 하는 방법 안내) */
+  function verNum(v) { return String(v || '0').split('.').map(function (x) { return +x || 0; }).reduce(function (a, x) { return a * 1000 + x; }, 0); }
+  P.hardRefresh = async function (quiet) {
+    try { if ('serviceWorker' in navigator) { var rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(function (r) { return r.unregister(); })); } } catch (e) { /* 무시 */ }
+    try { if (window.caches) { var ks = await caches.keys(); await Promise.all(ks.map(function (k) { return caches.delete(k); })); } } catch (e) { /* 무시 */ }
+    if (!quiet) LZ.toast('최신 버전으로 새로 여는 중…', 3000);
+    setTimeout(function () { location.replace(location.pathname + '?v=' + Date.now() + location.hash); }, quiet ? 0 : 400);
+  };
+  P.verCheck = function (serverVer) {
+    if (!serverVer || verNum(serverVer) <= verNum(LZ.VER)) { if (store.get('lz.verTry')) store.del('lz.verTry'); return false; }
+    var tried = +store.get('lz.verTry') || 0, n = +store.get('lz.verTryN') || 0;
+    if (Date.now() - tried < 600000) {                                          // 방금 시도했는데도 옛 버전이면 손으로
+      if (n >= 2 && store.get('lz.verNote') !== serverVer) { store.set('lz.verNote', serverVer); LZ.dialog({ title: '새 버전(v' + serverVer + ')이 안 받아져요', html: '<p>지금 v' + LZ.VER + '을 쓰고 계셔요. 아래처럼 해 주세요.</p><div class="box">' + (P.isIOS ? '① 홈 화면의 앱 아이콘을 지운 뒤<br>② 사파리로 다시 열고<br>③ 홈 화면에 다시 추가' : '① 휴대폰 설정 → 앱 → 크롬 → 저장공간 → <b>캐시 삭제</b><br>② 앱을 완전히 닫았다가 다시 열기') + '</div>', cancel: 'ok' }); }
+      return false;
+    }
+    store.set('lz.verTry', String(Date.now())); store.set('lz.verTryN', String(n + 1));
+    if (LZ.guard && LZ.guard.dirty && LZ.guard.dirty()) return false;
+    P.hardRefresh(true); return true;
+  };
+  /* 홈 화면에 추가 안내: 브라우저로 열 때마다(앱으로 열면 안 나와요) */
+  P.installNudge = function () {
+    if (P.standalone() || P.nudged || (navigator.webdriver && store.get('lz.nudgeForce') !== '1')) return; P.nudged = true;
+    setTimeout(function () {
+      if (document.querySelector('#layer .sheet, #layer .dlg')) return;
+      var inapp = P.inApp();
+      LZ.sheet('<h2>📱 홈 화면에 추가하세요</h2><p class="muted">홈 화면의 앱 아이콘으로 열면 더 빨리 열리고, 로그인이 유지되고, 알림도 받을 수 있어요.</p>' +
+        (inapp ? '<div class="box">지금은 카카오톡 안에서 열려 있어요. 먼저 <b>기본 브라우저로 열기</b>를 누른 뒤 홈 화면에 추가해 주세요.</div>' : P.isIOS ? '<div class="box">① 사파리 아래 <b>공유</b> 단추(네모에 화살표)<br>② <b>홈 화면에 추가</b><br>③ 오른쪽 위 <b>추가</b></div>' : '<div class="box">① 브라우저 오른쪽 위 <b>⋮</b> 메뉴<br>② <b>홈 화면에 추가</b>(또는 앱 설치)<br>③ <b>설치</b></div>') +
+        '<button type="button" class="btn" data-act="homeAdd">' + (inapp ? '기본 브라우저로 열기' : P.isIOS ? '알겠어요' : '홈 화면에 추가') + '</button>');
+    }, 1500);
+  };
   /* 새 버전: 서비스 워커가 새것을 받으면 막 열었을 땐 바로, 쓰는 중이면 물어보고 바꿈 */
   P.registerSW = function () {
     if (!('serviceWorker' in navigator)) return;

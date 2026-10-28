@@ -26,7 +26,7 @@
         '<div class="tgl"><span>홀 표에서 거리(m)로 크게 보기<span class="muted">끄면 타격감이 크게, 거리는 작게</span></span>' + LZ.sw(S.unit === 'm', 'unitTgl') + '</div>' +
         '<div class="tgl"><span>내 기록 공개<span class="muted">끄면 클럽 회원이 내 기록을 못 봐요(평균엔 들어가요)</span></span>' + LZ.sw(S.pub !== 0, 'pubTgl') + '</div></div>' +
         '<div class="card"><h3>안전</h3><button type="button" class="opt" data-go="pinChange"><b>비밀번호 바꾸기</b><span>숫자 ' + u.pinLen + '자리 · 바꾸면 다른 휴대폰은 로그아웃</span></button><button type="button" class="opt" data-act="sqChange"><b>비밀번호 찾기 질문</b><span>나의 절친 이름과 전화 뒷자리 4개 · 지금 ' + esc(u.sqh || '아직 없음') + '</span></button><button type="button" class="opt" data-go="notiCfg"><b>알림 설정</b><span>앱 푸시 · ' + (u.kind === 'admin' || (m.moims || []).some(function (x) { return x.role === 'cap'; }) ? '카카오톡으로 받기 · ' : '') + '조용한 시간</span></button></div>' +
-        '<div class="card"><h3>도움</h3><button type="button" class="opt" data-go="guide"><b>사용 안내</b><span>권한과 기준을 한눈에</span></button>' + (m.qnaOn ? '<button type="button" class="opt" data-go="qnaList"><b>문의하기</b><span>관리자에게 1:1' + (m.qna ? ' · 답변 ' + m.qna + '건' : '') + '</span></button>' : '') + '<button type="button" class="opt" data-go="notices" data-p=\'{"manage":0}\'><b>공지·소식</b></button><button type="button" class="opt" data-act="homeAdd"><b>홈 화면에 추가</b><span>앱처럼 열고 알림도 받아요</span></button></div>' +
+        '<div class="card"><h3>도움</h3><button type="button" class="opt" data-go="guide"><b>사용 안내</b><span>권한과 기준을 한눈에</span></button>' + (m.qnaOn ? '<button type="button" class="opt" data-go="qnaList"><b>문의하기</b><span>관리자에게 1:1' + (m.qna ? ' · 답변 ' + m.qna + '건' : '') + '</span></button>' : '') + '<button type="button" class="opt" data-go="notices" data-p=\'{"manage":0}\'><b>공지·소식</b></button><button type="button" class="opt" data-act="homeAdd"><b>홈 화면에 추가</b><span>앱처럼 열고 알림도 받아요</span></button><button type="button" class="opt" data-act="verRefresh"><b>최신 버전으로 새로 고침</b><span>지금 v' + (window.LZ_VER || '4.0') + '' + (S.me && S.me.appVer && S.me.appVer !== window.LZ_VER ? ' · 최신 v' + esc(S.me.appVer) : ' · 최신이에요') + '</span></button></div>' +
         '<button type="button" class="btn g" data-act="logout">로그아웃</button><p class="hint center">파크골프 공략수첩 v' + (window.LZ_VER || '4.0') + '</p></div>';
     }
   };
@@ -59,6 +59,7 @@
     if (!v) return;
     try { var r = await LZ.api('sqSet', v); S.user = r.user; LZ.toast('비밀번호 찾기 질문을 저장했어요'); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e), 5000); }
   };
+  LZ.act.verRefresh = async function () { if (!(await LZ.confirm('최신 버전으로 새로 고칠까요?', '저장해 둔 앱 껍데기를 지우고 다시 받아요. 로그인은 그대로예요.', '새로 고침'))) return; LZ.pwa.hardRefresh(); };
   LZ.act.homeAdd = function () { if (LZ.pwa && LZ.pwa.guide) LZ.pwa.guide(); else LZ.toast('브라우저 메뉴에서 "홈 화면에 추가"를 눌러 주세요', 5000); };
 
   /* 비밀번호 바꾸기 */

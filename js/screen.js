@@ -1,4 +1,4 @@
-/* 스크린 공략: 코스 목록 · 홀 표(환산·m 보기·비교) · 홀 입력(저장·음성·사진·이력) · 치기 모드(읽어 주기) · 코스 등록·수정 */
+/* 스크린 공략: 코스 목록 · 홀 표(환산·m 보기·비교) · 홀 입력(저장·음성·이력) · 치기 모드(읽어 주기) · 코스 등록·수정 */
 (function () {
   'use strict';
   var LZ = window.LZ, S = LZ.S, $ = LZ.$, $$ = LZ.$$, esc = LZ.esc, store = LZ.store;
@@ -259,7 +259,7 @@
         '<label class="lb">모드</label>' + LZ.seg([['b', '아마추어'], ['p', '프로'], ['m', '마스터']], RG.g, 'regG') + '<label class="lb">발사각 <span class="muted" style="font-weight:400">(발사 센서 높낮이 조절)</span></label>' + LZ.seg(LZ.HLSEG, RG.h, 'regH', 'hl') +
         '<div class="tgl" style="padding-bottom:0"><span><b>내 기록도 같이 적기</b><span class="muted">치면서 바로 적어요. 평균값이 미리 들어 있어요</span></span>' + LZ.sw(RG.rec, 'regRecTgl') + '</div></div>') +
       '<div class="card"><h3>' + (half ? '후반 9홀' : '전반 9홀') + '</h3><p class="muted" style="margin:0 0 6px">파는 1~4홀 3, 5~8홀 4, 9홀 5로 미리 채워져 있어요. 한 홀을 바꾸면 뒤 홀이 따라 바뀌어 기준 33을 지켜요. 거리만 넣으면 돼요.</p><p class="muted" id="regSum" style="margin:0 0 6px">' + regSumText() + '</p><div class="reg" style="font-size:var(--t0);color:var(--sub);padding:0"><span>홀</span><span class="center">파</span><span class="center">거리 m</span><span class="center">기준</span></div>' + regRows(half ? 9 : 0, RG.rows) + '</div>' +
-      '<p class="hint">참고사항·사진은 저장 뒤 홀 화면에서 더 적을 수 있어요. 등록하는 동안 화면이 꺼지지 않아요.</p><button type="button" class="btn" data-act="regSave">' + (half ? '후반 저장하고 등록 마치기' : '전반 저장하고 후반으로') + '</button></div>';
+      '<p class="hint">참고사항은 저장 뒤 홀 화면에서 더 적을 수 있어요. 등록하는 동안 화면이 꺼지지 않아요.</p><button type="button" class="btn" data-act="regSave">' + (half ? '후반 저장하고 등록 마치기' : '전반 저장하고 후반으로') + '</button></div>';
     root.addEventListener('input', function (e) {
       var t = e.target;
       if (t.dataset.row !== undefined) { var j = +t.dataset.row; RG.rows[j].m = t.value; RG.rows[j].p = null; var m = parseFloat(t.value), s = m > 0 ? LZ.sugOf(m, RG.g, RG.h) : null; $('#sg' + j).innerHTML = s === null ? '<span class="dim">—</span>' : LZ.fmtP(s) + '<small>' + LZ.distOf(s, RG.g, RG.h) + 'm</small>'; $('#rr' + j).innerHTML = regRec(j); }

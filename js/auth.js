@@ -81,7 +81,7 @@
   LZ.screens.join = {
     nobar: true,
     show: async function (p, root) {
-      var cfg = null; try { cfg = await LZ.api('cfg', { inv: store.get('lz.inv') || '' }, { noAuth: true }); } catch (e) { /* 무시 */ }
+      var cfg = null; try { cfg = await LZ.api('cfg', { inv: store.get('lz.inv') || '' }, { noAuth: true }); if (cfg && cfg.appVer && LZ.pwa && LZ.pwa.verCheck) LZ.pwa.verCheck(cfg.appVer); } catch (e) { /* 무시 */ }
       var ref = store.get('lz.ref') || '', refNick = '';
       if (ref) { try { refNick = (await LZ.api('refName', { ref: ref }, { noAuth: true })).nick; } catch (e) { /* 무시 */ } }
       root.innerHTML = LZ.hdr('가입하기', { back: true, noBell: 1 }) + '<div class="wrap">' +
