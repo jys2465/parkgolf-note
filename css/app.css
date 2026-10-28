@@ -395,3 +395,7 @@ a.btn.o{color:var(--g)}
 
 /* 아이폰: 상단·하단 막대가 스크롤에 끌려가지 않도록(backdrop-filter·transform 없이, 합성 레이어 고정) */
 .top,.tabs{-webkit-transform:translateZ(0);transform:translateZ(0);-webkit-backface-visibility:hidden}
+/* 상단 막대: 오른쪽 단추가 잘리지 않도록 — 안전 영역 포함, 단추 크기 고정, 종 배지는 잘리지 않게 */
+.top{box-sizing:border-box;width:100%;padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));min-width:0}
+.top .ib{flex:0 0 auto;min-width:40px;overflow:visible}.top .ib.help,.top .ib.bell{width:40px;padding:0}
+.top h2{flex:1 1 0;min-width:0}
