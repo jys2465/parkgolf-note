@@ -6,7 +6,7 @@
     var cls = 'club' + (m.color ? '' : (i % 2 ? ' b' : '')), sub = [];
     if (m.meet) sub.push('📅 ' + m.meet); else if (m.news) sub.push('📢 ' + m.news); else if (m.chal) sub.push('🏁 ' + m.chal.name + ' ' + m.chal.mine + '/' + m.chal.goal);
     return '<button type="button" class="' + cls + '" ' + (m.color ? 'style="background:linear-gradient(135deg,' + esc(m.color) + ',#14532D)"' : '') + ' data-go="club" data-p=\'' + esc(JSON.stringify({ id: m.id })) + '\'>' +
-      '<div style="display:flex;align-items:center;gap:6px"><h3 style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(m.name) + '</h3>' + (m.role === 'cap' ? '<span class="chip cap">캡틴</span>' : '') + (m.locked ? '<span class="chip gray">🔒</span>' : '') + (m.reqs ? '<span class="chip">신청 ' + m.reqs + '</span>' : '') + '</div>' +
+      '<div style="display:flex;align-items:center;gap:6px"><h3 style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(m.name) + '</h3>' + (m.role === 'cap' ? '<span class="chip cap">캡틴</span>' : m.role === 'mgr' ? '<span class="chip mgr">매니저</span>' : '') + (m.locked ? '<span class="chip gray">🔒</span>' : '') + (m.reqs ? '<span class="chip">신청 ' + m.reqs + '</span>' : '') + '</div>' +
       '<div class="m">회원 ' + m.members + '명' + (m.live ? ' · <b>지금 기록 중 ' + m.live + '명</b>' : '') + (sub.length ? ' · ' + esc(sub[0]) : '') + '</div>' +
       '</button>';
   }
@@ -24,7 +24,7 @@
         '<div class="hello">' + LZ.avatar(me) + '<div style="flex:1;min-width:0"><b style="font-size:var(--t3)">' + esc(me.nick) + ' 회원님</b></div><button type="button" class="sm2 g" data-act="logout">로그아웃</button></div>' + exp +
         (m.last ? '<button type="button" class="cont" data-act="resume"><span style="font-size:var(--t5)">▶</span><div style="flex:1"><b>이어서 기록하기</b><span class="muted">' + esc(m.last.name) + ' · ' + (m.last.hole + 1) + '홀부터 · ' + esc(m.last.store) + '</span></div><span class="go-arrow">›</span></button>' : '') +
         (m.round ? '<button type="button" class="cont" data-go="round" data-p=\'' + esc(JSON.stringify({ id: m.round.id })) + '\'><span style="font-size:var(--t5)">⛳</span><div style="flex:1"><b>진행 중인 라운드 ' + esc(m.round.code) + '</b><span class="muted">' + esc(m.round.fname) + '</span></div><span>›</span></button>' : '') +
-        (m.reqs ? '<button type="button" class="cont" data-act="homeReqs"><span style="font-size:var(--t5)">✋</span><div style="flex:1"><b>가입 신청 ' + m.reqs + '건이 기다려요</b><span class="muted">캡틴 관리에서 승인 / 보류</span></div><span>›</span></button>' : '') +
+        (m.reqs ? '<button type="button" class="cont" data-act="homeReqs"><span style="font-size:var(--t5)">✋</span><div style="flex:1"><b>가입 신청 ' + m.reqs + '건이 기다려요</b><span class="muted">클럽 관리에서 승인 / 보류</span></div><span>›</span></button>' : '') +
         '<button type="button" class="club me" data-act="openClubCourses" data-v="_me"><h3>내 기록장</h3><div class="m">내 기록만 모아 보기</div></button>' +
         moims.map(clubCard).join('') +
         '<div class="row" style="margin-top:4px"><button type="button" class="btn o" data-go="find">🔍 클럽 찾기</button><button type="button" class="btn o" data-go="make">＋ 클럽 만들기</button></div>' + (moims.length ? '<p class="hint" style="margin:6px 0 14px">클럽 ' + moims.length + '/' + me.moimMax + ' · 캡틴 ' + moims.filter(function (x) { return x.role === 'cap'; }).length + '/' + (me.makeMax || 1) + '</p>' : '') + (LZ.inviteCard ? LZ.inviteCard(false) : '') + '</div>';
@@ -35,7 +35,7 @@
   };
   LZ.act.openClubCourses = async function (el, id) { if (id !== S.br) { try { await LZ.api('useBranch', { br: id }); } catch (e) { LZ.toast(LZ.errText(e)); return; } } LZ.go('courses', {}, { reset: true }); };
   LZ.act.resume = async function () { var l = S.me.last; if (l.br !== S.br) { try { await LZ.api('useBranch', { br: l.br }); } catch (e) { /* 무시 */ } } LZ.go('holes', { id: l.cid, half: l.hole < 9 ? 0 : 1 }); };
-  LZ.act.homeReqs = function () { var m = (S.me.moims || []).filter(function (x) { return x.role === 'cap'; })[0]; if (m) LZ.go('club', { id: m.id, reqs: 1 }); else LZ.go('home'); };
+  LZ.act.homeReqs = function () { var m = (S.me.moims || []).filter(function (x) { return (x.role === 'cap' || x.role === 'mgr') && x.reqs; })[0] || (S.me.moims || []).filter(function (x) { return x.role === 'cap' || x.role === 'mgr'; })[0]; if (m) LZ.go('club', { id: m.id, reqs: 1 }); else LZ.go('home'); };
 
   /* ───── 클럽 ───── */
   var CL = { d: null };
@@ -43,8 +43,9 @@
     show: async function (p, root, alive) {
       root.innerHTML = LZ.hdr('클럽', { back: true }) + LZ.skeleton(6);
       var d = await LZ.api('moimGet', { id: p.id }); if (!alive()) return; CL.d = d;
-      var m = d.moim, cap = d.cap, me = S.user, st = d.stats || {};
-      var capPanel = cap ? '<div class="card" id="capPanel" ' + (p.manage ? '' : 'hidden') + '><h3>⭐ 캡틴 관리</h3>' +
+      var m = d.moim, cap = d.cap, staff = d.staff || cap, isMgr = d.me === 'mgr', me = S.user, st = d.stats || {};
+      var mgrN = (d.members || []).filter(function (x) { return x.mgr; }).length;
+      var capPanel = staff ? '<div class="card" id="capPanel" ' + (p.manage ? '' : 'hidden') + '><h3>⭐ ' + (cap ? '캡틴 관리' : '클럽 관리') + '</h3>' + (isMgr ? '<p class="muted" style="margin:0 0 8px">매니저로 캡틴 일을 함께 해요 · 내보내기·캡틴 바꾸기·클럽 닫기는 캡틴만</p>' : '') +
           '<button type="button" class="opt" data-act="clubReqs"><b>가입 신청 ' + (d.reqs || []).length + '건</b><span>' + (m.members >= (m.cap || 20) ? '한도가 차서 승인할 수 없어요 · 한도를 올려 주세요' : '승인 / 보류 · 자리 ' + ((m.cap || 20) - m.members) + '명') + '</span></button>' +
           '<button type="button" class="opt" data-go="capDash" data-p=\'' + esc(JSON.stringify({ id: m.id })) + '\'><b>📊 캡틴 대시보드</b><span>이달 활동 · 안 오신 분 · 이달의 시상식</span></button>' +
           '<button type="button" class="opt" data-go="pay" data-p=\'' + esc(JSON.stringify({ sel: 'club:' + m.id })) + '\'><b>클럽 이용료 · 한도 올리기</b><span>지금 ' + (m.cap || 20) + '명' + (m.capEnd ? ' · ' + LZ.fmtYmd(m.capEnd) + '까지' : ' · 20명은 연회비 포함') + '</span></button>' +
@@ -55,24 +56,26 @@
           '<button type="button" class="opt" data-act="clubQrPoster"><b>매장 QR 포스터</b><span>코스별 QR</span></button>' +
           '<button type="button" class="opt" data-go="notiCfg"><b>가입 신청 알림</b><span>앱 푸시 · 카카오톡</span></button>' +
           '<div class="tgl"><span>클럽 찾기에 보이기<span class="muted">끄면 비공개 · 클럽 코드·초대 링크로만 가입</span></span>' + LZ.sw(m.pub, 'clubPub') + '</div><div class="tgl"><span>초대 링크로는 바로 가입<span class="muted">캡틴 승인 없이 들어와요</span></span>' + LZ.sw(m.auto, 'clubAuto') + '</div>' +
-          '<button type="button" class="opt" data-act="clubHand"><b>캡틴 바꾸기</b><span>레드·골드 회원님께 · 5명 이하 클럽은 블루도</span></button>' +
-          '<button type="button" class="opt" data-act="clubClose"><b>클럽 닫기</b><span>혼자일 때만 · 내 기록은 내 기록장으로</span></button></div>' : '';
+          (cap ? '<button type="button" class="opt" data-act="clubMgr"><b>매니저 정하기</b><span>캡틴을 돕는 분 · 가입 승인·소식 쓰기 등' + (mgrN ? ' · 지금 ' + mgrN + '명' : '') + '</span></button>' +
+          '<button type="button" class="opt" data-act="clubHand"><b>캡틴 바꾸기</b><span>레드·골드 회원님께 · 5명 이하 클럽은 블루도 · 전 캡틴은 매니저로</span></button>' +
+          '<button type="button" class="opt" data-act="clubClose"><b>클럽 닫기</b><span>혼자일 때만 · 내 기록은 내 기록장으로</span></button>' : '') +
+          (isMgr ? '<button type="button" class="opt" data-act="mgrQuit"><b>매니저 그만두기</b><span>회원으로 남아요</span></button>' : '') + '</div>' : '';
       var info = [];
       if (m.meet) info.push('📅 ' + esc(m.meet)); if (m.chal) info.push('🏁 ' + esc(m.chal.name) + ' ' + m.chal.goal + '홀 · ' + m.chal.done + '/' + m.chal.members + '명 달성 · 나 ' + m.chal.mine); if ((d.news || []).length) info.push('📢 ' + esc(d.news[0].title));
-      root.innerHTML = LZ.hdr(m.name, { back: true, right: cap ? '<button type="button" class="ib' + (p.manage ? ' on' : '') + '" data-act="capToggle">⚙ 관리</button>' : '' }) + '<div class="wrap">' +
+      root.innerHTML = LZ.hdr(m.name, { back: true, right: staff ? '<button type="button" class="ib' + (p.manage ? ' on' : '') + '" data-act="capToggle">⚙ 관리</button>' : '' }) + '<div class="wrap">' +
         '<div class="card tight"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' + (m.area ? '<span class="chip">' + esc(m.area) + '</span>' : '') + '<span class="chip">회원 ' + m.members + '/' + (m.cap || 20) + '명</span>' + (m.live ? '<span class="chip cap">지금 기록 중 ' + m.live + '명</span>' : '') + (m.locked ? '<span class="chip gray">🔒 잠김</span>' : '') + '<span class="muted" style="margin-left:auto">캡틴 ' + esc(m.captainNick) + '님</span></div>' +
-        (m.locked ? '<div class="box err" style="margin-top:8px">🔒 ' + esc(m.lockWhy || '이 클럽은 잠겨 있어요') + (cap ? ' <button type="button" class="sm2" data-go="pay" data-p=\'' + esc(JSON.stringify({ sel: 'club:' + m.id })) + '\'>결제해서 풀기</button>' : '') + '</div>' : '') +
+        (m.locked ? '<div class="box err" style="margin-top:8px">🔒 ' + esc(m.lockWhy || '이 클럽은 잠겨 있어요') + (staff ? ' <button type="button" class="sm2" data-go="pay" data-p=\'' + esc(JSON.stringify({ sel: 'club:' + m.id })) + '\'>결제해서 풀기</button>' : '') + '</div>' : '') +
         (d.me && info.length ? '<div style="margin-top:8px">' + info.map(function (t) { return '<div class="news2">' + t + '</div>'; }).join('') + '</div>' : '') +
         (d.me ? '<div class="row" style="margin-top:10px"><button type="button" class="btn o sm" data-act="openClubCourses" data-v="' + esc(m.id) + '" style="margin:0">스크린 공략 열기</button><button type="button" class="btn g sm" data-go="notices" data-p=\'' + esc(JSON.stringify({ mid: m.id })) + '\' style="margin:0">소식 ' + ((d.news || []).length || '') + '</button></div>' : '') + '</div>' +
         (!d.me ? '<div class="card"><p style="margin:0 0 6px">이 클럽의 회원님이 아니에요.</p><button type="button" class="btn" data-act="applyClub" data-v="' + esc(m.id) + '">가입 신청</button></div>' : '') +
         capPanel +
         (d.me ? '<div class="card"><h3>회원님 ' + (d.members || []).length + '명</h3><div class="list">' + (d.members || []).map(function (x) {
-          return '<div class="it">' + LZ.avatar(x) + '<div class="t"><b>' + esc(x.nick) + '님 ' + (x.cap ? '<span class="chip cap">캡틴</span>' : '') + (x.live ? '<span class="chip">기록 중</span>' : '') + '</b><span class="muted">신뢰도 ' + x.trust + ' · 기록 ' + x.holes + '홀</span></div>' +
+          return '<div class="it">' + LZ.avatar(x) + '<div class="t"><b>' + esc(x.nick) + '님 ' + (x.cap ? '<span class="chip cap">캡틴</span>' : x.mgr ? '<span class="chip mgr">매니저</span>' : '') + (x.live ? '<span class="chip">기록 중</span>' : '') + '</b><span class="muted">신뢰도 ' + x.trust + ' · 기록 ' + x.holes + '홀</span></div>' +
             (cap && p.manage && x.uid !== me.uid && !x.cap ? '<button type="button" class="sm2 r" data-act="clubKick" data-v="' + esc(JSON.stringify({ uid: x.uid, nick: x.nick })) + '">내보내기</button>' : '') + '</div>';
         }).join('') + '</div></div>' : '') +
         (d.me ? '<div class="card"><h3>회원님 초대</h3><div class="center"><div class="muted">클럽 코드</div><div style="font-size:var(--t6);font-weight:700;letter-spacing:4px;color:var(--g)">' + esc(m.code.slice(0, 3) + ' ' + m.code.slice(3)) + '</div></div><button type="button" class="btn kakao" data-act="clubInvite">클럽 가입 초대하기</button><p class="hint">카카오톡·문자·QR 중 골라 보내요. 앱이 없는 분도 링크로 가입하면서 바로 가입 신청이 돼요.</p></div>' : '') +
         (d.me && d.me !== 'cap' ? '<button type="button" class="btn g" data-act="clubLeave">클럽 나가기</button>' : '') + '</div>';
-      if (p.reqs && cap) LZ.act.clubReqs();
+      if (p.reqs && staff) LZ.act.clubReqs();
     }
   };
   LZ.act.capToggle = function () { var c = LZ.cur(); LZ.go('club', { id: c.p.id, manage: c.p.manage ? 0 : 1 }, { replace: true }); };
@@ -160,9 +163,17 @@
   LZ.act.clubKick = async function (el, v) { var o = JSON.parse(v); if (!(await LZ.confirm(o.nick + '님을 내보낼까요?', '그분의 이 클럽 기록은 그분의 내 기록장으로 옮겨져요. 다시 가입 신청할 수 있어요.', '탈퇴 처리', 'r'))) return; try { CL.d = await LZ.api('moimKick', { id: CL.d.moim.id, uid: o.uid }); LZ.redraw(); LZ.toast('탈퇴 처리했어요'); } catch (e) { LZ.toast(e.message, 4500); } };
   LZ.act.clubHand = function () {
     var d = CL.d, small = (d.members || []).length <= 5, list = (d.members || []).filter(function (x) { return !x.cap && !x.off && (x.paid || (small && x.tier === 'blue')); });
-    LZ.sheet('<h2>캡틴 바꾸기</h2><p class="muted">레드·골드 회원님께 넘길 수 있어요' + (small ? '(회원 5명 이하라 블루 회원님도 돼요 · 캡틴 클럽이 없는 분만)' : '') + '. 넘긴 뒤에는 회원으로 남아요.</p>' + (list.length ? list.map(function (x) { return '<button type="button" class="opt" data-act="handTo" data-v=\'' + esc(JSON.stringify({ uid: x.uid, nick: x.nick })) + '\'><b>' + esc(x.nick) + '님</b><span>' + (x.paid ? '' : '블루 · ') + '신뢰도 ' + x.trust + ' · 기록 ' + x.holes + '홀</span></button>'; }).join('') : '<div class="empty">넘길 수 있는 회원님이 없어요.</div>'));
+    LZ.sheet('<h2>캡틴 바꾸기</h2><p class="muted">레드·골드 회원님께 넘길 수 있어요' + (small ? '(회원 5명 이하라 블루 회원님도 돼요 · 캡틴 클럽이 없는 분만)' : '') + '. 넘긴 뒤에는 매니저로 남아요.</p>' + (list.length ? list.map(function (x) { return '<button type="button" class="opt" data-act="handTo" data-v=\'' + esc(JSON.stringify({ uid: x.uid, nick: x.nick })) + '\'><b>' + esc(x.nick) + '님</b><span>' + (x.paid ? '' : '블루 · ') + '신뢰도 ' + x.trust + ' · 기록 ' + x.holes + '홀</span></button>'; }).join('') : '<div class="empty">넘길 수 있는 회원님이 없어요.</div>'));
   };
-  LZ.act.handTo = async function (el, v) { var o = JSON.parse(v); if (!(await LZ.confirm(o.nick + '님께 캡틴을 넘길까요?', '넘기면 되돌릴 수 없어요(새 캡틴이 다시 넘겨 줘야 해요).', '넘기기'))) return; try { CL.d = await LZ.api('moimHand', { id: CL.d.moim.id, uid: o.uid }); LZ.closeSheet(); LZ.refreshMe().catch(function () {}); LZ.redraw(); LZ.toast('캡틴을 넘겼어요'); } catch (e) { LZ.toast(e.message, 4500); } };
+  LZ.act.handTo = async function (el, v) { var o = JSON.parse(v); if (!(await LZ.confirm(o.nick + '님께 캡틴을 넘길까요?', '넘기면 되돌릴 수 없어요(새 캡틴이 다시 넘겨 줘야 해요). 전 캡틴은 매니저로 남아요.', '넘기기'))) return; try { CL.d = await LZ.api('moimHand', { id: CL.d.moim.id, uid: o.uid }); LZ.closeSheet(); LZ.refreshMe().catch(function () {}); LZ.redraw(); LZ.toast('캡틴을 넘겼어요'); } catch (e) { LZ.toast(e.message, 4500); } };
+  /* 매니저 정하기(캡틴): 회원 목록에 스위치 */
+  LZ.act.clubMgr = function () {
+    var d = CL.d, list = (d.members || []).filter(function (x) { return !x.cap; }), n = list.filter(function (x) { return x.mgr; }).length;
+    LZ.sheet('<h2>매니저 정하기</h2><p class="muted">매니저는 가입 승인·소식·모임·챌린지·클럽 이용료 등 캡틴 일을 함께 해요. 회원 내보내기·매니저 정하기·캡틴 바꾸기·클럽 닫기는 캡틴만 해요.</p><p class="lb" style="margin-top:0">매니저 ' + n + '명</p>' + (n > 5 ? '<p class="hint" style="margin:0 0 8px">매니저가 많으면 가입 신청 알림이 그만큼 많이 가요.</p>' : '') +
+      (list.length ? list.map(function (x) { return '<div class="tgl"><span>' + esc(x.nick) + '님' + (x.off ? '<span class="muted">지금은 쓸 수 없는 계정</span>' : '<span class="muted">신뢰도 ' + x.trust + ' · 기록 ' + x.holes + '홀</span>') + '</span>' + LZ.sw(x.mgr, 'mgrTgl', x.uid, !!x.off) + '</div>'; }).join('') : '<div class="empty">아직 다른 회원님이 없어요.</div>'));
+  };
+  LZ.act.mgrTgl = async function (el, uid) { var on = el.classList.contains('on') ? 0 : 1; try { CL.d = await LZ.api('moimMgr', { id: CL.d.moim.id, uid: uid, on: on }); LZ.redraw(); LZ.act.clubMgr(); LZ.toast(on ? '매니저로 정했어요' : '매니저를 해제했어요'); } catch (e) { LZ.toast(e.message, 4500); } };
+  LZ.act.mgrQuit = async function () { if (!(await LZ.confirm('매니저를 그만둘까요?', '회원으로 남고, 캡틴이 다시 정하면 매니저가 돼요.', '그만두기', 'r'))) return; try { await LZ.api('moimMgrQuit', { id: CL.d.moim.id }); await LZ.refreshMe(); LZ.go('club', { id: CL.d.moim.id }, { replace: true }); LZ.toast('매니저를 그만뒀어요'); } catch (e) { LZ.toast(e.message, 4500); } };
   LZ.act.clubClose = async function () { if (!(await LZ.confirm('클럽을 닫을까요?', '다른 회원님이 없을 때만 닫을 수 있어요. 내 기록은 내 기록장으로 옮겨져요.', '클럽 닫기', 'r'))) return; try { await LZ.api('moimClose', { id: CL.d.moim.id }); await LZ.refreshMe(); LZ.go('home', {}, { reset: true }); LZ.toast('클럽을 닫았어요'); } catch (e) { LZ.toast(e.message, 4500); } };
   LZ.act.clubLeave = async function () { if (!(await LZ.confirm('클럽에서 나갈까요?', '내 기록은 내 기록장으로 옮겨져요. 언제든 다시 가입 신청할 수 있어요.', '나가기', 'r'))) return; try { var r = await LZ.api('moimLeave', { id: CL.d.moim.id }); await LZ.refreshMe(); LZ.go('home', {}, { reset: true }); LZ.toast('나갔어요' + (r.moved ? ' · 기록 ' + r.moved + '개를 내 기록장으로 옮겼어요' : ''), 4000); } catch (e) { LZ.toast(e.message, 4500); } };
 
@@ -256,7 +267,7 @@
         D('비밀번호', '<p style="margin:0">가입할 때 <b>비밀번호 찾기 질문</b>(나의 절친 이름과 전화번호 뒷자리 4개)을 정해요. 늘 머릿속에 있는 답이라 메모가 필요 없어요. 잊으면 ① 비밀번호 찾기 질문으로 새 비밀번호 4자리 받기 ② 관리자에게 찾기 신청(임시 번호 ' + R.tmpHours + '시간). 캡틴은 비밀번호를 볼 수도 바꿀 수도 없어요. 비밀번호 찾기 질문은 내 정보에서 바꿔요.</p>') +
         D('타격감 기준', '<p style="margin:0 0 6px">타격감 = 볼스피드. <b>8~40</b>(40은 Full), 0.5씩. 모드와 발사각은 코스에 처음 기록할 때 정하고, 보는 사람이 바꾸면 <b>같은 거리</b>로 환산해 보여요. "거리(m)로 보기 ⇄ 타격감으로 보기"로 단위를 바꿀 수 있어요.</p><div class="tblwrap"><table class="tbl" style="font-size:var(--t0)"><tr><th>모드</th><th>50m<br>타격감</th><th>1당<br>거리</th><th>높게</th><th>보통</th><th>낮게</th><th>더낮게</th></tr>' + ['b', 'p', 'm'].map(hlRow).join('') + '</table></div><p class="muted" style="margin:6px 0 0">예: 프로·보통 타격감 20 = ' + LZ.distOf(20, 'p', 'm') + 'm, 프로·더낮게 20 = ' + LZ.distOf(20, 'p', 'x') + 'm. ● 평균과 같음 · ▲ 더 크게 · ▼ 더 작게. 관리자가 설정에서 바꾸면 여기도 같이 바뀌어요.</p>') +
         D('기록 규칙', '<ul style="margin:0;padding-left:18px"><li>위치 기준: <b>첫화면</b>(기본) · 홀컵 · 직접</li><li>좌우: <b>그대로</b> 또는 <span style="color:var(--red);font-weight:700">좌 1~10</span>·<span style="color:var(--blue);font-weight:700">우 1~10</span>칸, 타격감은 0.5씩. 단추를 꾹 누르면 빨리 움직여요</li><li>참고사항은 ' + R.noteMax + '자(사진은 없어요)</li><li>기록은 회원·코스마다 <b>하나</b>. 어느 클럽에서 적어도 같은 기록이고, 클럽을 나가도 그대로예요</li><li>회원님 기록은 같은 클럽 분 것만 보여요(공개한 분만). <b>평균</b>은 클럽 회원님들의 기록을 모은 값, <b>내 보정</b>은 평균 대비 내 차이</li><li>코스 정보는 누구나 고치고 이력이 남아요</li></ul>') +
-        D('클럽', '<ul style="margin:0;padding-left:18px"><li>가입: 초대 링크 · 클럽 코드 6자리 · 클럽 찾기 → 캡틴이 <b>승인</b>(또는 보류). ' + R.reqDays + '일 지나면 신청 정리</li><li>클럽 회원 수가 한도를 넘으면 승인이 안 돼요 → 클럽 이용료로 한도 올리기</li><li>캡틴 바꾸기는 레드·골드 회원님께(회원 5명 이하 클럽은 블루 회원님도). 바꾼 뒤 캡틴은 회원으로 남아요</li><li>회원 <b>내보내기</b>는 캡틴만. 내보내도 그분 기록은 그분 것</li><li>앱이 없는 분께는 <b>가입 안내 보내기</b>(카톡·문자)로 알려요</li></ul>') +
+        D('클럽', '<ul style="margin:0;padding-left:18px"><li>가입: 초대 링크 · 클럽 코드 6자리 · 클럽 찾기 → 캡틴이 <b>승인</b>(또는 보류). ' + R.reqDays + '일 지나면 신청 정리</li><li>클럽 회원 수가 한도를 넘으면 승인이 안 돼요 → 클럽 이용료로 한도 올리기</li><li>캡틴 바꾸기는 레드·골드 회원님께(회원 5명 이하 클럽은 블루 회원님도). 바꾼 뒤 전 캡틴은 매니저로 남아요</li><li>회원 <b>내보내기</b>는 캡틴만. 내보내도 그분 기록은 그분 것</li><li>캡틴은 <b>매니저</b>를 정할 수 있어요. 매니저는 가입 승인·소식·모임·챌린지·클럽 이용료 등 캡틴 일을 함께 하고, 회원 내보내기·매니저 정하기·캡틴 바꾸기·클럽 닫기는 캡틴만 해요</li><li>앱이 없는 분께는 <b>가입 안내 보내기</b>(카톡·문자)로 알려요</li></ul>') +
         D('필드 라운드 · 시상식 · 단체', '<p style="margin:0 0 6px"><button type="button" class="sm2 o" data-go="awards" data-p=\'{"demo":1}\'>🏆 시상식 미리보기</button></p><ul style="margin:0;padding-left:18px"><li>개별 라운드: 한 조 2~5명, 손님은 이름만. 끝내면 결과 화면에서 <b>시상식</b>을 열어 우승·준우승·장려·행운상(추첨)을 뽑고 결과 그림을 카톡으로 보내요</li><li>안 적은 홀은 파. ＋는 보기, −는 버디. 파를 고치면 ±는 그대로 두고 타수만 바뀌어요</li><li>끝낸 뒤 ' + (R.editHours || 2) + '시간까지 고칠 수 있고 고친 이력이 남아요. 주최자가 최종 확정하면 잠겨요</li><li>' + R.roundHours + '시간 지나면 저절로 끝나요</li><li><b>단체 라운드</b>: 누구나 주최. 조 1~' + (R.teamsMax || 50) + ' 사전 편성(자동 편성·대기 명단), 18/36/54/72홀(바퀴 1~4), 구장 선택·새 등록, 조별 도는 순서 자동 배치</li><li>카톡 초대장(편성표 글+그림)을 받으면 앱에서 내 조로 바로 들어가요. 앱이 없던 분은 가입하면 손님 자리와 점수를 그대로 이어받아요</li><li>상황판 3탭(조별·개인·편성표), 집계 범위(바퀴·조), 시상식 1부 조별(행운상→다음에 잘 치자상→단합상→장려상→준우승→우승) · 2부 개인, 중복 수상 가능/불가, 결과 그림 공유, 도우미 2명</li></ul>') +
         D('알림·화면', '<p style="margin:0">휴대폰 알림은 앱을 <b>홈 화면에 추가</b>한 뒤에 돼요(아이폰은 꼭 추가해야 해요). 밤 ' + R.quietFrom + '시~아침 ' + R.quietTo + '시 알림은 아침에 모아서 보내요. 기록·라운드 화면에서는 화면이 꺼지지 않아요.</p>') + '</div>';
     }
@@ -281,7 +292,7 @@
       var r = await LZ.api('noticeList', p.manage ? { manage: 1 } : (p.mid ? { mid: p.mid } : {})); if (!alive()) return;
       LZ.noticeMarkSeen(r.list);
       root.innerHTML = LZ.hdr(p.manage ? '공지 관리' : '공지·소식', { back: true, right: r.canWrite ? '<button type="button" class="ib" data-go="noticeEdit" data-p=\'' + esc(JSON.stringify({ br: p.mid || (S.user.kind === 'admin' ? '' : (r.moims[0] || {}).id) })) + '\'>쓰기</button>' : '' }) + '<div class="wrap">' +
-        (r.list.length ? r.list.map(function (n) { return '<div class="card"><div style="display:flex;align-items:center;gap:6px"><b style="flex:1;font-size:var(--t3)">' + (n.pin ? '📌 ' : '') + esc(n.title) + '</b>' + (n.canEdit ? '<button type="button" class="sm2 g" data-go="noticeEdit" data-p=\'' + esc(JSON.stringify({ id: n.id })) + '\'>고치기</button>' : '') + '</div><p class="muted" style="margin:2px 0 8px">' + [n.store, n.by, LZ.fmtDate(n.upd)].filter(Boolean).map(esc).join(' · ') + (n.end ? ' · ' + LZ.fmtYmd(n.end) + '까지' : '') + '</p>' + LZ.noticeBody(n) + (n.btns || []).map(function (b) { return '<button type="button" class="btn o sm" data-act="noticeBtn" data-v="' + esc(b.to) + '">' + esc(b.label) + '</button>'; }).join('') + '</div>'; }).join('') : '<div class="empty">공지가 없어요.</div>') + '</div>';
+        (r.list.length ? r.list.map(function (n) { return '<div class="card"><div style="display:flex;align-items:center;gap:6px"><b style="flex:1;font-size:var(--t3)">' + (n.pin ? '📌 ' : '') + esc(n.title) + '</b>' + (n.canEdit ? '<button type="button" class="sm2 g" data-go="noticeEdit" data-p=\'' + esc(JSON.stringify({ id: n.id })) + '\'>고치기</button>' : '') + '</div><p class="muted" style="margin:2px 0 8px">' + [n.store, n.by ? ({ cap: '캡틴 ', mgr: '매니저 ', admin: '관리자 ' }[n.byRole] || '') + n.by + '님' : '', LZ.fmtDate(n.upd)].filter(Boolean).map(esc).join(' · ') + (n.end ? ' · ' + LZ.fmtYmd(n.end) + '까지' : '') + '</p>' + LZ.noticeBody(n) + (n.btns || []).map(function (b) { return '<button type="button" class="btn o sm" data-act="noticeBtn" data-v="' + esc(b.to) + '">' + esc(b.label) + '</button>'; }).join('') + '</div>'; }).join('') : '<div class="empty">공지가 없어요.</div>') + '</div>';
       LZ.fillImgs(root);
     }
   };

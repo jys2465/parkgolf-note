@@ -11,7 +11,7 @@
     var ms = (S.me && S.me.moims || []).filter(function (m) { return m.code; });
     if (ms.length <= 1) { var m = ms[0] || null; LZ.inviteSheet('공략수첩 가입 초대', LZ.refText(m), LZ.refLink(m)); return; }
     LZ.sheet('<h2>어느 클럽으로 부를까요?</h2><p class="muted">고른 클럽에 바로 연결돼요(캡틴 승인 설정에 따라 신청으로 들어갈 수도 있어요).</p>' +
-      ms.map(function (m, i) { return '<button type="button" class="opt" data-act="inviteFor" data-v="' + i + '"><b>' + esc(m.name) + '</b><span>' + (m.role === 'cap' ? '캡틴' : '회원') + ' · ' + m.members + '명</span></button>'; }).join('') +
+      ms.map(function (m, i) { return '<button type="button" class="opt" data-act="inviteFor" data-v="' + i + '"><b>' + esc(m.name) + '</b><span>' + (m.role === 'cap' ? '캡틴' : m.role === 'mgr' ? '매니저' : '회원') + ' · ' + m.members + '명</span></button>'; }).join('') +
       '<button type="button" class="opt" data-act="inviteFor" data-v="-1"><b>클럽 없이 앱만 소개</b><span>어느 클럽에도 연결하지 않아요</span></button>');
   };
   LZ.act.inviteFor = function (el, v) { var ms = (S.me && S.me.moims || []).filter(function (m) { return m.code; }), m = +v >= 0 ? ms[+v] : null; LZ.closeSheet(); LZ.inviteSheet('공략수첩 가입 초대', LZ.refText(m), LZ.refLink(m)); };
@@ -33,7 +33,7 @@
         '<div class="tgl"><span>글씨 크게</span>' + LZ.sw(big, 'big') + '</div><div class="tgl"><span>어두운 화면</span>' + LZ.sw(dark, 'theme') + '</div><div class="tgl"><span>단추 누를 때 진동</span>' + LZ.sw(buzz, 'buzz') + '</div>' +
         '<div class="tgl"><span>홀 표에서 거리(m)로 크게 보기<span class="muted">끄면 타격감이 크게, 거리는 작게</span></span>' + LZ.sw(S.unit === 'm', 'unitTgl') + '</div>' +
         '<div class="tgl"><span>내 기록 공개<span class="muted">끄면 클럽 회원이 내 기록을 못 봐요(평균엔 들어가요)</span></span>' + LZ.sw(S.pub !== 0, 'pubTgl') + '</div></div>' +
-        '<div class="card"><h3>안전</h3><button type="button" class="opt" data-go="pinChange"><b>비밀번호 바꾸기</b><span>숫자 ' + u.pinLen + '자리 · 바꾸면 다른 휴대폰은 로그아웃</span></button><button type="button" class="opt" data-act="sqChange"><b>비밀번호 찾기 질문</b><span>나의 절친 이름과 전화 뒷자리 4개 · 지금 ' + esc(u.sqh || '아직 없음') + '</span></button><button type="button" class="opt" data-go="notiCfg"><b>알림 설정</b><span>앱 푸시 · ' + (u.kind === 'admin' || (m.moims || []).some(function (x) { return x.role === 'cap'; }) ? '카카오톡으로 받기 · ' : '') + '조용한 시간</span></button></div>' +
+        '<div class="card"><h3>안전</h3><button type="button" class="opt" data-go="pinChange"><b>비밀번호 바꾸기</b><span>숫자 ' + u.pinLen + '자리 · 바꾸면 다른 휴대폰은 로그아웃</span></button><button type="button" class="opt" data-act="sqChange"><b>비밀번호 찾기 질문</b><span>나의 절친 이름과 전화 뒷자리 4개 · 지금 ' + esc(u.sqh || '아직 없음') + '</span></button><button type="button" class="opt" data-go="notiCfg"><b>알림 설정</b><span>앱 푸시 · ' + (u.kind === 'admin' || (m.moims || []).some(function (x) { return x.role === 'cap' || x.role === 'mgr'; }) ? '카카오톡으로 받기 · ' : '') + '조용한 시간</span></button></div>' +
         '<div class="card"><h3>도움</h3><button type="button" class="opt" data-go="guide"><b>사용 안내</b><span>권한과 기준을 한눈에</span></button>' + (m.qnaOn ? '<button type="button" class="opt" data-go="qnaList"><b>문의하기</b><span>관리자에게 1:1' + (m.qna ? ' · 답변 ' + m.qna + '건' : '') + '</span></button>' : '') + '<button type="button" class="opt" data-go="notices" data-p=\'{"manage":0}\'><b>공지·소식</b></button><button type="button" class="opt" data-act="homeAdd"><b>홈 화면에 추가</b><span>앱처럼 열고 알림도 받아요</span></button><button type="button" class="opt" data-act="verRefresh"><b>최신 버전으로 새로 고침</b><span>지금 v' + (window.LZ_VER || '4.0') + '' + (S.me && S.me.appVer && S.me.appVer !== window.LZ_VER ? ' · 최신 v' + esc(S.me.appVer) : ' · 최신이에요') + '</span></button></div>' +
         '<button type="button" class="btn g" data-act="logout">로그아웃</button><p class="hint center">파크골프 공략수첩 v' + (window.LZ_VER || '4.0') + '</p></div>';
     }
@@ -128,7 +128,7 @@
     tab: 'me',
     show: async function (p, root, alive) {
       root.innerHTML = LZ.hdr('알림 설정', { back: true }) + LZ.skeleton(4);
-      var d = await LZ.api('notiCfg', {}); if (!alive()) return; NC = d; var c = d.cfg, isCap = S.user.kind === 'admin' || (S.me.moims || []).some(function (x) { return x.role === 'cap'; });
+      var d = await LZ.api('notiCfg', {}); if (!alive()) return; NC = d; var c = d.cfg, isCap = S.user.kind === 'admin' || (S.me.moims || []).some(function (x) { return x.role === 'cap' || x.role === 'mgr'; });
       var perm = ('Notification' in window) ? Notification.permission : 'none', canPush = 'serviceWorker' in navigator && 'PushManager' in window && !!d.vapid;
       root.innerHTML = LZ.hdr('알림 설정', { back: true }) + '<div class="wrap">' +
         '<div class="card"><h3>📱 앱 푸시</h3><p class="muted" style="margin:0 0 6px">' + (canPush ? (perm === 'denied' ? '휴대폰 설정에서 이 앱의 알림이 꺼져 있어요. 설정 → 알림에서 켜 주세요.' : LZ.pwa && LZ.pwa.isIOS && !LZ.pwa.standalone() ? '아이폰은 "홈 화면에 추가"한 뒤에 알림을 받을 수 있어요.' : '앱을 닫아도 알림이 와요. 휴대폰 ' + d.pushN + '대에 켜져 있어요.') : '이 브라우저는 푸시를 지원하지 않거나 서버 준비가 안 됐어요.') + '</p><div class="tgl"><span>이 휴대폰에서 푸시 받기</span>' + LZ.sw(c.push && d.pushN, 'pushTgl', '', !canPush || perm === 'denied') + '</div></div>' +
