@@ -1,12 +1,12 @@
-/* 내 정보: 등급·결제·클럽 이용료·환불 · 비밀번호·비밀번호 찾기 질문 · 보기 설정 · 친구 초대하기 · 프로필 사진 · 알림 설정(푸시·카카오) · 의견 */
+/* 내 정보: 등급·자리·결제(포인트+송금)·환불 · 적립 포인트·레벨(v7.3) · 비밀번호·카카오 본인 확인 · 보기 설정 · 친구 초대하기 · 프로필 사진 · 알림 설정(푸시·카카오) · 의견 */
 (function () {
   'use strict';
   var LZ = window.LZ, S = LZ.S, $ = LZ.$, $$ = LZ.$$, esc = LZ.esc, store = LZ.store;
   /* 친구 초대: 내 클럽이 여럿이면 어느 클럽으로 부를지 고르고(안 부를 수도), 링크에 그 클럽 코드를 붙여요 */
   LZ.refLink = function (m) { return LZ.APP_URL + '?ref=' + S.user.uid + (m ? '&inv=' + m.code : '&inv=0'); };
-  LZ.refText = function (m) { return '⛳ 파크골프 공략수첩\n스크린 파크골프 칠 때 홀마다 어디로 얼마나 칠지 적어 두는 수첩이에요. 가입은 무료' + (m ? '고, 아래 링크로 들어오면 ' + S.user.nick + '님의 "' + m.name + '" 클럽과 바로 연결돼요.\n같이 기록하고 같이 시상식 해요 🏆' : '예요.\n홀마다 적어 두면 다음에 칠 때 훨씬 편해요 🏆') + '\n👇 아래 링크를 눌러 가입하세요'; };
+  LZ.refText = function (m) { return '⛳ 파크골프 공략수첩\n스크린 파크골프 칠 때 홀마다 어디로 얼마나 칠지 적어 두는 수첩이에요. 가입은 무료' + (m ? '고, 아래 링크로 들어오면 ' + LZ.nim(S.user.nick) + '의 "' + m.name + '" 클럽과 바로 연결돼요.\n같이 기록하고 같이 시상식 해요 🏆' : '예요.\n홀마다 적어 두면 다음에 칠 때 훨씬 편해요 🏆') + '\n👇 아래 링크를 눌러 가입하세요'; };
   /* 친구 초대하기 카드(홈 아래·내 정보 아래) */
-  LZ.inviteCard = function (big) { if (S.user.kind === 'admin') return ''; var n = (S.me && S.me.moims || []).length; return '<div class="card invite"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:var(--t6)">💛</span><div style="flex:1"><h3 style="margin:0">친구 초대하기</h3><div class="muted">' + (n > 1 ? '어느 클럽으로 부를지 고른 뒤 링크를 보내요. 클럽 없이 앱만 소개할 수도 있어요' : n === 1 ? '내 링크로 가입하면 내 클럽에 바로 연결돼요. 함께 치는 분이 많을수록 시상식이 즐거워요' : '내 링크로 가입하면 앱만 소개돼요(클럽에 들어오게 하려면 먼저 클럽을 만들거나 가입하세요)') + '</div></div></div><button type="button" class="btn kakao" data-act="inviteKakao">친구 초대하기</button>' + '</div>'; };
+  LZ.inviteCard = function (big) { if (S.user.kind === 'admin') return ''; var n = (S.me && S.me.moims || []).length; return '<div class="card invite"><div style="display:flex;align-items:center;gap:10px"><span class="invic">' + LZ.ic('club') + '</span><div style="flex:1"><h3 style="margin:0">친구 초대하기</h3><div class="muted">' + (n > 1 ? '어느 클럽으로 부를지 고른 뒤 링크를 보내요. 클럽 없이 앱만 소개할 수도 있어요' : n === 1 ? '내 링크로 가입하면 내 클럽에 바로 연결돼요. 함께 치는 분이 많을수록 시상식이 즐거워요' : '내 링크로 가입하면 앱만 소개돼요(클럽에 들어오게 하려면 먼저 클럽을 만들거나 가입하세요)') + '</div></div></div><button type="button" class="btn kakao" data-act="inviteKakao">친구 초대하기</button>' + '</div>'; };
   LZ.act.inviteKakao = function () {
     var ms = (S.me && S.me.moims || []).filter(function (m) { return m.code; });
     if (ms.length <= 1) { var m = ms[0] || null; LZ.inviteSheet('공략수첩 가입 초대', LZ.refText(m), LZ.refLink(m)); return; }
@@ -16,35 +16,194 @@
   };
   LZ.act.inviteFor = function (el, v) { var ms = (S.me && S.me.moims || []).filter(function (m) { return m.code; }), m = +v >= 0 ? ms[+v] : null; LZ.closeSheet(); LZ.inviteSheet('공략수첩 가입 초대', LZ.refText(m), LZ.refLink(m)); };
 
+  /* 내 정보(v7 #29): 다섯 그룹만 두고 들어가서 보기. 보기 설정(큰 글씨·어두운 화면·진동)은 상단 가+ · ◐ 로 옮김 */
+  function grow(icon, title, sub, attrs) { return '<button type="button" class="li grow" ' + attrs + '>' + LZ.ic(icon, 'gi') + '<div class="t"><b>' + title + '</b><span class="su">' + sub + '</span></div>' + LZ.ic('chev') + '</button>'; }
+  function tierShort(u) { var t = u.tier; return t === 'admin' ? '관리자' : t === 'gold' ? '골드 ~' + LZ.fmtYmd(u.end) : t === 'red' ? '레드 ~' + LZ.fmtYmd(u.end) : t === 'black' ? '블랙(이용 정지)' : '블루 · 무료'; }
   LZ.screens.me = {
     tab: 'me',
     show: async function (p, root, alive) {
-      if (!S.me) { root.innerHTML = LZ.hdr('내 정보') + LZ.skeleton(5); await LZ.refreshMe(); if (!alive()) return; }
-      if (S.pub === undefined) { try { S.pub = (await LZ.api('prefs', {})).pub; } catch (e) { S.pub = 1; } if (!alive()) return; }
-      var u = S.user, m = S.me, dark = LZ.theme.get(), big = LZ.big.get(), buzz = store.get('lz.buzz') !== '0';
-      var ym = function (ts) { var d = new Date(ts || Date.now()); return d.getFullYear() + '-' + (d.getMonth() + 1 < 10 ? '0' : '') + (d.getMonth() + 1); };
-      var period = u.tier === 'gold' ? '골드 · ' + (u.end ? LZ.fmtYmd(u.end) + '까지' : '') : u.tier === 'admin' ? '관리자' : u.tier === 'red' ? '레드 · ' + LZ.fmtYmd(u.end) + '까지' : u.tier === 'black' ? '블랙' : '블루 · ' + ym(u.created) + '부터';
-      root.innerHTML = LZ.hdr('내 정보') + '<div class="wrap">' +
-        '<div class="hello"><button type="button" class="avbtn" data-act="avatarMenu">' + LZ.avatar(u, 'big') + '<span class="avedit">✎</span></button><div style="flex:1"><b style="font-size:var(--t3)">' + esc(u.nick) + ' 회원님</b> <span class="tier">' + esc(period) + '</span>' + (u.tier === 'red' && u.left !== null && u.left <= 30 ? '<div class="muted">' + (u.left === 0 ? '오늘까지예요' : u.left + '일 남았어요') + '</div>' : u.wasRed && u.tier === 'blue' ? '<div class="muted">레드 기간이 끝났어요 · 연회비를 내면 다시 레드</div>' : '') + '</div><button type="button" class="sm2 g" data-act="nickChange">닉네임</button></div>' +
-        (u.kind === 'admin' ? '<button type="button" class="cont" data-go="dash"><span style="font-size:var(--t5)">🛠</span><div style="flex:1"><b>관리자</b><span class="muted">결제 ' + ((m.admin || {}).pay || 0) + ' · 환불 ' + ((m.admin || {}).refund || 0) + ' · 비밀번호 ' + ((m.admin || {}).pw || 0) + ' · 문의 ' + ((m.admin || {}).qna || 0) + '</span></div><span>›</span></button>' : '') +
-        (u.tier !== 'admin' && u.tier !== 'gold' ? '<div class="card"><div style="display:flex;align-items:center;gap:8px"><h3 style="flex:1;margin:0">' + (u.tier === 'red' ? '연회비' : '연회비를 내면') + '</h3>' + (m.pending ? '<span class="chip">승인 기다림</span>' : '<span class="muted">1만 원 / 1년</span>') + '</div><p class="muted" style="margin:6px 0 10px">클럽 5개(각 20명) · 클럽 이용료 결제 · 단체 주최</p><button type="button" class="btn" data-go="pay" style="margin:0">' + (m.pending ? '결제 확인 상태 보기' : u.tier === 'red' ? (u.left <= 30 ? '연회비 연장하기' : '결제·클럽 이용료 보기') : '연회비 결제하기') + '</button>' + (m.refund && (m.refund.can || m.refund.req) ? '<button type="button" class="btn g sm" data-go="refund">' + (m.refund.req ? '환불 신청 중 · 보기' : '환불 신청') + '</button>' : '') + '</div>' : '') +
-        LZ.inviteCard(true) +
-        '<div class="card"><h3>보기</h3>' +
-        '<div class="tgl"><span>글씨 크게</span>' + LZ.sw(big, 'big') + '</div><div class="tgl"><span>어두운 화면</span>' + LZ.sw(dark, 'theme') + '</div><div class="tgl"><span>단추 누를 때 진동</span>' + LZ.sw(buzz, 'buzz') + '</div>' +
-        '<div class="tgl"><span>홀 표에서 거리(m)로 크게 보기<span class="muted">끄면 타격감이 크게, 거리는 작게</span></span>' + LZ.sw(S.unit === 'm', 'unitTgl') + '</div>' +
-        '<div class="tgl"><span>내 기록 공개<span class="muted">끄면 클럽 회원이 내 기록을 못 봐요(평균엔 들어가요)</span></span>' + LZ.sw(S.pub !== 0, 'pubTgl') + '</div></div>' +
-        '<div class="card"><h3>안전</h3><button type="button" class="opt" data-go="pinChange"><b>비밀번호 바꾸기</b><span>숫자 ' + u.pinLen + '자리 · 바꾸면 다른 휴대폰은 로그아웃</span></button><button type="button" class="opt" data-act="sqChange"><b>비밀번호 찾기 질문</b><span>나의 절친 이름과 전화 뒷자리 4개 · 지금 ' + esc(u.sqh || '아직 없음') + '</span></button><button type="button" class="opt" data-go="notiCfg"><b>알림 설정</b><span>앱 푸시 · ' + (u.kind === 'admin' || (m.moims || []).some(function (x) { return x.role === 'cap' || x.role === 'mgr'; }) ? '카카오톡으로 받기 · ' : '') + '조용한 시간</span></button></div>' +
-        '<div class="card"><h3>도움</h3><button type="button" class="opt" data-go="guide"><b>사용 안내</b><span>권한과 기준을 한눈에</span></button>' + (m.qnaOn ? '<button type="button" class="opt" data-go="qnaList"><b>문의하기</b><span>관리자에게 1:1' + (m.qna ? ' · 답변 ' + m.qna + '건' : '') + '</span></button>' : '') + '<button type="button" class="opt" data-go="notices" data-p=\'{"manage":0}\'><b>공지·소식</b></button><button type="button" class="opt" data-act="homeAdd"><b>홈 화면에 추가</b><span>앱처럼 열고 알림도 받아요</span></button><button type="button" class="opt" data-act="verRefresh"><b>최신 버전으로 새로 고침</b><span>지금 v' + (window.LZ_VER || '4.0') + '' + (S.me && S.me.appVer && S.me.appVer !== window.LZ_VER ? ' · 최신 v' + esc(S.me.appVer) : ' · 최신이에요') + '</span></button></div>' +
-        '<button type="button" class="btn g" data-act="logout">로그아웃</button><p class="hint center">파크골프 공략수첩 v' + (window.LZ_VER || '4.0') + '</p></div>';
+      if (!S.me) { root.innerHTML = LZ.hdr('내 정보', { logout: 1 }) + LZ.skeleton(5); await LZ.refreshMe(); if (!alive()) return; }
+      var u = S.user, m = S.me, ad = m.admin || {}, isCap = u.kind === 'admin' || (m.moims || []).some(function (x) { return x.role === 'cap' || x.role === 'mgr'; });
+      root.innerHTML = LZ.hdr('내 정보', { logout: 1 }) + '<div class="wrap">' +
+        '<div class="hello"><button type="button" class="avbtn" data-act="avatarMenu" aria-label="프로필 사진 바꾸기">' + LZ.avatar(u, 'big') + '<span class="avedit">' + LZ.ic('edit') + '</span></button><div style="flex:1;min-width:0"><div class="hname"><b>' + esc(u.nick) + '</b> <span>회원님</span></div><div class="tier">' + LZ.tierLines(u) + '</div><div class="su">' + LZ.lvBadge((m.points && m.points.tot) || 0) + ' 적립 포인트 ' + ((m.points && m.points.bal) || 0).toLocaleString() + 'P</div></div></div>' +
+        (u.kind === 'admin' ? '<button type="button" class="cont" data-go="dash">' + LZ.ic('gear', 'ci') + '<div style="flex:1;min-width:0"><b>관리자</b><span class="muted">결제 ' + (ad.pay || 0) + ' · 환불 ' + (ad.refund || 0) + ' · 비밀번호 ' + (ad.pw || 0) + ' · 문의 ' + (ad.qna || 0) + '</span></div>' + LZ.ic('chev') + '</button>' : '') +
+        '<div class="card tight groups">' +
+        grow('seat', '내 등급·자리', esc(tierShort(u)) + (u.packs ? ' · 자리 ' + u.packs + '장' : '') + (m.pending ? ' · 결제 ' + esc(m.pending.stName) : ''), 'data-go="meTier"') +
+        grow('star', '적립 포인트', ((m.points && m.points.bal) || 0).toLocaleString() + 'P · ' + esc((m.points && m.points.lvName) || '새싹') + (m.points && m.points.soon && m.points.soon.left <= 30 ? ' · 곧 사라질 ' + m.points.soon.amt.toLocaleString() + 'P' : ''), 'data-go="mePoints"') +
+        grow('bell', '알림 설정', '푸시' + (isCap ? ' · 카카오톡' : '') + ' · 조용한 시간', 'data-go="notiCfg"') +
+        grow('shield', '계정·안전', '닉네임 · 비밀번호 · 프로필 사진', 'data-go="meAcct"') +
+        grow('chat', '도움', '파크골프 첫걸음 · 사용 안내 · 문의 · 공지' + (m.qna ? ' · 답변 ' + m.qna + '건' : ''), 'data-go="helpHub"') +
+        '</div>' + LZ.inviteCard(true) +
+        '<button type="button" class="verline" data-act="verRefresh">파크골프 공략수첩 v' + esc(window.LZ_VER || '4.0') + ' · ' + (S.me && S.me.appVer && S.me.appVer !== window.LZ_VER ? '최신 v' + esc(S.me.appVer) + '로 새로 고침' : '최신 버전으로 새로 고침') + '</button></div>';
     }
   };
-  LZ.act.unitTgl = async function (el) { var nu = S.unit === 'm' ? 'p' : 'm'; S.unit = nu; S.user.unit = nu; LZ.flip(el); try { await LZ.api('useBranch', { br: S.br, unit: nu }); } catch (e) { /* 다음에 */ } };
-  LZ.act.pubTgl = async function (el) { var to = S.pub === 0 ? 1 : 0; LZ.flip(el); S.pub = to; try { var r = await LZ.api('pub', { pub: to }); S.pub = r.pub; LZ.toast(r.pub ? '내 기록을 클럽 회원이 볼 수 있어요' : '내 기록을 숨겼어요'); } catch (e) { LZ.flip(el); S.pub = to ? 0 : 1; LZ.toast(LZ.errText(e)); } };
-  LZ.act.nickChange = async function () {
-    var v = await LZ.dialog({ title: '닉네임 바꾸기', html: '<p class="muted">한글·영문·숫자 2~8자 · 7일에 한 번 · 예전 이름은 7일 동안 남이 못 써요.</p><input type="text" id="nn" class="in" maxlength="8" value="' + esc(S.user.nick) + '">', cancel: null, focus: '#nn', buttons: [{ label: '바꾸기', kind: 'y', value: 'ok' }, { label: '취소', kind: 'g', value: null }] }).then(function (x) { return x === 'ok' ? $('#nn').value : null; });
-    if (v === null) return;
-    try { var r = await LZ.api('setNick', { nick: v }); S.user = r.user || S.user; await LZ.refreshMe(); LZ.toast('닉네임을 바꿨어요'); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e), 5000); }
+  /* 내 등급·자리(v7.2 #20): 등급·기간 · 결제 요청 상태 · 내 클럽 자리 · 내가 산 자리(연장·옮기기) · 안내(관리자 설정 글) */
+  var won = function (n) { return Number(n || 0).toLocaleString() + '원'; }, pt = function (n) { return Number(n || 0).toLocaleString() + 'P'; };
+  function dd(x) { return '<span class="nw">' + LZ.fmtYmd(x) + '</span>'; }
+  LZ.dd = dd;
+  LZ.won = won;
+  var TDESC = { blue: '무료 회원 · 클럽 {c}개, 클럽마다 {s}자리', red: '유료 자리를 가진 회원 · 가진 자리 중 가장 늦게 끝나는 날까지', gold: '관리자가 드린 무료 {z}자리 · 가입 기념일 전날까지', black: '이용 정지 · 관리자에게 문의해 주세요', admin: '관리자' };
+  LZ.tierDesc = function (u, sc) { sc = sc || (S.me && S.me.seat) || {}; return (TDESC[u.tier] || '').replace('{c}', sc.free_clubs || 2).replace('{s}', sc.free_seats || 10).replace('{z}', sc.seat_size || 10); };
+  var PKN = { free: '무료', paid: '유료', club: '유료', gold: '골드', admin: '관리자' };
+  /** 자리 묶음 한 줄: "유료 10자리 · 2026-10-20 ~ 2027-10-19 · 홍길동" */
+  LZ.packLine = function (p, o) {
+    o = o || {}; var per = p.kind === 'free' ? '기간 없음' : (p.start ? dd(p.start) + ' ~ ' : '') + dd(p.end) + (p.left !== null && p.left !== undefined ? '<span class="nw">' + (p.left >= 0 ? ' (남은 ' + p.left + '일)' : ' (끝남)') + '</span>' : '');
+    var chip = p.grace ? ' <span class="chip red">유예 중</span>' : !p.live && p.kind !== 'free' ? ' <span class="chip gray">끝남</span>' : p.left !== null && p.left <= 30 && p.kind !== 'free' ? ' <span class="chip">곧 끝나요</span>' : '';
+    return '<div class="li pkrow"><div class="t"><b>' + (PKN[p.kind] || '') + ' ' + p.seats + '자리' + chip + '</b><span class="su">' + per + (o.club && p.club ? ' · ' + esc(p.club) : !p.mid && p.kind !== 'free' ? ' · 아직 클럽에 안 놓음' : '') + (o.who && p.ownerNick ? ' · ' + esc(p.ownerNick) : '') + '</span>' + (o.btns || '') + '</div></div>';
   };
+  LZ.screens.meTier = {
+    tab: 'me',
+    show: async function (p, root, alive) {
+      root.innerHTML = LZ.hdr('내 등급·자리', { back: true }) + LZ.skeleton(4);
+      var d = await LZ.api('payInfo', {}); if (!alive()) return; var m = S.me || {};
+      var u = d.user, sc = d.seat, ms = m.moims || [], pend = d.pending, rf = d.refund || {}, staffed = d.clubs || [];
+      var mine = (d.mine || []).filter(function (x) { return x.kind !== 'admin'; });
+      root.innerHTML = LZ.hdr('내 등급·자리', { back: true }) + '<div class="wrap">' +
+        '<div class="card"><h3>' + LZ.ic('seat') + ' 내 등급</h3>' + LZ.tierLines(u) + '<p class="muted" style="margin:6px 0 0">' + esc(LZ.tierDesc(u, sc)) + '</p>' +
+          (u.wasRed && u.tier === 'blue' ? '<p class="muted" style="margin:6px 0 0">유료 자리 기간이 끝나 블루예요. 자리를 다시 사면 바로 레드가 돼요.</p>' : '') +
+          '<button type="button" class="li ptline" data-go="mePoints">' + LZ.ic('star', 'gi') + '<div class="t"><b>적립 포인트 ' + pt(d.points.bal) + '</b><span class="su">결제에 ' + d.points.unit + 'P 단위로 써요' + (d.points.soon ? ' · ' + dd(d.points.soon.date) + '에 ' + pt(d.points.soon.amt) + ' 사라져요' : '') + '</span></div>' + LZ.ic('chev') + '</button></div>' +
+        (pend ? '<div class="card pendc"><h3>' + LZ.ic('bell') + ' 결제 ' + esc(pend.stName) + '</h3><p style="margin:0"><b>' + esc(pend.planName) + '</b></p><p class="muted" style="margin:4px 0 0">보낼 금액 ' + won(pend.cash) + (pend.pts ? ' · 포인트 ' + pt(pend.pts) : '') + ' · ' + (pend.method === 'bank' ? '계좌' : '카카오페이') + ' · 보낸 분 ' + esc(pend.depositor) + '</p><p class="muted" style="margin:4px 0 8px">관리자가 확인하면 그때 자리가 생기고 알림이 와요.</p><button type="button" class="btn g sm" data-act="payCancel" style="margin:0">요청 취소</button></div>' : '') +
+        (rf.req ? '<div class="card pendc"><h3>' + LZ.ic('back') + ' 환불 ' + esc(rf.req.stName) + '</h3><p style="margin:0">' + esc(rf.req.planName) + ' · ' + won(rf.req.amount) + '</p><button type="button" class="btn g sm" data-go="refund">환불 보기</button></div>' : '') +
+        '<div class="card tight"><h3 class="ih">' + LZ.ic('club') + '내 클럽 자리</h3>' + (ms.length ? ms.map(function (x) {
+          return '<button type="button" class="li" data-go="club" data-p=\'' + esc(JSON.stringify({ id: x.id })) + '\'><div class="t"><b>' + esc(x.name) + (x.role === 'cap' ? ' <span class="chip cap">캡틴</span>' : x.role === 'mgr' ? ' <span class="chip mgr">매니저</span>' : '') + (x.locked ? ' <span class="chip gray">' + LZ.ic('lock') + ' 잠김</span>' : x.meLock ? ' <span class="chip gray">보기만</span>' : '') + '</b><span class="su">' + LZ.seatTxt(x) + (x.nextEnd ? ' · 다음 끝 ' + LZ.dd(x.nextEnd) : '') + '</span></div>' + LZ.ic('chev') + '</button>';
+        }).join('') : '<p class="muted" style="margin:6px 0">함께하는 클럽이 없어요.</p>') +
+          '<p class="hint" style="margin:8px 2px 4px">운영하는 클럽 ' + u.ownClubs + '개 · 무료 ' + sc.free_clubs + '개' + (u.makeMax > sc.free_clubs ? ' + 더 열 수 있는 ' + (u.makeMax - sc.free_clubs) + '개' : '') + '</p>' +
+          '<div class="row">' + (staffed.length ? '<button type="button" class="btn sm" data-go="pay" data-p=\'' + esc(JSON.stringify({ plan: 'seat', mid: staffed[0].id })) + '\'>' + LZ.ic('plus') + sc.seat_size + '자리 추가</button>' : '') + '<button type="button" class="btn o sm" data-go="make">' + LZ.ic('club') + (u.canMake ? '클럽 만들기' : '클럽 추가') + '</button></div></div>' +
+        (mine.length ? '<div class="card tight"><h3 class="ih">' + LZ.ic('seat') + '내가 가진 자리</h3>' + mine.map(function (x) {
+          var b = x.kind === 'gold' ? '' : '<div class="pkb"><button type="button" class="sm2" data-go="pay" data-p=\'' + esc(JSON.stringify({ plan: 'renew', pack: x.id })) + '\'>연장</button>';
+          if (x.kind === 'gold') b = '<div class="pkb">';
+          b += (x.live || x.grace) && !x.inUse && staffed.length > (x.mid ? 1 : 0) ? '<button type="button" class="sm2 g" data-act="packMove" data-v=\'' + esc(JSON.stringify({ id: x.id, from: x.mid })) + '\'>옮기기</button>' : x.inUse ? '<span class="muted small">쓰는 중이라 못 옮겨요</span>' : '';
+          return LZ.packLine(x, { club: 1, btns: b + '</div>' });
+        }).join('') + '<p class="hint" style="margin:6px 2px 4px">연장하면 끝나는 날부터 이어져요. 안 쓰는 자리는 내가 캡틴·매니저인 다른 클럽으로 옮길 수 있어요(끝나는 날 그대로).</p></div>' : '') +
+        (rf.can || rf.recent ? '<button type="button" class="btn g sm" data-go="refund">' + LZ.ic('back') + '환불' + (rf.recent ? ' · ' + esc(rf.recent.stName) : '') + '</button>' : '') +
+        '<details class="card acc"><summary><h3>' + LZ.ic('help') + ' 등급·자리 안내</h3></summary><div class="accb seatguide">' + LZ.cleanHtml(sc.guide) + '</div></details></div>';
+    }
+  };
+  /** "24명 / 30자리" (관리자 클럽은 제한 없음) */
+  LZ.seatTxt = function (m) { var n = Number(m.members || m.n || 0).toLocaleString('ko-KR'); return m.staffClub ? n + '명 · 자리 제한 없음' : n + '명 / ' + Number(m.seats || m.cap || 0).toLocaleString('ko-KR') + '자리' + (m.grace ? ' (+유예 ' + m.grace + ')' : ''); };
+  /* 자리 옮기기: 내가 캡틴·매니저인 다른 클럽 고르기 */
+  LZ.act.packMove = async function (el, v) {
+    var o = JSON.parse(v), list = (S.me && S.me.moims || []).filter(function (m) { return (m.role === 'cap' || m.role === 'mgr') && m.id !== o.from && !m.staffClub; });
+    if (!list.length) { LZ.toast('옮길 수 있는 다른 클럽이 없어요(내가 캡틴·매니저인 클럽)', 4000); return; }
+    LZ.sheet('<h2>' + LZ.ic('seat') + ' 자리 옮기기</h2><p class="muted">끝나는 날은 그대로예요. 지금 그 자리를 쓰지 않을 때만 옮겨져요.</p>' + list.map(function (m) { return '<button type="button" class="opt" data-act="packMoveTo" data-v=\'' + esc(JSON.stringify({ id: o.id, mid: m.id, name: m.name })) + '\'><b>' + esc(m.name) + '</b><span>' + LZ.seatTxt(m) + ' → ' + (Number(m.seats || 0) + 10) + '자리</span></button>'; }).join(''));
+  };
+  LZ.act.packMoveTo = async function (el, v) { var o = JSON.parse(v); if (!(await LZ.confirm('"' + o.name + '"(으)로 옮길까요?', '끝나는 날은 그대로예요.', '옮기기'))) return; try { await LZ.api('packMove', { id: o.id, mid: o.mid }); LZ.closeSheet(); await LZ.refreshMe(); LZ.toast('자리를 옮겼어요'); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e), 5000); } };
+  /* 적립 포인트(v7.3 #25): 쓸 수 있는 포인트·레벨 막대·곧 사라질 포인트 · 전체/받은 것/쓴 것/사라진 것 · 날짜별 사유 · 모으는 법(관리자 설정값) */
+  var PTF = { f: 'all' };
+  var PTCAT = [['all', '전체'], ['in', '받은 것'], ['out', '쓴 것'], ['gone', '사라진 것']];
+  function ptRules(r, i) {
+    if (!r) return '';
+    var row = function (what, v, cond) { return '<div class="prw"><div class="t"><b>' + what + '</b><span class="su">' + cond + '</span></div><b class="pv">' + v + '</b></div>'; };
+    var lv = r.names.map(function (n, k) { return '<div class="lvs' + (i && i.lv === k ? ' on' : '') + '"><span class="lvi">' + LZ.LVN[k][0] + '</span><b>' + esc(n) + '</b><span>' + Number(r.th[k]).toLocaleString('ko-KR') + 'P~</span><em>×' + r.mul[k] + '</em></div>'; }).join('');
+    return '<div class="card"><h3>' + LZ.ic('star') + ' 이렇게 모아요</h3>' +
+      row('홀 기록 새로 적기', '+' + r.hole_new + 'P', '홀마다 · 코스·홀마다 처음 한 번') +
+      row('홀 기록 다듬기', '+' + r.hole_fix + 'P', '값이 실제로 바뀔 때만 · 같은 홀은 하루 1번') +
+      row('새 코스 등록', '+' + r.course_reg + 'P', '18홀 거리를 모두 넣어 등록을 마쳤을 때') +
+      row('코스 정보 고치기', '+' + r.course_fix + 'P', '같은 코스는 하루 1번 · ' + r.claw_days + '일 안에 되돌려지면 회수') +
+      row('다른 분이 내 기록을 가져감', '+' + r.import + 'P × 레벨', '같은 분·같은 코스 1번 · 카카오 확인 받은 다른 회원님만') +
+      row('자리·클럽 추가 구매', r.earn_pct + '%', '보낸 돈만큼 · 환불하면 회수') +
+      '<p class="hint ptfoot">하루 최대 <b>' + r.day_cap + 'P</b>(결제 적립 빼고) · 1P = 1원 · 쓸 때는 <b>' + r.unit + 'P 단위</b> · 받은 날부터 ' + r.years + '년 · 사라지기 ' + r.remind.join('·') + '일 전에 알려 드려요</p>' +
+      '<h3 class="lvh">레벨 <span class="muted small">모은 포인트 기준 · 써도 그대로</span></h3><div class="lvgrid">' + lv + '</div></div>';
+  }
+  LZ.screens.mePoints = {
+    tab: 'me',
+    show: async function (p, root, alive) {
+      root.innerHTML = LZ.hdr('적립 포인트', { back: true }) + LZ.skeleton(4);
+      var d = await LZ.api('points', {}); if (!alive()) return; var i = d.info, f = PTF.f;
+      var span = i.next ? Math.max(1, i.next.at - i.from) : 1, pc = i.next ? Math.max(0, Math.min(100, Math.round((i.tot - i.from) / span * 100))) : 100;
+      var list = d.list.filter(function (x) { return f === 'all' || x.cat === f; }), day = '', rows = '';
+      list.forEach(function (x) {
+        if (x.day !== day) { day = x.day; rows += '<div class="ptday">' + esc(x.sum ? day + ' 모음' : LZ.fmtYmd(day)) + '</div>'; }   // v7.0.1 오래된 달은 한 줄로 모아요
+        var sg = x.sign > 0 ? '+' : x.sign < 0 ? '−' : '', cls = x.sign > 0 ? 'pin' : x.cat === 'gone' ? 'pgone' : x.sign < 0 ? 'pout' : 'pzero';
+        rows += '<div class="li ptl"><div class="t"><b>' + esc(x.title) + '</b>' + (x.sub ? '<span class="su">' + esc(x.sub) + '</span>' : '') + '</div><b class="ptv ' + cls + '">' + sg + Number(x.amt).toLocaleString('ko-KR') + 'P</b></div>';
+      });
+      root.innerHTML = LZ.hdr('적립 포인트', { back: true }) + '<div class="wrap">' +
+        '<div class="ptcard"><div class="pth"><span>쓸 수 있는 포인트</span><em class="ptlv">' + LZ.LVN[i.lv][0] + ' ' + esc(i.lvName) + '</em></div><b>' + Number(i.bal).toLocaleString('ko-KR') + '<small>P</small></b>' +
+          '<div class="ptbar" role="progressbar" aria-valuenow="' + pc + '" aria-valuemin="0" aria-valuemax="100"><i style="width:' + pc + '%"></i></div>' +
+          '<div class="ptf"><span>지금까지 모은 ' + Number(i.tot).toLocaleString('ko-KR') + 'P</span><span>' + (i.next ? esc(i.next.name) + '까지 ' + Number(i.next.need).toLocaleString('ko-KR') + 'P' : '가장 높은 레벨이에요') + '</span></div></div>' +
+        (i.soon ? '<div class="card ptsoon">' + LZ.ic('clock') + '<span><b>' + Number(i.soon.amt).toLocaleString('ko-KR') + 'P</b>가 ' + esc(LZ.fmtYmd(i.soon.date)) + '에 사라져요' + (i.soon.left <= 30 ? ' (남은 ' + i.soon.left + '일)' : '') + '</span></div>' : '') +
+        (!d.kid && S.user.kind !== 'admin' ? '<div class="box">' + LZ.ic('shield') + ' 카카오 본인 확인을 받으면 다른 분의 기록을 가져갈 때 그분께 포인트가 쌓여요. <a href="#" data-go="meAcct">확인하러 가기</a></div>' : '') +
+        '<div class="flt" role="tablist">' + PTCAT.map(function (c) { return '<button type="button" role="tab" class="' + (f === c[0] ? 'on' : '') + '" aria-selected="' + (f === c[0]) + '" data-act="ptFlt" data-v="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div>' +
+        '<div class="card tight ptlist">' + (rows || '<p class="muted" style="margin:8px 0">' + (f === 'all' ? '아직 내역이 없어요. 홀 기록을 적으면 바로 쌓여요.' : '이 내역이 없어요.') + '</p>') + '</div>' +
+        ptRules(d.rules, i) + '</div>';
+    }
+  };
+  LZ.act.ptFlt = function (el, v) { PTF.f = v; LZ.redraw(); };
+  /* 계정·안전 */
+  LZ.screens.meAcct = {
+    tab: 'me',
+    show: async function (p, root, alive) {
+      var u = S.user;
+      root.innerHTML = LZ.hdr('계정·안전', { back: true }) + '<div class="wrap">' +
+        '<div class="card tight groups">' +
+        grow('user', '프로필 사진', u.img ? '사진 바꾸기·지우기' : '사진 넣기', 'data-act="avatarMenu"') +
+        grow('edit', '닉네임 바꾸기', '지금 ' + esc(u.nick) + (u.nickNext ? ' · ' + LZ.fmtDate(u.nickNext, true) + '부터 바꿀 수 있어요' : ' · 7일에 한 번'), 'data-go="nickChange"') +
+        grow('lock', '비밀번호 바꾸기', '숫자 ' + u.pinLen + '자리 · 바꾸면 다른 휴대폰은 로그아웃', 'data-go="pinChange"') +
+        (u.kind === 'admin' ? '' : grow('kakao', '카카오 본인 확인', u.kid ? '확인했어요 · 비밀번호를 잊으면 카카오로 찾아요' : '아직 안 했어요 · 눌러서 확인하기', u.kid ? 'data-act="kidInfo"' : 'data-go="kakaoAsk"')) +
+        '</div>' +
+        '<div class="card"><h3>치기 화면</h3><div class="tgl"><span>말해 주기<span class="muted">홀을 넘길 때마다 소리로 읽어 드려요</span></span>' + LZ.sw(LZ.store.get('lz.say') === '1', 'sayTgl') + '</div>' +
+        '<button type="button" class="li" data-act="voicePick">' + LZ.ic('sound') + '<span class="t"><b>말해 주기 목소리</b><span class="muted">휴대폰에 있는 한국어 목소리 고르기 · 미리 듣기</span></span>' + LZ.ic('chev') + '</button>' +
+        '<p class="hint" style="margin:8px 0 0">' + LZ.ic('lock') + ' 내 기록 공개는 이제 <b>코스마다</b> 정해요 · 스크린 공략 → 내 수첩의 자물쇠</p></div></div>';
+    }
+  };
+  /* 도움 */
+  LZ.screens.helpHub = {
+    tab: 'me',
+    show: function (p, root) {
+      var m = S.me || {};
+      root.innerHTML = LZ.hdr('도움', { back: true, noHelp: 1 }) + '<div class="wrap"><div class="card tight groups">' +
+        grow('ball', '파크골프 첫걸음', '처음 오신 분께 · 규칙 · 점수 세는 법 · 매너', 'data-go="firstSteps"') +
+        grow('book', '사용 안내', '권한과 기준을 한눈에', 'data-go="guide"') +
+        (m.qnaOn ? grow('chat', '문의하기', '관리자에게 1:1' + (m.qna ? ' · 답변 ' + m.qna + '건' : ''), 'data-go="qnaList"') : '') +
+        grow('note', '공지·소식', '관리자 공지와 클럽 소식', 'data-go="notices" data-p=\'{"manage":0}\'') +
+        grow('home', '홈 화면에 추가', '앱처럼 열고 알림도 받아요', 'data-act="homeAdd"') +
+        '</div></div>';
+    }
+  };
+  /* 닉네임 바꾸기 3단계(#17): ① 새 이름 → 중복 검사 ② "홍길동 → 김영희" 확인 ③ "정말 바꿀까요?" */
+  var NN = { nick: '' };
+  LZ.act.nickChange = function () { LZ.go('nickChange', {}); };
+  LZ.screens.nickChange = {
+    tab: 'me',
+    show: function (p, root) {
+      var u = S.user, step = p.step || 1, steps = '<div class="steps"><span class="' + (step === 1 ? 'on' : '') + '">1 새 이름</span><span class="' + (step === 2 ? 'on' : '') + '">2 확인</span><span class="' + (step === 3 ? 'on' : '') + '">3 바꾸기</span></div>';
+      if (step === 1) {
+        root.innerHTML = LZ.hdr('닉네임 바꾸기', { back: true }) + '<div class="wrap">' + steps + '<div class="card"><p class="muted" style="margin:0 0 4px">지금 이름</p><b style="font-size:var(--t3)">' + esc(u.nick) + '</b>' +
+          '<label class="lb" for="nn">새 이름</label><input type="text" id="nn" maxlength="8" value="' + esc(NN.nick && NN.nick !== u.nick ? NN.nick : '') + '" placeholder="한글·영문·숫자 2~8자" autocomplete="off">' +
+          '<p class="hint" id="nnMsg">' + (u.nickNext ? '<span class="err">' + LZ.fmtDate(u.nickNext, true) + '부터 바꿀 수 있어요</span>' : '띄어쓰기 없이 2~8자. 확인을 누르면 쓸 수 있는 이름인지 봐요.') + '</p>' +
+          '<button type="button" class="btn" data-act="nnCheck">확인</button></div></div>';
+        var el = $('#nn'); el.addEventListener('keydown', function (e) { if (e.key === 'Enter') LZ.act.nnCheck(); });
+        return;
+      }
+      if (!NN.nick) { LZ.go('nickChange', {}, { replace: true }); return; }
+      if (step === 2) {
+        root.innerHTML = LZ.hdr('닉네임 바꾸기', { back: true }) + '<div class="wrap">' + steps + '<div class="card center"><div class="nnfrom">' + esc(u.nick) + ' <span>→</span> <b>' + esc(NN.nick) + '</b></div></div>' +
+          '<div class="card"><h3>바꾸기 전에 확인해 주세요</h3><ul class="nnlist"><li>바꾸면 <b>' + (NN.days || 7) + '일 동안</b> 다시 못 바꿔요</li><li>예전 이름 <b>' + esc(u.nick) + '</b>은 ' + (NN.protect || 7) + '일 동안 다른 분이 못 써요</li><li>다음 로그인부터는 새 이름 <b>' + esc(NN.nick) + '</b>으로 들어와요</li><li>클럽 회원님께도 새 이름으로 보여요</li></ul></div>' +
+          '<div class="row"><button type="button" class="btn g" data-act="nnBack">다시 쓰기</button><button type="button" class="btn" data-act="nnNext">다음</button></div></div>';
+        return;
+      }
+      root.innerHTML = LZ.hdr('닉네임 바꾸기', { back: true }) + '<div class="wrap">' + steps + '<div class="card center"><h3 style="text-align:center">정말 바꿀까요?</h3><div class="nnfrom">' + esc(u.nick) + ' <span>→</span> <b>' + esc(NN.nick) + '</b></div><p class="muted">바꾼 뒤 ' + (NN.days || 7) + '일 동안은 되돌릴 수 없어요.</p>' +
+        '<button type="button" class="btn red" data-act="nnDo">' + esc(NN.nick) + '(으)로 바꾸기</button><button type="button" class="btn g" data-act="nnCancel">그만두기</button></div></div>';
+    }
+  };
+  LZ.act.nnCheck = async function () {
+    var v = LZ.stripNick(($('#nn') || {}).value || ''), msg = $('#nnMsg');
+    if (!v) { msg.innerHTML = '<span class="err">새 이름을 적어 주세요</span>'; return; }
+    try {
+      var r = await LZ.api('nickCheck', { nick: v }, { retry: 0 });
+      if (r.res) { msg.innerHTML = '<span class="err">' + esc(r.res.code === 'dupnick' ? '이미 쓰는 이름이에요. 다른 이름으로 적어 주세요.' : r.res.msg) + '</span>'; if (r.res.code === 'dupnick') msg.innerHTML += '<br><span class="muted">' + esc(r.res.msg) + '</span>'; return; }
+      NN = { nick: r.nick || v, days: r.days, protect: r.protect }; LZ.go('nickChange', { step: 2 }, { replace: true });
+    } catch (e) { msg.innerHTML = '<span class="err">' + esc(LZ.errText(e)) + '</span>'; }
+  };
+  LZ.act.nnBack = function () { LZ.go('nickChange', { step: 1 }, { replace: true }); };
+  LZ.act.nnNext = function () { LZ.go('nickChange', { step: 3 }, { replace: true }); };
+  LZ.act.nnCancel = function () { NN = { nick: '' }; LZ.back(); };
+  LZ.act.nnDo = async function () {
+    LZ.busy(true, '바꾸는 중…');
+    try { var r = await LZ.api('setNick', { nick: NN.nick }); S.user = r.user || S.user; await LZ.refreshMe().catch(function () {}); LZ.busy(false); LZ.toast('닉네임을 ' + NN.nick + '(으)로 바꿨어요'); NN = { nick: '' }; LZ.back(); }
+    catch (e) { LZ.busy(false); LZ.toast(LZ.errText(e), 5000); LZ.go('nickChange', { step: 1 }, { replace: true }); }
+  };
+  LZ.act.unitTgl = async function (el) { var nu = S.unit === 'm' ? 'p' : 'm'; S.unit = nu; S.user.unit = nu; LZ.flip(el); try { await LZ.api('useBranch', { br: S.br, unit: nu }); } catch (e) { /* 다음에 */ } };
   LZ.act.avatarMenu = function () {
     LZ.sheet('<h2>프로필 사진</h2><p class="muted">정사각형으로 잘라 작게 저장돼요(256px). 클럽 회원님과 점수판에 보여요.</p><label class="btn" style="display:flex;align-items:center;justify-content:center;cursor:pointer"><input type="file" id="avFile" accept="image/*" hidden>사진 고르기</label><label class="btn o" style="display:flex;align-items:center;justify-content:center;cursor:pointer"><input type="file" id="avCam" accept="image/*" capture="user" hidden>지금 찍기</label>' + (S.user.img ? '<button type="button" class="btn g" data-act="avatarDel">사진 지우기</button>' : ''));
     ['#avFile', '#avCam'].forEach(function (id) { var f = $(id); if (f) f.addEventListener('change', function () { if (f.files[0]) avatarUpload(f.files[0]); }); });
@@ -62,11 +221,7 @@
       img.onerror = function () { reject(new Error('사진을 읽지 못했어요')); }; img.src = url;
     });
   };
-  LZ.act.sqChange = async function () {
-    var v = await LZ.dialog({ title: '🔑 비밀번호 찾기 질문 바꾸기', html: '<p class="muted">나의 절친 이름과 전화번호 뒷자리 4개. 늘 머릿속에 있는 답으로 정하세요.</p>' + (S.user.sq ? '<label class="lb" style="margin-top:0">지금 비밀번호</label><input type="password" id="sqPin" inputmode="numeric" maxlength="' + (S.user.pinLen || 4) + '">' : '') + '<div class="row" style="margin-top:8px"><input type="text" id="sqN" maxlength="10" placeholder="절친 이름"><input type="tel" id="sqD" inputmode="numeric" maxlength="4" placeholder="뒷자리 4"></div>', cancel: null, buttons: [{ label: '저장', kind: 'y', value: 'ok' }, { label: '취소', kind: 'g', value: null }] }).then(function (x) { return x === 'ok' ? { pin: ($('#sqPin') || {}).value || '', name: $('#sqN').value, num: $('#sqD').value } : null; });
-    if (!v) return;
-    try { var r = await LZ.api('sqSet', v); S.user = r.user; LZ.toast('비밀번호 찾기 질문을 저장했어요'); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e), 5000); }
-  };
+  LZ.act.kidInfo = function () { LZ.dialog({ title: '카카오 본인 확인을 마쳤어요', body: '카카오 계정 하나에 회원 한 분이에요. 비밀번호를 잊으면 로그인 화면의 "비밀번호를 잊었어요"에서 카카오로 확인하고 새로 정해요.' }); };
   LZ.act.verRefresh = async function () { if (!(await LZ.confirm('최신 버전으로 새로 고칠까요?', '저장해 둔 앱 껍데기를 지우고 다시 받아요. 로그인은 그대로예요.', '새로 고침'))) return; LZ.pwa.hardRefresh(); };
   LZ.act.homeAdd = function () { if (LZ.pwa && LZ.pwa.guide) LZ.pwa.guide(); else LZ.toast('브라우저 메뉴에서 "홈 화면에 추가"를 눌러 주세요', 5000); };
 
@@ -81,44 +236,83 @@
   };
   LZ.act.pinChangeOk = async function () { var a = $('#np1').value, b = $('#np2').value; if (a !== b) { LZ.toast('두 번 넣은 번호가 달라요'); return; } try { var r = await LZ.api('pin', { pin: a }); S.user = r.user; LZ.toast('비밀번호를 바꿨어요', 3000); LZ.back(); } catch (e) { LZ.toast(LZ.errText(e), 5000); } };
 
-  /* 결제 */
+  /* 결제(v7.2): 자리 추가 · 자리 연장 · 클럽 추가 — 적립 포인트(10P 단위)와 송금을 섞어 내기, 송금은 관리자 확인 뒤 자리가 생김 */
+  var PAY = { d: null, p: null };
   LZ.screens.pay = {
     tab: 'me',
     show: async function (p, root, alive) {
       root.innerHTML = LZ.hdr('결제', { back: true }) + LZ.skeleton(4);
-      var d = await LZ.api('payInfo', {}); if (!alive()) return;
-      var u = d.user, pend = d.pending, won = function (n) { return Number(n).toLocaleString() + '원' };
-      var sel = p.sel || (d.pay.ok ? 'red' : (d.clubs[0] ? 'club:' + d.clubs[0].id : '')), amount = 0, label = '', note = '', capSel = 0, club = null;
-      if (sel === 'red') { amount = d.red.price; label = '레드 연회비 1년'; note = LZ.fmtYmd(d.red.preview.start) + ' ~ ' + LZ.fmtYmd(d.red.preview.end); }
-      else if (sel.indexOf('club:') === 0) { club = d.clubs.filter(function (c) { return 'club:' + c.id === sel; })[0]; if (club) { capSel = +(p.cap || (club.quotes.filter(function (q) { return q.cap > club.paidCap; })[0] || club.quotes[0] || {}).cap || 0); var q = club.quotes.filter(function (x) { return x.cap === capSel; })[0]; amount = q ? q.amount : 0; label = club.name + ' 클럽 이용료 · ' + capSel + '명'; note = q ? q.why + (q.end ? ' · ' + LZ.fmtYmd(q.end) + '까지' : '') : ''; } }
-      root.innerHTML = LZ.hdr('결제', { back: true }) + '<div class="wrap">' +
-        (pend ? '<div class="card" style="background:var(--yl)"><h3>⏳ 입금 확인을 기다려요</h3><p style="margin:0">' + esc(pend.planName) + ' ' + won(pend.amount) + ' · ' + (pend.method === 'bank' ? '계좌이체' : '카카오페이') + ' · 보낸 분 이름 <b>' + esc(pend.depositor) + '</b></p><p class="muted">관리자가 확인하면 바로 적용되고 알림이 와요. 보통 하루 안에 처리돼요.</p><button type="button" class="btn g sm" data-act="payCancel">신청 취소</button></div>' : '') +
-        (pend ? '' : '<div class="card"><h3>무엇을 낼까요?</h3>' +
-          '<button type="button" class="opt ' + (sel === 'red' ? 'on' : '') + '" data-act="paySel" data-v="red"' + (d.pay.ok ? '' : ' disabled') + '><b>레드 연회비 · ' + won(d.red.price) + ' / 1년</b><span>' + (d.pay.ok ? '클럽 5개(각 20명) · 클럽 이용료 결제 · ' + LZ.fmtYmd(d.red.preview.start) + '부터 1년' : esc(d.pay.why)) + '</span></button>' +
-          d.clubs.map(function (c) { return '<button type="button" class="opt ' + (sel === 'club:' + c.id ? 'on' : '') + '" data-act="paySel" data-v="club:' + esc(c.id) + '"><b>🏠 ' + esc(c.name) + ' 클럽 이용료</b><span>지금 한도 ' + c.cap + '명 · 회원 ' + c.members + '명' + (c.capEnd ? ' · ' + LZ.fmtYmd(c.capEnd) + '까지' : '') + '</span></button>'; }).join('') +
-          '<p class="hint">클럽 이용료는 <b>클럽에 귀속</b>돼요(캡틴이 바뀌어도 한도·기간은 클럽에 그대로). 20명까지는 연회비에 포함이에요.</p>' + '</div>' +
-          (club ? '<div class="card"><h3>한도 고르기</h3><p class="muted" style="margin:0 0 8px">50명 ' + won(d.fee[50]) + ' · 100명 ' + won(d.fee[100]) + ' · 200명 ' + won(d.fee[200]) + ' · 이후 100명마다 +' + won(d.fee.step) + ' (1년). 기간 안에 연장하면 50% 할인, 올리기는 차액만.</p><div class="chips wrap2">' + club.quotes.map(function (q) { return '<button type="button" class="sm2 ' + (capSel === q.cap ? '' : 'g') + '" data-act="payCap" data-v="' + q.cap + '">' + q.cap + '명 ' + (q.amount ? won(q.amount) : '포함') + (q.kind === 'renew' ? ' 연장' : q.kind === 'up' ? ' 올리기' : '') + '</button>'; }).join('') + '</div></div>' : '') +
-          (amount > 0 ? '<div class="card"><h3>보내기 · ' + won(amount) + '</h3><p class="muted" style="margin:0 0 6px"><b>' + esc(label) + '</b> · ' + esc(note) + '</p>' + (d.qr.red ? '<a class="btn kakao" href="' + esc(d.qr.red) + '" target="_blank" rel="noopener">카카오페이로 ' + won(amount) + ' 보내기</a>' : '') + (d.bank.no ? '<p class="muted" style="margin:10px 0 6px">' + (d.qr.red ? '또는 ' : '') + '계좌로 보내요</p><div class="box"><b>' + esc(d.bank.name) + ' ' + esc(d.bank.no) + '</b> ' + esc(d.bank.holder) + ' <button type="button" class="sm2 g" data-act="copy" data-v="' + esc(d.bank.no) + '">복사</button></div>' : '') + '<label class="lb">보낸 분 이름(통장·카카오페이에 찍히는 이름)</label><input type="text" id="dep" maxlength="10" value="' + esc(u.nick) + '">' + LZ.seg([['kakao', '카카오페이로 보냈어요'], ['bank', '계좌로 보냈어요']], d.qr.red ? 'kakao' : 'bank', 'payMethod') + '<input type="hidden" id="pm" value="' + (d.qr.red ? 'kakao' : 'bank') + '"><button type="button" class="btn" data-act="payReq" data-v="' + esc(sel) + ':' + capSel + '">보냈어요 · 확인 요청</button><p class="hint">관리자가 입금을 확인하면 바로 적용돼요. 결제 후 7일 안이고 기록을 쓰지 않았으면 전액 환불, 그 뒤엔 남은 일수만큼 환불해요.</p></div>' : (sel ? '<div class="card"><p style="margin:0">' + esc(label) + ' — 낼 금액이 없어요(이미 포함).</p></div>' : ''))) + '</div>';
+      p = p || {}; if (!p.plan) p.plan = 'seat';
+      var body = { plan: p.plan }; ['mid', 'pack', 'name', 'area', 'meet', 'color', 'pub'].forEach(function (k) { if (p[k] !== undefined) body[k] = p[k]; });
+      if (p.plan === 'seat' && !body.mid) { var st = (S.me && S.me.moims || []).filter(function (m) { return m.role === 'cap' || m.role === 'mgr'; })[0]; if (st) body.mid = st.id; }
+      var d = await LZ.api('payInfo', body); if (!alive()) return; PAY.d = d; PAY.p = body;
+      var sc = d.seat, q = d.quote, pend = d.pending, title = p.plan === 'renew' ? sc.seat_size + '자리 연장' : p.plan === 'clubadd' ? '클럽 추가' : sc.seat_size + '자리 추가', html = '';
+      if (pend) html = '<div class="card pendc"><h3>' + LZ.ic('bell') + ' 결제 ' + esc(pend.stName) + '</h3><p style="margin:0"><b>' + esc(pend.planName) + '</b> · 보낼 금액 ' + won(pend.cash) + (pend.pts ? ' · 포인트 ' + pt(pend.pts) : '') + '</p><p class="muted">' + (pend.method === 'bank' ? '계좌이체' : '카카오페이') + ' · 보낸 분 <b>' + esc(pend.depositor) + '</b><br>관리자가 확인하면 바로 자리가 생기고 알림이 와요. 보통 하루 안에 확인해요.</p><button type="button" class="btn g sm" data-act="payCancel">요청 취소</button><p class="hint">새로 결제하려면 이 요청을 먼저 취소해 주세요.</p></div>';
+      else {
+        if (p.plan === 'seat') {
+          var cl = d.clubs.filter(function (c) { return c.id === body.mid; })[0];
+          html += '<div class="card"><span class="su">클럽</span>' + (d.clubs.length > 1 ? '<select id="payClub" class="in" style="margin-top:4px">' + d.clubs.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === body.mid ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select>' : '<div><b class="big1">' + esc(cl ? cl.name : '') + '</b></div>') +
+            (q ? '<div class="su" style="margin-top:6px">' + q.n + '명 / ' + q.before + '자리 → <b class="acc1">' + q.after + '자리</b></div>' : '') + '</div>';
+        } else if (p.plan === 'renew' && q) html += '<div class="card"><span class="su">연장할 자리</span><div><b class="big1">' + esc(q.label) + '</b></div><div class="su" style="margin-top:6px">지금 ' + LZ.fmtYmd(q.before) + '까지 → <b class="acc1">' + LZ.fmtYmd(q.end) + '까지</b> (끝나는 날부터)</div></div>';
+        else if (p.plan === 'clubadd') html += '<div class="card"><span class="su">새 클럽</span><div><b class="big1">' + esc(p.name || '') + '</b>' + (p.area ? ' <span class="su">' + esc(p.area) + '</span>' : '') + '</div><div class="su" style="margin-top:6px">무료 ' + sc.free_seats + '자리 + 유료 ' + sc.seat_size + '자리 1장을 함께 받아요. 유료 자리는 내가 캡틴·매니저인 다른 클럽으로 옮길 수도 있어요.</div></div>';
+        if (d.quoteErr || !q) html += '<div class="box warn">' + esc(d.quoteErr || '살 것을 골라 주세요.') + '</div>' + (p.plan === 'clubadd' ? '<button type="button" class="btn o" data-go="make">클럽 정보 다시 쓰기</button>' : '');
+        else {
+          var unit = d.points.unit, maxP = Math.min(d.points.usable, Math.floor(q.amount / unit) * unit), useP = p.pts !== undefined ? Math.min(maxP, Math.floor(+p.pts / unit) * unit) : maxP;
+          html += '<div class="card payg"><div class="pr"><span>' + esc(title) + ' · ' + (sc.seat_days % 365 === 0 ? sc.seat_days / 365 + '년' : sc.seat_days + '일') + '</span><b>' + won(q.amount) + '</b></div>' +
+            '<div class="su">기간 ' + dd(q.start) + ' ~ ' + dd(q.end) + '</div>' +
+            '<div class="pr"><label class="ckl"><input type="checkbox" id="usePt"' + (useP > 0 ? ' checked' : '') + (maxP <= 0 ? ' disabled' : '') + '><span>적립 포인트 쓰기</span></label><b class="ptuse" id="ptUse">− ' + pt(useP) + '</b></div>' +
+            '<div class="su">보유 ' + pt(d.points.bal) + ' · ' + unit + 'P 단위로 사용' + (d.points.soon ? ' · ' + dd(d.points.soon.date) + '에 ' + pt(d.points.soon.amt) + ' 소멸' : '') + '</div>' +
+            (maxP > 0 ? '<div class="ptadj"><button type="button" class="sm2 g" data-act="ptStep" data-v="-1">−' + unit + '</button><input type="number" id="ptIn" class="num" inputmode="numeric" step="' + unit + '" min="0" max="' + maxP + '" value="' + useP + '"><button type="button" class="sm2 g" data-act="ptStep" data-v="1">＋' + unit + '</button><button type="button" class="sm2 g" data-act="ptStep" data-v="max">모두</button></div>' : '') +
+            '<div class="pr tot"><span>보낼 금액</span><b class="big2" id="cashV">' + won(q.amount - useP) + '</b></div>' +
+            '<div class="pr su"><span>보낸 금액의 ' + sc.earn_pct + '% 적립</span><span id="earnV">+' + pt(Math.floor((q.amount - useP) * sc.earn_pct / 100)) + '</span></div></div>' +
+            '<div class="su paynote">· 카카오페이나 계좌로 보내면 관리자가 확인해요. 확인되면 그때 자리가 생겨요<br>· ' + (u0().tier === 'red' || u0().tier === 'gold' ? '자리는 묶음마다 기간이 따로 흘러요' : '처음 사면 <b>레드</b> 회원이 돼요') + '<br>· ' + sc.refund_days + '일 안, 아직 안 쓴 자리는 전액 환불돼요</div>' +
+            '<div id="cashBox"' + (q.amount - useP > 0 ? '' : ' hidden') + '><div class="card"><h3>보내는 곳</h3>' + (d.qr.red ? '<a class="btn kakao" id="qrBtn" href="' + esc(d.qr.red) + '" target="_blank" rel="noopener">카카오페이로 보내기</a>' : '') + (d.bank.no ? '<p class="muted" style="margin:10px 0 6px">' + (d.qr.red ? '또는 ' : '') + '계좌로 보내요</p><div class="box"><b>' + esc(d.bank.name) + ' ' + esc(d.bank.no) + '</b> ' + esc(d.bank.holder) + ' <button type="button" class="sm2 g" data-act="copy" data-v="' + esc(d.bank.no) + '">복사</button></div>' : '') +
+            '<label class="lb">보낸 분 이름(통장·카카오페이에 찍히는 이름)</label><input type="text" id="dep" maxlength="10" value="' + esc(S.user.nick) + '">' + LZ.seg([['kakao', '카카오페이'], ['bank', '계좌']], d.qr.red ? 'kakao' : 'bank', 'payMethod') + '<input type="hidden" id="pm" value="' + (d.qr.red ? 'kakao' : 'bank') + '"></div></div>' +
+            '<button type="button" class="btn paygo" data-act="payReq" id="payGo">' + payBtnTxt(q.amount - useP) + '</button>';
+        }
+      }
+      root.innerHTML = LZ.hdr(title, { back: true }) + '<div class="wrap">' + html + '</div>';
+      var sel = $('#payClub'); if (sel) sel.addEventListener('change', function () { LZ.go('pay', { plan: 'seat', mid: sel.value }, { replace: true }); });
+      var ck = $('#usePt'), pin = $('#ptIn'); if (ck) ck.addEventListener('change', payCalc); if (pin) pin.addEventListener('input', payCalc);
     }
   };
-  LZ.act.paySel = function (el, v) { LZ.go('pay', { sel: v }, { replace: true }); };
-  LZ.act.payCap = function (el, v) { LZ.go('pay', { sel: LZ.cur().p.sel, cap: +v }, { replace: true }); };
+  function u0() { return S.user || {}; }
+  function payBtnTxt(cash) { return cash > 0 ? won(cash) + ' 보내고 신청하기' : '포인트로 바로 사기'; }
+  function payPts() { var d = PAY.d, q = d && d.quote; if (!q) return 0; var unit = d.points.unit, maxP = Math.min(d.points.usable, Math.floor(q.amount / unit) * unit), ck = $('#usePt'), pin = $('#ptIn'); if (!ck || !ck.checked) return 0; var v = pin ? Math.floor((+pin.value || 0) / unit) * unit : maxP; return Math.max(0, Math.min(maxP, v)); }
+  function payCalc() {
+    var d = PAY.d, q = d.quote, use = payPts(), cash = q.amount - use;
+    $('#ptUse').textContent = '− ' + pt(use); $('#cashV').textContent = won(cash); $('#earnV').textContent = '+' + pt(Math.floor(cash * d.seat.earn_pct / 100));
+    var cb = $('#cashBox'); if (cb) cb.hidden = cash <= 0; $('#payGo').textContent = payBtnTxt(cash);
+  }
+  LZ.act.ptStep = function (el, v) { var d = PAY.d, q = d.quote, unit = d.points.unit, maxP = Math.min(d.points.usable, Math.floor(q.amount / unit) * unit), pin = $('#ptIn'), ck = $('#usePt'); var cur = Math.floor((+pin.value || 0) / unit) * unit; cur = v === 'max' ? maxP : Math.max(0, Math.min(maxP, cur + (+v) * unit)); pin.value = cur; ck.checked = cur > 0; payCalc(); };
   LZ.act.payMethod = function (el, v) { $('#pm').value = v; $$('[data-act="payMethod"]').forEach(function (b) { b.classList.toggle('on', b.dataset.v === v); }); };
-  LZ.act.payReq = async function (el, v) { var p = v.split(':'), body = p[0] === 'red' ? { plan: 'red' } : { plan: 'club', mid: p[1], cap: +p[2] }; body.method = $('#pm').value; body.depositor = $('#dep').value; try { await LZ.api('payReq', body); LZ.toast('확인 요청을 보냈어요. 승인되면 알림이 와요', 4000); await LZ.refreshMe(); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e), 5000); } };
-  LZ.act.payCancel = async function () { if (!(await LZ.confirm('결제 신청을 취소할까요?', '이미 보낸 돈이 있다면 취소하지 말고 기다려 주세요.', '취소하기', 'r'))) return; try { await LZ.api('payCancel', {}); await LZ.refreshMe(); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e)); } };
-  /* 환불 */
+  LZ.act.payReq = async function () {
+    var body = {}, b0 = PAY.p; for (var k in b0) body[k] = b0[k]; body.pts = payPts();
+    var q = PAY.d.quote, cash = q.amount - body.pts;
+    if (cash > 0) { body.method = $('#pm').value; body.depositor = $('#dep').value; if (!(await LZ.confirm(won(cash) + '을 보내셨나요?', '카카오페이나 계좌로 보낸 뒤에 신청해 주세요. 관리자가 "' + (body.depositor || S.user.nick) + '" 이름으로 확인해요.', '보냈어요 · 신청'))) return; }
+    else if (!(await LZ.confirm('포인트 ' + pt(body.pts) + '로 살까요?', q.label + ' · 바로 생겨요', '사기'))) return;
+    try { var r = await LZ.api('payReq', body); await LZ.refreshMe(); if (r.done) { LZ.toast(r.pay.planName + ' · 바로 생겼어요', 4000); LZ.go(r.pay.mid ? 'club' : 'meTier', r.pay.mid ? { id: r.pay.mid } : {}, { replace: true }); } else { LZ.toast('결제를 요청했어요. 관리자가 확인하면 알림이 와요', 4500); LZ.go('meTier', {}, { replace: true }); } }
+    catch (e) { LZ.toast(LZ.errText(e), 5000); }
+  };
+  LZ.act.payCancel = async function () { if (!(await LZ.confirm('결제 요청을 취소할까요?', '이미 돈을 보냈다면 취소하지 말고 기다려 주세요. 쓴 포인트는 되돌려 드려요.', '요청 취소', 'r'))) return; try { await LZ.api('payCancel', {}); await LZ.refreshMe(); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e)); } };
+  /* 환불(v7.2): 확인된 지 14일 안 + 그 자리를 한 자리도 안 쓰면 전액. 포인트만 썼으면 바로 */
   LZ.screens.refund = {
     tab: 'me',
     show: async function (p, root, alive) {
       root.innerHTML = LZ.hdr('환불', { back: true }) + LZ.skeleton(3);
-      var d = await LZ.api('refundInfo', {}); if (!alive()) return; var st = d.state || {}, won = function (n) { return Number(n).toLocaleString() + '원'; };
+      var d = await LZ.api('refundInfo', {}); if (!alive()) return; var st = d.state || {}, list = d.list || [], sel = list.filter(function (x) { return x.id === p.pid && x.can; })[0];
       root.innerHTML = LZ.hdr('환불', { back: true }) + '<div class="wrap">' +
-        (st.req ? '<div class="card" style="background:var(--yl)"><h3>환불 신청 중</h3><p style="margin:0">' + esc(st.req.planName) + ' · 예상 ' + won(st.req.amount) + ' · ' + esc(st.req.bank) + ' ' + esc(st.req.acct) + '</p><p class="muted">' + esc(st.req.why) + '</p><button type="button" class="btn g sm" data-act="refundCancel">신청 취소</button></div>' :
-          st.recent ? '<div class="card"><h3>' + (st.recent.status === 'done' ? '환불 완료' : '환불 안 됨') + '</h3><p style="margin:0">' + esc(st.recent.planName) + ' · ' + won(st.recent.amount) + (st.recent.note ? '<br>' + esc(st.recent.note) : '') + '</p></div>' : '') +
-        (d.calc && !st.req ? '<div class="card"><h3>환불 신청</h3><p style="margin:0">' + esc(d.pay.planName) + ' ' + won(d.pay.amount) + ' (' + esc(d.pay.start) + '~' + esc(d.pay.end) + ')</p><div class="box"><b>예상 환불 ' + won(d.calc.amount) + '</b><div class="muted">' + esc(d.calc.why) + '</div></div><label class="lb">은행</label><input type="text" id="rb" maxlength="20" placeholder="예: 카카오뱅크"><label class="lb">계좌번호</label><input type="tel" id="ra" maxlength="30"><label class="lb">예금주</label><input type="text" id="rh" maxlength="20"><label class="lb">사유(선택)</label><input type="text" id="rr" maxlength="100"><label class="tgl"><span>환불되면 연회비 기간이 바로 끝나는 것을 확인했어요</span><input type="checkbox" id="rag"></label><button type="button" class="btn" data-act="refundReq">환불 신청</button></div>' : (!st.req && !st.recent ? '<div class="card"><p style="margin:0">환불할 수 있는 결제가 없어요.</p></div>' : '')) + '</div>';
+        (st.req ? '<div class="card pendc"><h3>' + LZ.ic('back') + ' 환불 ' + esc(st.req.stName) + '</h3><p style="margin:0">' + esc(st.req.planName) + ' · ' + won(st.req.amount) + '<br>' + esc(st.req.bank) + ' ' + esc(st.req.acct) + '</p><p class="muted">' + esc(st.req.why) + '<br>관리자가 보내면 "환불됨"으로 바뀌고 알림이 와요.</p><button type="button" class="btn g sm" data-act="refundCancel">신청 취소</button></div>' :
+          st.recent ? '<div class="card"><h3>환불 ' + esc(st.recent.stName) + '</h3><p style="margin:0">' + esc(st.recent.planName) + ' · ' + won(st.recent.amount) + (st.recent.note ? '<br>' + esc(st.recent.note) : '') + '</p></div>' : '') +
+        '<div class="card"><p class="muted" style="margin:0">확인된 지 <b>' + d.days + '일 안</b>이고 그 자리를 <b>한 자리도 안 쓰고 있으면</b> 전액 환불돼요(일할 환불은 없어요). 쓴 포인트는 되돌리고, 그 결제로 받은 적립은 회수해요. 환불하면 그 자리는 바로 없어져요.</p></div>' +
+        (st.req ? '' : list.length ? '<div class="card tight"><h3 class="ih">최근 결제</h3>' + list.map(function (x) { return '<div class="li"><div class="t"><b>' + esc(x.planName) + '</b><span class="su">' + won(x.cash) + (x.pts ? ' + 포인트 ' + pt(x.pts) : '') + ' · 확인 ' + LZ.fmtDate(x.decided) + (x.can ? ' · ' + LZ.fmtYmd(x.until) + '까지 환불 가능' : '') + '</span>' + (x.can ? '<div class="pkb"><button type="button" class="sm2 ' + (sel && sel.id === x.id ? '' : 'g') + '" data-act="refundPick" data-v="' + esc(x.id) + '">' + (sel && sel.id === x.id ? '고름' : '환불 신청') + '</button></div>' : '<span class="su warnt">' + esc(x.why) + '</span>') + '</div></div>'; }).join('') + '</div>' : '<div class="card"><p style="margin:0">환불할 수 있는 결제가 없어요.</p></div>') +
+        (sel && !st.req ? '<div class="card"><h3>' + esc(sel.planName) + '</h3><div class="box"><b>환불 ' + won(sel.cash) + '</b>' + (sel.pts ? '<div class="muted">포인트 ' + pt(sel.pts) + '는 되돌려요</div>' : '') + '</div>' +
+          (sel.cash > 0 ? '<label class="lb">은행</label><input type="text" id="rb" maxlength="20" placeholder="예: 카카오뱅크"><label class="lb">계좌번호</label><input type="tel" id="ra" maxlength="30"><label class="lb">예금주</label><input type="text" id="rh" maxlength="20"><label class="lb">사유(선택)</label><input type="text" id="rr" maxlength="100">' : '<p class="muted">포인트로만 냈으니 바로 환불돼요.</p>') +
+          '<label class="tgl"><span>환불하면 그 자리가 바로 없어지는 것을 확인했어요</span><input type="checkbox" id="rag"></label><button type="button" class="btn" data-act="refundReq" data-v="' + esc(sel.id) + '">' + (sel.cash > 0 ? '환불 신청' : '바로 환불') + '</button></div>' : '') + '</div>';
     }
   };
-  LZ.act.refundReq = async function () { try { await LZ.api('refundReq', { bank: $('#rb').value, acct: $('#ra').value, holder: $('#rh').value, reason: $('#rr').value, agree: $('#rag').checked ? 1 : 0 }); LZ.toast('환불 신청을 보냈어요', 4000); await LZ.refreshMe(); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e), 5000); } };
+  LZ.act.refundPick = function (el, id) { LZ.go('refund', { pid: id }, { replace: true }); };
+  LZ.act.refundReq = async function (el, pid) { var v = function (id) { var e = $('#' + id); return e ? e.value : ''; }; try { var r = await LZ.api('refundReq', { pid: pid, bank: v('rb'), acct: v('ra'), holder: v('rh'), reason: v('rr'), agree: $('#rag').checked ? 1 : 0 }); LZ.toast(r.done ? '환불됐어요' + (r.back ? ' · 포인트 ' + pt(r.back) + ' 되돌림' : '') : '환불을 신청했어요. 관리자가 보내면 알림이 와요', 4500); await LZ.refreshMe(); LZ.go('refund', {}, { replace: true }); } catch (e) { LZ.toast(LZ.errText(e), 5000); } };
   LZ.act.refundCancel = async function () { if (!(await LZ.confirm('환불 신청을 취소할까요?', '', '취소하기', 'r'))) return; try { await LZ.api('refundCancel', {}); await LZ.refreshMe(); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e)); } };
 
 
@@ -131,11 +325,11 @@
       var d = await LZ.api('notiCfg', {}); if (!alive()) return; NC = d; var c = d.cfg, isCap = S.user.kind === 'admin' || (S.me.moims || []).some(function (x) { return x.role === 'cap' || x.role === 'mgr'; });
       var perm = ('Notification' in window) ? Notification.permission : 'none', canPush = 'serviceWorker' in navigator && 'PushManager' in window && !!d.vapid;
       root.innerHTML = LZ.hdr('알림 설정', { back: true }) + '<div class="wrap">' +
-        '<div class="card"><h3>📱 앱 푸시</h3><p class="muted" style="margin:0 0 6px">' + (canPush ? (perm === 'denied' ? '휴대폰 설정에서 이 앱의 알림이 꺼져 있어요. 설정 → 알림에서 켜 주세요.' : LZ.pwa && LZ.pwa.isIOS && !LZ.pwa.standalone() ? '아이폰은 "홈 화면에 추가"한 뒤에 알림을 받을 수 있어요.' : '앱을 닫아도 알림이 와요. 휴대폰 ' + d.pushN + '대에 켜져 있어요.') : '이 브라우저는 푸시를 지원하지 않거나 서버 준비가 안 됐어요.') + '</p><div class="tgl"><span>이 휴대폰에서 푸시 받기</span>' + LZ.sw(c.push && d.pushN, 'pushTgl', '', !canPush || perm === 'denied') + '</div></div>' +
-        (isCap ? '<div class="card"><h3>💬 카카오톡으로 받기</h3><p class="muted" style="margin:0 0 6px">' + (d.kakaoKey ? '카카오 "나에게 보내기"로 같은 알림을 카톡으로도 받아요. 앱을 안 열어도 돼요.' : '관리자가 카카오 앱 키를 넣으면 쓸 수 있어요.') + '</p>' + (d.kakaoLinked ? '<div class="tgl"><span>카카오톡으로도 받기<span class="muted">' + LZ.fmtDate(d.kakaoAt) + ' 연결됨</span></span>' + LZ.sw(c.kakao, 'kakaoTgl') + '</div><button type="button" class="btn g sm" data-act="kakaoUnlink">연결 끊기</button>' : (d.kakaoKey ? '<button type="button" class="btn kakao" data-act="kakaoLinkGo">카카오 연결하기</button>' : '')) + '</div>' : '') +
+        '<div class="card"><h3>' + LZ.ic('bell') + ' 앱 푸시</h3><p class="muted" style="margin:0 0 6px">' + (canPush ? (perm === 'denied' ? '휴대폰 설정에서 이 앱의 알림이 꺼져 있어요. 설정 → 알림에서 켜 주세요.' : LZ.pwa && LZ.pwa.isIOS && !LZ.pwa.standalone() ? '아이폰은 "홈 화면에 추가"한 뒤에 알림을 받을 수 있어요.' : '앱을 닫아도 알림이 와요. 휴대폰 ' + d.pushN + '대에 켜져 있어요.') : '이 브라우저는 푸시를 지원하지 않거나 서버 준비가 안 됐어요.') + '</p><div class="tgl"><span>이 휴대폰에서 푸시 받기</span>' + LZ.sw(c.push && d.pushN, 'pushTgl', '', !canPush || perm === 'denied') + '</div></div>' +
+        (isCap ? '<div class="card"><h3>' + LZ.ic('kakao') + ' 카카오톡으로 받기</h3><p class="muted" style="margin:0 0 6px">' + (d.kakaoKey ? '카카오 "나에게 보내기"로 같은 알림을 카톡으로도 받아요. 앱을 안 열어도 돼요.' : '관리자가 카카오 앱 키를 넣으면 쓸 수 있어요.') + '</p>' + (d.kakaoLinked ? '<div class="tgl"><span>카카오톡으로도 받기<span class="muted">' + LZ.fmtDate(d.kakaoAt) + ' 연결됨</span></span>' + LZ.sw(c.kakao, 'kakaoTgl') + '</div><button type="button" class="btn g sm" data-act="kakaoUnlink">연결 끊기</button>' : (d.kakaoKey ? '<button type="button" class="btn kakao" data-act="kakaoLinkGo">카카오 연결하기</button>' : '')) + '</div>' : '') +
         '<div class="card"><h3>받을 알림</h3>' + d.kinds.map(function (k) { return '<div class="tgl"><span>' + esc(NK[k] || k) + '</span>' + LZ.sw(c.kinds[k] !== 0, 'kindTgl', k) + '</div>'; }).join('') + '</div>' +
         '<div class="card"><div class="tgl"><span>조용한 시간<span class="muted">밤 10시~아침 7시 알림은 아침 7시에 모아서 보내요</span></span>' + LZ.sw(c.quiet, 'quietTgl') + '</div></div>' +
-        '<p class="hint">앱 안 알림함(🔔)에는 설정과 상관없이 모두 남아요.</p></div>';
+        '<p class="hint">앱 안 알림함(상단 종)에는 설정과 상관없이 모두 남아요.</p></div>';
     }
   };
   var NC = null;
@@ -148,7 +342,7 @@
     try {
       var perm = await Notification.requestPermission(); if (perm !== 'granted') { LZ.toast('알림을 허용하지 않았어요'); return; }
       var reg2 = await navigator.serviceWorker.ready, sub2 = await reg2.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(NC.vapid) });
-      await LZ.api('pushSub', { sub: sub2.toJSON(), dev: LZ.devId().slice(0, 16) }); await setCfg({ push: 1 }); LZ.toast('이 휴대폰에서 푸시를 받아요 🔔', 3000);
+      await LZ.api('pushSub', { sub: sub2.toJSON(), dev: LZ.devId().slice(0, 16) }); await setCfg({ push: 1 }); LZ.toast('이 휴대폰에서 푸시를 받아요', 3000);
     } catch (e) { LZ.toast('푸시를 켜지 못했어요. ' + (LZ.pwa && LZ.pwa.isIOS ? '홈 화면에 추가한 뒤 다시 해 주세요.' : LZ.errText(e)), 5000); }
   };
   function b64ToU8(s) { var p = '='.repeat((4 - s.length % 4) % 4), b = (s + p).replace(/-/g, '+').replace(/_/g, '/'), raw = atob(b), out = new Uint8Array(raw.length); for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i); return out; }

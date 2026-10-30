@@ -11,7 +11,7 @@
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; });
   window.addEventListener('appinstalled', function () { deferred = null; store.set('lz.installed', '1'); });
   P.guide = async function () {
-    if (deferred) { var d = deferred; deferred = null; d.prompt(); var r = await d.userChoice; if (r && r.outcome === 'accepted') { LZ.toast('홈 화면에 추가했어요. 앱 아이콘으로 열어 주세요 🎉', 5000); return; } }
+    if (deferred) { var d = deferred; deferred = null; d.prompt(); var r = await d.userChoice; if (r && r.outcome === 'accepted') { LZ.toast('홈 화면에 추가했어요. 앱 아이콘으로 열어 주세요', 5000); return; } }
     if (P.standalone()) { LZ.toast('이미 앱으로 열려 있어요'); return; }
     if (P.inApp()) { LZ.sheet('<h2>기본 브라우저로 열어요</h2><p class="muted">카카오톡 안에서는 홈 화면에 추가할 수 없어요. 아래를 눌러 크롬·사파리로 연 뒤 다시 해 주세요.</p>' + (P.externalUrl() ? '<a class="btn" href="' + LZ.esc(P.externalUrl()) + '">기본 브라우저로 열기</a>' : '<p>오른쪽 위 ⋮ 메뉴 → "다른 브라우저로 열기"</p>')); return; }
     LZ.sheet('<h2>홈 화면에 추가</h2>' + (P.isIOS ? '<div class="box">① 사파리 아래 <b>공유</b> 단추(네모에 화살표)<br>② <b>홈 화면에 추가</b><br>③ 오른쪽 위 <b>추가</b></div><p class="muted">아이폰은 홈 화면에 추가한 뒤에 푸시 알림을 받을 수 있어요.</p>' : '<div class="box">① 브라우저 오른쪽 위 <b>⋮</b> 메뉴<br>② <b>홈 화면에 추가</b> 또는 <b>앱 설치</b><br>③ <b>설치</b></div>') + '<p class="muted">앱 아이콘으로 열면 더 빠르고 알림도 받아요.</p>');
@@ -43,7 +43,7 @@
     setTimeout(function () {
       if (document.querySelector('#layer .sheet, #layer .dlg')) return;
       var inapp = P.inApp();
-      LZ.sheet('<h2>📱 홈 화면에 추가하세요</h2><p class="muted">홈 화면의 앱 아이콘으로 열면 더 빨리 열리고, 로그인이 유지되고, 알림도 받을 수 있어요.</p>' +
+      LZ.sheet('<h2>' + LZ.ic('home') + ' 홈 화면에 추가하세요</h2><p class="muted">홈 화면의 앱 아이콘으로 열면 더 빨리 열리고, 로그인이 유지되고, 알림도 받을 수 있어요.</p>' +
         (inapp ? '<div class="box">지금은 카카오톡 안에서 열려 있어요. 먼저 <b>기본 브라우저로 열기</b>를 누른 뒤 홈 화면에 추가해 주세요.</div>' : P.isIOS ? '<div class="box">① 사파리 아래 <b>공유</b> 단추(네모에 화살표)<br>② <b>홈 화면에 추가</b><br>③ 오른쪽 위 <b>추가</b></div>' : '<div class="box">① 브라우저 오른쪽 위 <b>⋮</b> 메뉴<br>② <b>홈 화면에 추가</b>(또는 앱 설치)<br>③ <b>설치</b></div>') +
         '<button type="button" class="btn" data-act="homeAdd">' + (inapp ? '기본 브라우저로 열기' : P.isIOS ? '알겠어요' : '홈 화면에 추가') + '</button>');
     }, 1500);

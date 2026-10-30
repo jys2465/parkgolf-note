@@ -1,12 +1,14 @@
 /* 서비스 워커 — 앱 껍데기를 기기에 저장해서 더 빨리 열리고, 푸시 알림을 받아요.
  * ★ 파일을 고쳐 GitHub 에 올릴 때마다 아래 VERSION 숫자를 올리세요. (모든 기기가 새 버전으로 바뀝니다) */
-const VERSION = '6.9.1';
+const VERSION = '7.0.1';
 const CACHE = 'lezuro-' + VERSION;
 const SHELL = [
   './', 'index.html', 'manifest.json', 'css/app.css',
   'js/config.js', 'js/core.js', 'js/auth.js', 'js/home.js', 'js/screen.js', 'js/field.js', 'js/event.js', 'js/me.js', 'js/admin.js', 'js/pwa.js', 'js/help.js', 'js/app.js', 'vendor/qrcode.js',
   'assets/hero.webp', 'assets/logo-dark.png', 'assets/logo-light.png', 'assets/og-card-v6.jpg', 'assets/promo-join.jpg', 'assets/nosleep.mp4', 'assets/nosleep.webm',
-  'assets/fonts/Pretendard-Regular.woff2', 'assets/fonts/Pretendard-Bold.woff2', 'assets/fonts/Pretendard-ExtraBold.woff2',
+  'assets/fonts/Pretendard-Regular.woff2', 'assets/fonts/Pretendard-Bold.woff2',
+  // 화면 안내 그림(? 버튼) — 인터넷이 없어도 보이게
+  'assets/guide/adminCfg.webp', 'assets/guide/awards.webp', 'assets/guide/capDash.webp', 'assets/guide/club.webp', 'assets/guide/courses.webp', 'assets/guide/dash.webp', 'assets/guide/edit.webp', 'assets/guide/evMake.webp', 'assets/guide/event.webp', 'assets/guide/events.webp', 'assets/guide/field.webp', 'assets/guide/fieldReg.webp', 'assets/guide/find.webp', 'assets/guide/holes.webp', 'assets/guide/home.webp', 'assets/guide/me.webp', 'assets/guide/members.webp', 'assets/guide/notiCfg.webp', 'assets/guide/pay.webp', 'assets/guide/pays.webp', 'assets/guide/play.webp', 'assets/guide/rall.webp', 'assets/guide/reg.webp', 'assets/guide/round.webp',
   'icons/icon-192.png', 'icons/icon-maskable-512.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png'
 ];
 self.addEventListener('install', function (e) {

@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>파크골프 공략수첩</title>
-<meta name="description" content="스크린 파크골프 홀별 공략(좌우·타격감)을 적고 클럽 회원과 함께 보는 수첩 · 필드 라운드 점수판">
+<meta name="description" content="스크린 파크골프 홀별 공략(좌우·볼스피드)을 적고 클럽 회원과 함께 보는 수첩 · 필드 라운드 점수판">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; media-src 'self' blob: data:; connect-src 'self' https://achlxwcfcqaffazlxuxe.supabase.co wss://achlxwcfcqaffazlxuxe.supabase.co; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <!-- 카카오톡·문자 미리보기 카드 (저장소 주소가 바뀌면 아래 두 줄의 주소도 함께 바꿔 주세요) -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="파크골프 공략수첩">
 <meta property="og:title" content="파크골프 공략수첩 · 블루 회원 무료">
-<meta property="og:description" content="스크린 파크골프 홀별 공략(좌우·타격감)을 적어 두고 클럽 회원 기록과 평균까지 한눈에. 필드 라운드 점수판도 함께.">
+<meta property="og:description" content="스크린 파크골프 홀별 공략(좌우·볼스피드)을 적어 두고 클럽 회원 기록과 평균까지 한눈에. 필드 라운드 점수판도 함께.">
 <meta property="og:url" content="https://jys2465.github.io/parkgolf-note/">
 <meta property="og:image" content="https://jys2465.github.io/parkgolf-note/assets/og-card-v6.jpg">
 <meta property="og:image:width" content="1200">
@@ -27,9 +27,59 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/favicon-32.png">
 <link rel="preload" href="assets/fonts/Pretendard-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/Pretendard-Bold.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
+<!-- 선 아이콘 묶음(v7): LZ.ic('이름') 으로 씀 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20h-5v-6H9v6H4z"/></symbol>
+<symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V4h10l-2 4 2 4H6"/><circle cx="17" cy="18" r="2"/></symbol>
+<symbol id="i-field" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><path d="M12 10v5M7 20h10M9.5 15 12 20l2.5-5"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-club" viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><circle cx="16.5" cy="10" r="2.5"/><path d="M3 19c.7-3 3-4.5 6-4.5s5.3 1.5 6 4.5M15 14.5c2.5 0 4.5 1.3 5 4.5"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+<symbol id="i-unlock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></symbol>
+<symbol id="i-seat" viewBox="0 0 24 24"><path d="M7 4h10v8H7zM5 12h14v4H5zM7 16v4M17 16v4"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="m12 4 2.4 5 5.4.6-4 3.7 1.1 5.3L12 16l-4.9 2.6 1.1-5.3-4-3.7 5.4-.6z"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24"><path d="M5 5h14v10H10l-4 4v-4H5z"/></symbol>
+<symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8"/></symbol>
+<symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></symbol>
+<symbol id="i-note" viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6z"/><path d="M9 10h6M9 14h6M9 18h3"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6-6.2-6-11a6 6 0 0 1 12 0c0 4.8-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></symbol>
+<symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.5.4.8 1 .8 1.6V16h5.4v-.5c0-.6.3-1.2.8-1.6A6 6 0 0 0 12 3z"/></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></symbol><symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M9.5 9.5h3.2a1.8 1.8 0 0 1 0 3.6H10v-3.6M10 13.1V15"/></symbol><symbol id="i-kakao" viewBox="0 0 24 24"><path d="M12 4C7 4 3 7.1 3 11c0 2.5 1.7 4.7 4.2 5.9L6.5 20l3.6-2.4c.6.1 1.2.1 1.9.1 5 0 9-3.1 9-7S17 4 12 4z" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+<symbol id="i-up" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-medal" viewBox="0 0 24 24"><path d="M8 3l3 6.5M16 3l-3 6.5"/><circle cx="12" cy="15" r="5"/><path d="M12 13v4"/></symbol>
+<symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19C5 10 11 5 19 5c0 8-5 14-14 14z"/><path d="M5 19l8-8"/></symbol>
+<symbol id="i-clover" viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><circle cx="15" cy="9" r="3"/><circle cx="9" cy="15" r="3"/><circle cx="15" cy="15" r="3"/><path d="M15 15l4 5"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".8" fill="currentColor"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></symbol>
+<symbol id="i-sunset" viewBox="0 0 24 24"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M5.5 10.5 7 12M18.5 10.5 17 12M9 21h6"/></symbol>
+<symbol id="i-bird" viewBox="0 0 24 24"><path d="M3 13c3-.5 5 .5 7 3 1.5-5 5.5-8 11-8-2.5 1.5-3.5 4-5 7-2.5 4-8 4-13-2z"/><path d="M14 9.5 12 6"/></symbol>
+<symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 4s6 6.5 6 10.5a6 6 0 0 1-12 0C6 10.5 12 4 12 4z"/></symbol>
+<symbol id="i-ruler" viewBox="0 0 24 24"><path d="M3.5 15.5 15.5 3.5l5 5-12 12z"/><path d="M7 12l2 2M10 9l2 2M13 6l2 2"/></symbol>
+<symbol id="i-ball" viewBox="0 0 24 24"><circle cx="12" cy="11" r="7"/><circle cx="10" cy="9" r=".8" fill="currentColor"/><circle cx="13.5" cy="8.5" r=".8" fill="currentColor"/><circle cx="12" cy="12" r=".8" fill="currentColor"/><circle cx="15" cy="12" r=".8" fill="currentColor"/><path d="M9 21h6M12 18v3"/></symbol>
+<symbol id="i-screen" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></symbol>
+<symbol id="i-hands" viewBox="0 0 24 24"><path d="M4 13l4-4 4 3 4-3 4 4-6 6-2-2-2 2z"/></symbol>
+</svg>
 <div id="boot" class="boot"><div class="spin" aria-hidden="true"></div><p>불러오는 중…</p></div>
 <div id="app" hidden></div>
 <nav id="tabs" class="tabs" hidden></nav>
@@ -37,17 +87,14 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <noscript><p style="padding:24px">이 앱은 자바스크립트가 필요해요.</p></noscript>
 <script defer src="js/config.js"></script>
-<script defer src="vendor/qrcode.js"></script>
 <script defer src="js/core.js"></script>
 <script defer src="js/pwa.js"></script>
-<script defer src="js/help.js"></script>
 <script defer src="js/auth.js"></script>
 <script defer src="js/home.js"></script>
 <script defer src="js/screen.js"></script>
 <script defer src="js/field.js"></script>
-<script defer src="js/event.js"></script>
 <script defer src="js/me.js"></script>
-<script defer src="js/admin.js"></script>
+<!-- v7.0.1: admin.js · event.js · help.js · vendor/qrcode.js 는 필요할 때 core.js 의 LZ.need 가 불러요 -->
 <script defer src="js/app.js"></script>
 </body>
 </html>
