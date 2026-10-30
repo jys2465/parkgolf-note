@@ -39,7 +39,16 @@
   LZ.big = { get: function () { return document.body.classList.contains('big'); }, set: function (on) { document.body.classList.toggle('big', !!on); store.set('lz.big', on ? '1' : '0'); $$('[data-act="big"]').forEach(function (b) { b.classList.toggle('on', !!on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); }); } };
   /** 선 아이콘(index.html 의 SVG 묶음 #i-이름). 레벨 배지만 그림 글자를 써요 */
   LZ.ic = function (name, cls) { return '<svg class="ic' + (cls ? ' ' + cls : '') + '" aria-hidden="true" focusable="false"><use href="#i-' + name + '"/></svg>'; };
-  LZ.buzz = function () { if (store.get('lz.buzz') === '0') return; try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) { /* 무시 */ } };
+  /* 단추 진동: 안드로이드는 vibrate(짧으면 못 느껴서 25ms). 아이폰은 vibrate가 없어서, iOS 18 이상에서 '스위치' 체크박스를 누를 때 나는 햅틱을 빌려 씀(단추를 누른 그 순간에만 동작) */
+  LZ.buzz = function () {
+    if (store.get('lz.buzz') === '0') return;
+    try {
+      if (typeof navigator.vibrate === 'function') { navigator.vibrate(25); return; }
+      var l = document.createElement('label'), i = document.createElement('input');
+      i.type = 'checkbox'; i.setAttribute('switch', ''); l.appendChild(i); l.style.display = 'none'; l.setAttribute('aria-hidden', 'true'); l.addEventListener('click', function (e) { e.stopPropagation(); });   // 바깥 누르면 닫히는 창이 닫히지 않게
+      document.body.appendChild(l); l.click(); document.body.removeChild(l);
+    } catch (e) { /* 무시 */ }
+  };
   var p2 = function (n) { return (n < 10 ? '0' : '') + n; };
   /* 날짜는 항상 연도까지: 2026-10-27 (시간이 붙으면 2026-10-27 14:05) */
   LZ.fmtDate = function (ts, withTime) { if (!ts) return ''; var d = new Date(Number(ts) || ts); if (isNaN(d)) return String(ts); var s = d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()); if (withTime) s += ' ' + p2(d.getHours()) + ':' + p2(d.getMinutes()); return s; };
@@ -69,6 +78,10 @@
   /** 기록 환산: 같은 거리가 나오는 다른 모드·탄도의 볼스피드(소수점 1자리) */
   LZ.conv = function (p, g, h, g2, h2) { return g === g2 && h === h2 ? p : LZ.clampP(LZ.r1(LZ.convRaw(p, g, h, g2, h2))); };
   LZ.convTxt = function (p, g, h, g2, h2) { return LZ.bsTxt(LZ.conv(p, g, h, g2, h2)); };
+  /** 받침 따라 "으로/로"(보통 → 보통으로 · 더낮게 → 더낮게로) */
+  LZ.ro = function (w) { var c = String(w).charCodeAt(String(w).length - 1) - 0xAC00; return c >= 0 && c <= 11171 && c % 28 && c % 28 !== 8 ? '으로' : '로'; };
+  /** 기록 기준 글: "프로 · 더낮게" */
+  LZ.modeTxt = function (m) { return LZ.MODE[m.g] + ' · ' + LZ.HL[m.h]; };
   LZ.fmtP = function (n) { return n >= 40 ? 'Full' : String(LZ.r1(n)).replace(/\.0$/, ''); };
   LZ.fmtM = function (m) { return String(LZ.r1(m)).replace(/\.0$/, ''); };
   /** 볼스피드 표시(#31): 정수면 "~17"(16━━●17, 17까지), 아니면 "16~"(16━●━17, 16 넘고 17 전, 점은 계산된 자리) */

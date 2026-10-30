@@ -332,27 +332,38 @@
         D('등급 · 자리 · 요금', '<div class="seatguide">' + LZ.cleanHtml((cfg.seat && cfg.seat.guide) || '') + '</div><p class="muted" style="margin:8px 0 0"><b>블루</b> 무료 · <b>레드</b> 기간이 남은 유료 자리를 가진 회원 · <b>골드</b> 관리자가 드린 무료 자리(가입 기념일까지) · <b>블랙</b> 이용 정지. 자리 기간이 끝나면 ' + LZ.remindTxt(cfg.seat && cfg.seat.remind) + '에 알려 드리고, ' + ((cfg.seat && cfg.seat.grace_days) || 14) + '일 유예 뒤 자리가 모자라면 늦게 들어온 분부터 보기만 해요(캡틴·매니저 제외). 적립 포인트는 ' + ((cfg.seat && cfg.seat.point_unit) || 10) + 'P 단위로 결제에 섞어 쓸 수 있어요.</p>') +
         D('비밀번호 · 카카오 확인', '<p style="margin:0">가입할 때 <b>카카오로 본인 확인</b>을 한 번 해요(카카오 계정 하나에 회원 한 분, 카카오에서는 회원번호만 받아요). 로그인은 닉네임과 비밀번호 4자리로 해요. 잊으면 ① 로그인 화면 "비밀번호를 잊었어요" → <b>카카오로 확인</b>하고 새 4자리 정하기 ② 관리자가 만들어 준 계정은 관리자에게 찾기 신청(임시 번호 ' + R.tmpHours + '시간). 캡틴은 비밀번호를 볼 수도 바꿀 수도 없어요.</p>') +
         D('적립 포인트 · 레벨', (function () { var r = cfg.pt; if (!r) return '<p style="margin:0">내 정보 → 적립 포인트에서 봐요.</p>'; return '<p style="margin:0 0 6px">홀 기록 새로 적기 +' + r.hole_new + 'P(홀마다) · 다듬기 +' + r.hole_fix + 'P · 새 코스 등록 +' + r.course_reg + 'P · 코스 정보 고치기 +' + r.course_fix + 'P · 내 기록을 가져감 +' + r.import + 'P × 레벨 배수 · 자리·클럽 추가 ' + r.earn_pct + '%. 하루 최대 ' + r.day_cap + 'P(결제 적립 빼고), 1P = 1원, ' + r.unit + 'P 단위로 쓰고 ' + r.years + '년 뒤 사라져요.</p><p style="margin:0">레벨(모은 포인트): ' + r.names.map(function (n, k) { return LZ.LVN[k][0] + ' ' + n + ' ' + Number(r.th[k]).toLocaleString('ko-KR') + ' (×' + r.mul[k] + ')'; }).join(' · ') + '</p>'; })()) +
-        D('볼스피드 기준', '<p style="margin:0 0 6px"><b>볼스피드</b>는 공이 출발하는 속도예요. <b>8~40</b>(40은 Full), 0.5씩 적어요. <b>센서 탄도</b>는 그 매장 센서 설정(더높게·높게·보통·낮게·더낮게)이고, 스크린은 굴러가는 마찰이 거의 없어 탄도가 높을수록 멀리 가요(캐리 = 날아간 거리, 런 = 떨어진 뒤 굴러간 거리).</p><p style="margin:0 0 6px">총 비거리 = (기준 거리 <b>' + LZ.fmtM(pw.d0) + 'm</b> + (볼스피드 − 모드 기준) × 1당 비거리) × (1 + 탄도 %) · 탄도 간격 <b>' + pw.gap + '%</b>(높게 +' + pw.gap + '% · 더높게 +' + LZ.r1(pw.gap * 2) + '%).</p><div class="tblwrap"><table class="tbl" style="font-size:var(--t0)"><tr><th>모드</th><th>모드<br>기준</th><th>1당<br>비거리</th><th>80m<br>높게</th><th>80m<br>보통</th><th>80m<br>낮게</th></tr>' + ['b', 'p', 'm'].map(hlRow).join('') + '</table></div><p class="muted" style="margin:6px 0 0">표시: <b>~17</b> = 17까지, <b>16~</b> = 16 넘게 17 전까지(아래 막대의 점이 정확한 자리). 기준과 1 이내면 초록 ●, 1 넘게 크면 ▲ · 작으면 ▼. 다른 모드·매장에서 칠 때는 <b>같은 거리</b>가 나오는 볼스피드로 바꿔 보여요. 관리자가 설정에서 바꾸면 여기도 같이 바뀌어요.</p>') +
+        D('볼스피드 기준', '<p style="margin:0 0 6px"><b>볼스피드</b>는 공이 출발하는 속도예요. <b>8~40</b>(40은 Full), 0.5씩 적어요. <b>센서 탄도</b>는 그 매장 센서 설정(더높게·높게·보통·낮게·더낮게)이고, 스크린은 굴러가는 마찰이 거의 없어 탄도가 높을수록 멀리 가요(캐리 = 날아간 거리, 런 = 떨어진 뒤 굴러간 거리).</p><p style="margin:0 0 6px">총 비거리 = (기준 거리 <b>' + LZ.fmtM(pw.d0) + 'm</b> + (볼스피드 − 모드 기준) × 1당 비거리) × (1 + 탄도 %) · 탄도 간격 <b>' + pw.gap + '%</b>(높게 +' + pw.gap + '% · 더높게 +' + LZ.r1(pw.gap * 2) + '%).</p><div class="tblwrap"><table class="tbl" style="font-size:var(--t0)"><tr><th>모드</th><th>모드<br>기준</th><th>1당<br>비거리</th><th>80m<br>높게</th><th>80m<br>보통</th><th>80m<br>낮게</th></tr>' + ['b', 'p', 'm'].map(hlRow).join('') + '</table></div><p class="muted" style="margin:6px 0 0">표시: <b>~17</b> = 17까지, <b>16~</b> = 16 넘게 17 전까지(아래 막대의 점이 정확한 자리). 기준과 1 이내면 초록 ●, 1 넘게 크면 ▲ · 작으면 ▼. 다른 모드·매장에서 칠 때는 <b>같은 거리</b>가 나오는 볼스피드로 바꿔 보여요. 그렇게 보면서 치기 화면에서 고쳐 저장하면 그 코스의 <b>기록 기준</b>이 그 기준으로 바뀌고 다른 홀도 함께 바뀌어요. 관리자가 설정에서 바꾸면 여기도 같이 바뀌어요.</p>') +
         D('기록 규칙', '<ul style="margin:0;padding-left:18px"><li>위치 기준: <b>첫화면</b>(기본) · 홀컵 · 직접</li><li>좌우: <b>그대로</b> 또는 <span style="color:var(--red);font-weight:700">좌 1~10</span>·<span style="color:var(--blue);font-weight:700">우 1~10</span>칸, 볼스피드는 0.5씩. 단추를 꾹 누르면 빨리 움직여요</li><li>참고사항은 ' + R.noteMax + '자(사진은 없어요)</li><li>기록은 회원·코스마다 <b>하나</b>. 어느 클럽에서 적어도 같은 기록이고, 클럽을 나가도 그대로예요</li><li>회원님 기록은 같은 클럽 분 것만 보여요. 공개·비공개는 <b>코스마다</b> 자물쇠로 정해요(새 코스는 공개). <b>클럽 평균</b>은 이 코스를 공개한 회원님이 3명 이상일 때 보여요</li><li>코스 정보는 누구나 고치고 이력이 남아요</li></ul>') +
         D('클럽', '<ul style="margin:0;padding-left:18px"><li>가입: 초대 링크 · 클럽 코드 6자리 · 클럽 찾기 → 캡틴이 <b>승인</b>(또는 보류). ' + R.reqDays + '일 지나면 신청 정리</li><li>클럽 자리(캡틴 포함)가 다 차면 승인이 안 돼요 → 캡틴·매니저가 <b>자리 추가</b></li><li>캡틴 바꾸기는 받는 분이 운영할 수 있는 클럽 수 안에서. 산 자리는 클럽에 남고, 전 캡틴은 매니저로 남아요</li><li>회원 <b>내보내기</b>는 캡틴만. 내보내도 그분 기록은 그분 것</li><li>캡틴은 <b>매니저</b>를 정할 수 있어요. 매니저는 가입 승인·소식·모임·챌린지·자리 추가 등 캡틴 일을 함께 하고, 회원 내보내기·매니저 정하기·캡틴 바꾸기·클럽 닫기는 캡틴만 해요</li><li>앱이 없는 분께는 <b>가입 안내 보내기</b>(카톡·문자)로 알려요</li></ul>') +
-        D('필드 라운드 · 시상식 · 단체', '<p style="margin:0 0 6px"><button type="button" class="sm2 o" data-go="awards" data-p=\'{"demo":1}\'>' + LZ.ic('trophy') + ' 시상식 미리보기</button></p><ul style="margin:0;padding-left:18px"><li>개별 라운드: 한 조 2~5명, 손님은 이름만. 끝내면 결과 화면에서 <b>시상식</b>을 열어 우승·준우승·장려·행운상(추첨)을 뽑고 결과 그림을 카톡으로 보내요</li><li>안 적은 홀은 파. ＋는 보기, −는 버디. 파를 고치면 ±는 그대로 두고 타수만 바뀌어요</li><li>끝낸 뒤 ' + (R.editHours || 2) + '시간까지 고칠 수 있고 고친 이력이 남아요. 주최자가 최종 확정하면 잠겨요</li><li>' + R.roundHours + '시간 지나면 저절로 끝나요</li><li><b>단체 라운드</b>: 누구나 주최. 조 1~' + (R.teamsMax || 50) + ' 사전 편성(자동 편성·대기 명단), 18/36/54/72홀(바퀴 1~4), 구장 선택·새 등록, 조별 도는 순서 자동 배치</li><li>카톡 초대장(편성표 글+그림)을 받으면 앱에서 내 조로 바로 들어가요. 앱이 없던 분은 가입하면 손님 자리와 점수를 그대로 이어받아요</li><li>상황판 3탭(조별·개인·편성표), 집계 범위(바퀴·조), 시상식 1부 조별(행운상→다음에 잘 치자상→단합상→장려상→준우승→우승) · 2부 개인, 중복 수상 가능/불가, 결과 그림 공유, 도우미 2명</li></ul>') +
+        D('필드 라운드 · 시상식 · 단체', '<div class="awlinks"><button type="button" class="sm2" data-go="awGuide">' + LZ.ic('book') + ' 시상식 안내</button><button type="button" class="sm2 o" data-act="awDemo">' + LZ.ic('trophy') + ' 미리보기</button></div><ul style="margin:0;padding-left:18px"><li>개별 라운드: 한 조 2~5명, 손님은 이름만. 끝내면 결과 화면에서 <b>시상식</b>을 열어 우승·준우승·장려·행운상(추첨) 등을 뽑고 결과 그림을 카톡으로 보내요</li><li>안 적은 홀은 파. ＋는 보기, −는 버디. 파를 고치면 ±는 그대로 두고 타수만 바뀌어요</li><li>끝낸 뒤 ' + (R.editHours || 2) + '시간까지 고칠 수 있고 고친 이력이 남아요. 주최자가 최종 확정하면 잠겨요</li><li>' + R.roundHours + '시간 지나면 저절로 끝나요</li><li><b>단체 라운드</b>: 누구나 주최. 조 1~' + (R.teamsMax || 50) + ' 사전 편성(자동 편성·대기 명단), 18/36/54/72홀(바퀴 1~4), 구장 선택·새 등록, 조별 도는 순서 자동 배치</li><li>카톡 초대장(편성표 글+그림)을 받으면 앱에서 내 조로 바로 들어가요. 앱이 없던 분은 가입하면 손님 자리와 점수를 그대로 이어받아요</li><li>상황판 3탭(조별·개인·편성표), 집계 범위(바퀴·조), 시상식 1부 조별(행운상→다음에 잘 치자상→단합상→장려상→준우승→우승) · 2부 개인, 중복 수상 가능/불가, 결과 그림 공유, 도우미 2명</li></ul>') +
         D('알림·화면', '<p style="margin:0">휴대폰 알림은 앱을 <b>홈 화면에 추가</b>한 뒤에 돼요(아이폰은 꼭 추가해야 해요). 밤 ' + R.quietFrom + '시~아침 ' + R.quietTo + '시 알림은 아침에 모아서 보내요. 기록·라운드 화면에서는 화면이 꺼지지 않아요.</p>') + '</div>';
     }
   };
 
-  /* ───── 파크골프 첫걸음(v7.4 #11): 처음 오신 분께 카드 6장. 글은 관리자 설정(관리자 → 공지·홍보 → 파크골프 첫걸음)에서 고쳐요 ───── */
-  LZ.screens.firstSteps = {
-    show: async function (p, root, alive) {
-      var H = LZ.hdr('파크골프 첫걸음', { back: true, noBell: 1 });
+  /* ───── 안내 카드 화면(v7.4 #11 파크골프 첫걸음 · v7.0.3 시상식 안내): 카드 6장 + 위쪽 칸을 누르면 그 카드로. 로그인 없이 열려요.
+     글은 관리자 설정(관리자 → 공지·홍보 → 파크골프 첫걸음 / 시상식 안내)에서 고쳐요 ───── */
+  var GUIDE = {
+    first: { title: '파크골프 첫걸음', api: ['firstSteps', {}], lead: '파크골프를 처음 시작하시나요?', sub: '여섯 가지만 알면 바로 함께 칠 수 있어요. 아래 칸을 누르면 그 설명으로 가요.' },
+    awards: { title: '시상식 안내', api: ['guideCards', { g: 'awards' }], lead: '라운드 끝, 시상식은 이렇게 해요', sub: '여섯 가지만 보면 돼요. 아래 칸을 누르면 그 설명으로 가요. 맨 아래에서 샘플 조로 미리 해 볼 수 있어요.',
+      foot: '<div class="card awdemo"><b>직접 눌러 보세요</b><span>샘플 조 4명(18홀)으로 꾸민 시상식이에요. 상을 켜고 끄거나 차례를 바꿔도 내 기록에는 남지 않아요.</span><button type="button" class="btn gold" data-act="awDemo">' + LZ.ic('trophy') + '시상식 미리보기 시작</button></div>' }
+  };
+  function guideShow(g) {
+    var G = GUIDE[g];
+    return async function (p, root, alive) {
+      var H = LZ.hdr(G.title, { back: true, noBell: 1 });
       root.innerHTML = H + LZ.skeleton(5);
-      var r = null; try { r = await LZ.api('firstSteps', {}, { noAuth: true }); } catch (e) { r = null; } if (!alive()) return;
-      if (!r || !r.cards) { root.innerHTML = H + '<div class="wrap"><div class="empty">안내를 불러오지 못했어요. 잠시 뒤에 다시 열어 주세요.</div></div>'; return; }
-      root.innerHTML = H + '<div class="wrap fsw"><div class="fsin"><b>파크골프를 처음 시작하시나요?</b><span>여섯 가지만 알면 바로 함께 칠 수 있어요. 아래 칸을 누르면 그 설명으로 가요.</span></div>' +
+      var r = null; try { r = await LZ.api(G.api[0], G.api[1], { noAuth: true }); } catch (e) { r = null; } if (!alive()) return;
+      if (!r || !r.cards) { root.innerHTML = H + '<div class="wrap"><div class="empty">안내를 불러오지 못했어요. 잠시 뒤에 다시 열어 주세요.</div>' + (G.foot || '') + '</div>'; return; }
+      root.innerHTML = H + '<div class="wrap fsw"><div class="fsin"><b>' + G.lead + '</b><span>' + G.sub + '</span></div>' +
         '<div class="fsx">' + r.cards.map(function (c, i) { return '<button type="button" class="fst" data-act="fsJump" data-v="' + (i + 1) + '">' + LZ.ic(c.ic) + '<b>' + esc(c.t) + '</b></button>'; }).join('') + '</div>' +
         r.cards.map(function (c, i) { return '<section class="card fsc" id="fs' + (i + 1) + '"><div class="fsh"><span class="fsi">' + LZ.ic(c.ic) + '</span><span class="fsn">' + (i + 1) + '</span><h3>' + esc(c.t) + '</h3></div><ul class="fsb ntbody">' + LZ.cleanHtml(c.b).split(/<br\s*\/?>/i).filter(function (x) { return x.trim(); }).map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></section>'; }).join('') +
-        '<p class="hint">' + esc(r.note || '') + '</p>' + (S.user && S.user.kind === 'admin' ? '<button type="button" class="btn g sm" data-go="firstAdmin">' + LZ.ic('edit') + '안내 글 고치기(관리자)</button>' : '') + '</div>';
-    }
-  };
+        (G.foot || '') + '<p class="hint">' + esc(r.note || '') + '</p>' + (S.user && S.user.kind === 'admin' ? '<button type="button" class="btn g sm" data-go="firstAdmin"' + (g === 'first' ? '' : ' data-p=\'{"g":"' + g + '"}\'') + '>' + LZ.ic('edit') + '안내 글 고치기(관리자)</button>' : '') + '</div>';
+    };
+  }
+  LZ.screens.firstSteps = { show: guideShow('first') };
+  LZ.screens.awGuide = { show: guideShow('awards') };
+  /* 시상식 미리보기: 단체·시상식 모듈(event.js)을 먼저 받고 샘플 조 시상식으로 */
+  LZ.act.awDemo = async function () { try { await LZ.need('event'); } catch (e) { LZ.toast(LZ.errText(e), 4000); return; } LZ.go('awards', { demo: 1 }); };
   LZ.act.fsJump = function (el, v) { var t = $('#fs' + v); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
 
   /* ───── 공지(관리자: 모든 회원님 / 캡틴: 클럽 소식) ───── */

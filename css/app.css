@@ -918,6 +918,15 @@ svg.ic.okc{color:var(--green);width:1em;height:1em;margin:0 0 0 2px}
 .fsb{font-size:var(--fs);line-height:1.65;word-break:keep-all;overflow-wrap:anywhere}
 ul.fsb{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
 ul.fsb li{position:relative;padding:0 0 0 14px}ul.fsb li::before{content:'';position:absolute;left:2px;top:.7em;width:6px;height:6px;border-radius:50%;background:var(--au)}
+/* v7.0.2 시상식 안내: 필드 메인 "시상식이 뭔가요?" 줄 · 안내 맨 아래 미리보기 · 사용 안내 단추 두 개 */
+.awq{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;margin:-4px 0 12px;padding:6px 12px;border:0;border-radius:12px;background:var(--gl);color:var(--ink);font:inherit;text-align:left}
+.awq>svg.ic{flex:none;width:20px;height:20px;color:var(--gt);margin:0}.awq>svg.ic:last-child{margin-left:auto;color:var(--sub)}
+.awq span{flex:1;min-width:0;font-size:var(--t1);color:var(--sub);word-break:keep-all;overflow-wrap:anywhere;line-height:1.35}.awq span b{color:var(--ink);margin-right:4px}
+:root[data-theme="dark"] .awq>svg.ic:first-child{color:var(--hnc)}
+.awdemo{display:flex;flex-direction:column;gap:4px;border:2px solid var(--au);margin-top:4px}
+.awdemo>b{font-size:var(--t3)}.awdemo>span{color:var(--sub);font-size:var(--t1);word-break:keep-all;line-height:1.5}.awdemo .btn{margin-top:8px;min-height:60px;height:auto;font-size:var(--t3)}
+.awlinks{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}.awlinks .sm2{flex:1 1 auto}
+.card h3.ih .chip{flex:none}
 
 /* v7.0 어두운 화면: 에메랄드 글자(var(--g))가 어두운 바탕에 묻히지 않게 밝은 에메랄드로(--gt) */
 :root{--gt:var(--g)}
@@ -954,3 +963,60 @@ b.neg{color:var(--red)}b.pos{color:var(--gt)}:root[data-theme="dark"] b.neg{colo
 .ptiles .ptodd span{display:block;color:#F4E3B8;font-size:12px}
 .oddl .li .ic{width:18px;height:18px;flex:none;color:var(--sub)}
 .ptiles b .ic.tk{width:15px;height:15px;margin-left:3px;vertical-align:-2px}
+
+/* ───── v7.0.5 결제: 적립 포인트 카드 · 낼 돈 계산 · 1단계 보내기 / 2단계 신청 ───── */
+.card.ptc h3,.card.calc h3,.card.pstep h3{margin-top:0}
+.qty{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:stretch;margin-top:10px}
+.qb{min-height:54px;border:2px solid var(--em);border-radius:12px;background:var(--card);color:var(--em);font:inherit;font-size:var(--t2);font-weight:800;padding:0 4px;cursor:pointer;touch-action:manipulation;white-space:nowrap}
+.qb.qmax{border-color:var(--au);color:var(--auk);background:var(--aubg)}
+.qb:disabled{opacity:.35;cursor:default}
+:root[data-theme="dark"] .qb{color:#9AE6C8;border-color:#2F6B57}
+:root[data-theme="dark"] .qb.qmax{color:var(--auk);border-color:var(--au)}
+.qv{display:flex;align-items:center;justify-content:center;border-radius:12px;background:var(--em);color:#fff;min-width:0;padding:0 4px}
+.qv b{font-size:calc(var(--t2) + 2px);white-space:nowrap}
+:root[data-theme="dark"] .qv{background:#2F6B57}
+.qprice{margin:12px 0 4px;font-size:var(--t1);word-break:keep-all}
+.qprice b{font-size:calc(var(--t2) + 4px);color:var(--em);white-space:nowrap}
+:root[data-theme="dark"] .qprice b{color:var(--hnc)}
+.qafter{font-size:var(--t1);margin-bottom:2px}
+.qwhy{margin:8px 0 0;color:var(--auk);font-weight:700;word-break:keep-all}
+.qwhy:empty{display:none}
+.ckl.ptck{align-items:flex-start;gap:10px;cursor:pointer}
+.ckl.ptck input{width:26px;height:26px;margin:2px 0 0;flex:none}
+.ckl.ptck>span{display:flex;flex-direction:column;gap:2px;min-width:0;font-size:var(--t1)}
+.ckl.allr{margin-top:10px;align-items:flex-start;gap:8px;line-height:1.45;word-break:keep-all}
+.ckl.allr input{width:24px;height:24px;margin:1px 0 0;flex:none}
+.earnl{margin:8px 0 0;color:var(--auk);font-weight:700;line-height:1.45;word-break:keep-all}
+.box.ptnone{display:flex;gap:6px;align-items:flex-start;line-height:1.5;margin-bottom:12px;word-break:keep-all}
+.box.ptnone .ic{flex:none;margin-top:3px}
+.payg.calc .pr{font-size:var(--t1)}
+.payg.calc .pr.tot span{font-weight:800}
+.card.pstep{border:2px solid var(--em)}
+:root[data-theme="dark"] .card.pstep{border-color:#2F6B57}
+.stn{display:inline-block;background:var(--em);color:#fff;border-radius:999px;padding:2px 10px;margin-right:8px;font-size:var(--t0);vertical-align:2px;white-space:nowrap}
+:root[data-theme="dark"] .stn{background:#2F6B57}
+.sendamt{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:4px 0 12px;padding:10px 12px;border-radius:12px;background:var(--aubg);border:1px solid var(--au)}
+.sendamt>div{display:flex;flex-direction:column;min-width:0}
+.sendamt .big2{font-size:calc(var(--t3) + 8px);color:var(--em);white-space:nowrap}
+:root[data-theme="dark"] .sendamt .big2{color:var(--hnc)}
+.sendamt .sm2{margin:0;flex:none}
+.box.acct{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.box.acct .t{flex:1 1 10em;min-width:0;display:flex;flex-direction:column}
+.box.acct .acno{font-size:calc(var(--t1) + 1px);letter-spacing:.2px}
+.box.acct .sm2{margin:0;flex:none}
+.sendwarn{display:flex;gap:6px;align-items:flex-start;margin:12px 0 0;line-height:1.5;color:#9A3412;font-weight:700;word-break:keep-all}
+.sendwarn .ic{flex:none;margin-top:3px}
+:root[data-theme="dark"] .sendwarn{color:#FDBA74}
+.lbsub{display:block;font-weight:400;margin-top:2px}
+.ckl.sentl{margin-top:14px;padding:12px;border-radius:12px;border:2px solid var(--au);background:var(--aubg);cursor:pointer;line-height:1.4;align-items:flex-start}
+.ckl.sentl input{width:26px;height:26px;margin:0}
+.ckl.sentl span{font-size:var(--t1);font-weight:700;min-width:0}
+.paywhy{text-align:center !important;margin:6px 0 12px}
+.btn.paygo:disabled{opacity:.45}
+.depl{font-weight:800}
+.sortr{flex:none;width:44px;height:44px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--gt);display:flex;align-items:center;justify-content:center;padding:0}
+.sortr svg.ic{width:22px;height:22px;margin:0}
+:root[data-theme="dark"] .sortr{color:#9AE6C8}
+.payrow .pn{display:block;font-size:var(--t1);word-break:keep-all}
+.payrow .pl{margin:4px 0 2px;line-height:1.5;word-break:keep-all}
+.payrow .pl b{white-space:nowrap}

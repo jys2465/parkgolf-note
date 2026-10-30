@@ -19,6 +19,8 @@
         '<div class="row fmk"><button type="button" class="btn gold" data-act="roundOpenS">' + LZ.ic('play') + '라운드 열기</button><button type="button" class="btn o" data-act="roundJoinS">' + LZ.ic('field') + '번호로 들어가기</button></div>' +
         (m.round ? '<button type="button" class="cont" data-go="round" data-p=\'' + esc(JSON.stringify({ id: m.round.id })) + '\'>' + LZ.ic('flag', 'ci') + '<div style="flex:1;min-width:0"><b>진행 중인 라운드 ' + esc(m.round.code) + '</b><span class="muted">' + esc(m.round.fname) + '</span></div>' + LZ.ic('chev') + '</button>' : '') +
         '<div class="ftiles">' + tile('club', '단체 라운드', '조 편성·상황판', 'data-go="events"') + tile('trophy', '시상식', '끝난 라운드', 'data-act="awPickRound"') + tile('flag', '구장 관리', '등록·고치기', 'data-go="fieldMng"') + '</div>' +
+        /* v7.0.3 시상식 안내: 시상식 칸은 그대로(라운드 고르기), 바로 아래 작은 안내 줄 */
+        '<button type="button" class="awq" data-go="awGuide">' + LZ.ic('help') + '<span><b>시상식이 뭔가요?</b> 상 종류 · 여는 법 · 미리보기</span>' + LZ.ic('chev') + '</button>' +
         '<div class="fstat"><div><span>최근 ' + (m.avgN || 0) + '회 평균</span><b class="' + (!m.avgN ? '' : m.avgPar < 0 ? 'u' : m.avgPar > 0 ? 'o' : '') + '">' + avgD + '</b><span>파 대비' + (m.avg ? ' · ' + m.avg + '타' : '') + '</span></div><div><span>라운드</span><b>' + (m.total || 0) + '</b><span>9홀 넘게 끝낸 것</span></div></div>' +
         '<div class="card tight groups"><button type="button" class="li" data-go="firstSteps">' + LZ.ic('ball', 'gi') + '<span class="t"><b>파크골프 첫걸음</b><span class="su">처음이세요? 규칙 · 점수 세는 법 · 매너</span></span>' + LZ.ic('chev') + '</button></div>' +
         '<div class="card"><h3 class="ih">' + LZ.ic('book') + '내 라운드 기록</h3>' +
@@ -28,7 +30,7 @@
   };
   LZ.act.awPickRound = async function () {
     var m = await LZ.api('roundMine', {}), list = (m.list || []).filter(function (x) { return x.rid && !/\/1$/.test(x.rank || ''); }).slice(0, 20);
-    LZ.sheet('<h2>어느 라운드로 할까요?</h2><p class="muted">2~5명이 친 라운드는 끝나면 시상식이 열려요(혼자 친 라운드는 시상 없음). 우승·준우승·장려·행운상(추첨)을 뽑고 결과 그림을 카톡으로 보내요.</p>' + (list.length ? list.map(function (x) { return '<button type="button" class="opt" data-go="awards" data-p=\'' + esc(JSON.stringify({ rid: x.rid })) + '\'><b>' + LZ.fmtDate(x.at) + ' · ' + esc(x.fname) + '</b><span>' + x.tot + '타 (' + (x.tot - x.par > 0 ? '+' : '') + (x.tot - x.par) + ')</span></button>'; }).join('') : '<p class="muted">끝낸 라운드가 아직 없어요.</p>'));
+    LZ.sheet('<h2>어느 라운드로 할까요?</h2><p class="muted">2~5명이 친 라운드는 끝나면 시상식이 열려요(혼자 친 라운드는 시상 없음). 우승·준우승·장려·행운상(추첨) 등을 뽑고 결과 그림을 카톡으로 보내요.</p>' + (list.length ? list.map(function (x) { return '<button type="button" class="opt" data-go="awards" data-p=\'' + esc(JSON.stringify({ rid: x.rid })) + '\'><b>' + LZ.fmtDate(x.at) + ' · ' + esc(x.fname) + '</b><span>' + x.tot + '타 (' + (x.tot - x.par > 0 ? '+' : '') + (x.tot - x.par) + ')</span></button>'; }).join('') : '<p class="muted">끝낸 라운드가 아직 없어요.</p>') + '<div class="row" style="margin-top:10px"><button type="button" class="btn g sm" data-go="awGuide">' + LZ.ic('book') + '시상식 안내</button><button type="button" class="btn o sm" data-act="awDemo">' + LZ.ic('trophy') + '미리보기</button></div>');
   };
   LZ.act.roundMineDel = async function (el, rid) { if (!(await LZ.confirm('이 라운드 기록을 지울까요?', '내 목록과 평균에서만 빠져요. 같은 조의 점수판은 남아요.', '지우기', 'r'))) return; try { await LZ.api('roundMineDel', { rid: rid }); LZ.toast('지웠어요'); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e), 4000); } };
   /* 라운드 열기 */
