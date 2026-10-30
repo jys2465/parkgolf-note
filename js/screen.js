@@ -49,7 +49,7 @@
         var cnt = { all: all.length, done: 0, ing: 0, no: 0 }; all.forEach(function (c) { cnt[cStat(c)]++; });
         var list = all.filter(function (c) { return flt === 'all' || cStat(c) === flt; });
         list.sort(sortFn(sort));
-        root.innerHTML = LZ.hdr('내 수첩') + '<div id="syncbar" class="sync wait" hidden></div><div class="wrap clist">' +
+        root.innerHTML = LZ.hdr('내 수첩') + '<div id="syncbar" class="sync wait" hidden></div><div class="wrap clist">' + (LZ.admNote ? LZ.admNote('홀 기록(내 수첩)·클럽 가입·라운드 기록') : '') +
           (r.canReg ? '<button type="button" class="btn mk1" data-go="reg">' + LZ.ic('plus') + '새 코스 등록</button>' : '') +
           '<div class="flt" role="tablist">' + FLT.map(function (x) { return '<button type="button" role="tab" aria-selected="' + (flt === x[0]) + '" class="' + (flt === x[0] ? 'on' : '') + '" data-act="cFlt" data-v="' + x[0] + '">' + x[1] + ' <b>' + cnt[x[0]] + '</b></button>'; }).join('') + '</div>' +
           '<div class="csort"><span class="muted">정렬</span><button type="button" class="sortb" data-act="cSort">' + SORTS.filter(function (x) { return x[0] === sort; })[0][1] + ' ▾</button><button type="button" class="sortr" data-act="cSortRev" aria-label="순서 거꾸로 · 지금 ' + SORTS.filter(function (x) { return x[0] === sort; })[0][1] + '" title="순서 거꾸로">' + LZ.ic('sort') + '</button><input type="search" id="cq" value="' + esc(store.get('lz.cq') || '') + '" placeholder="코스 찾기" aria-label="코스 이름 찾기"></div>' +
@@ -130,7 +130,7 @@
     var diff = v.g !== bm.g || v.h !== bm.h, noClub = !d.clubs.length;
     var det = noClub ? '<span class="muted">클럽에 들면 회원님들 기록과 비교할 수 있어요</span>' :
       mode === 'avg' ? '<button type="button" class="c3d" data-act="hClub">' + LZ.ic('pin') + '<b>' + esc(d.cmp.name || '클럽') + '</b><span>· 공개 ' + d.cmp.n + '명</span></button>' :
-      mode === 'mem' ? (d.pick ? '<button type="button" class="c3d" data-act="hWho">' + LZ.avatar({ nick: d.pick.nick, img: d.pick.img }, 'xs') + '<b>' + esc(d.pick.nick) + '</b>' + LZ.lvBadge(d.pick.pts, d.lv) + '<span>' + Number(d.pick.pts || 0).toLocaleString() + 'P</span></button>' : '<span class="muted">' + esc(d.cmp.name) + '에 이 코스를 공개한 회원이 아직 없어요</span>') :
+      mode === 'mem' ? (d.pick ? '<button type="button" class="c3d" data-act="hWho">' + LZ.avatar({ nick: d.pick.nick, img: d.pick.img }, 'xs') + '<b>' + esc(d.pick.nick) + '</b>' + LZ.lvBadge(d.pick.pts, d.lv) + '<span>' + Number(d.pick.pts || 0).toLocaleString() + '점</span></button>' : '<span class="muted">' + esc(d.cmp.name) + '에 이 코스를 공개한 회원이 아직 없어요</span>') :
       '<span class="muted">내 기록만 크게 보여요</span>';
     var empt = 0; if (mode === 'mem' && d.pick) d.pick.recs.forEach(function (r, i) { if (i < n && r.r && !d.mine[i].r) empt++; });
     var list = ''; for (var i = a; i < b; i++) list += holeBlock(d, i, v, mode, (i - a) % 2 === 1);
@@ -188,7 +188,7 @@
   LZ.act.hClubSet = async function (el, id) { store.set('lz.cmpBr', id); if (cmpMode(CUR.d) === 'off') store.set('lz.cmpMode', 'avg'); LZ.closeSheet(); reCourse(true); };
   LZ.act.hWho = function () {
     var d = CUR.d; if (!d.authors.length) { LZ.toast('이 코스를 공개한 클럽 회원이 아직 없어요', 3500); return; }
-    LZ.sheet('<h2>비교할 회원</h2><p class="muted">' + esc(d.cmp.name) + ' · 이 코스 공개 기록 · 적립 포인트 높은 순</p>' + d.authors.map(function (a) { var on = d.pick && d.pick.uid === a.uid; return '<button type="button" class="opt whoopt ' + (on ? 'on' : '') + '" data-act="hWhoSet" data-v="' + esc(a.uid) + '">' + LZ.avatar({ nick: a.nick, img: a.img }, 'xs') + '<span class="t"><b>' + esc(a.nick) + ' ' + LZ.lvBadge(a.pts, d.lv) + '</b><span>' + Number(a.pts || 0).toLocaleString() + 'P · ' + a.filled + '홀 기록</span></span>' + (on ? '<b class="ck">✓</b>' : '') + '</button>'; }).join(''));
+    LZ.sheet('<h2>비교할 회원</h2><p class="muted">' + esc(d.cmp.name) + ' · 이 코스 공개 기록 · 레벨 점수 높은 순</p>' + d.authors.map(function (a) { var on = d.pick && d.pick.uid === a.uid; return '<button type="button" class="opt whoopt ' + (on ? 'on' : '') + '" data-act="hWhoSet" data-v="' + esc(a.uid) + '">' + LZ.avatar({ nick: a.nick, img: a.img }, 'xs') + '<span class="t"><b>' + esc(a.nick) + '</b><span>' + LZ.lvPts(a.pts, d.lv) + ' · ' + a.filled + '홀 기록</span></span>' + (on ? '<b class="ck">✓</b>' : '') + '</button>'; }).join(''));
     LZ.fillImgs && LZ.fillImgs($('#layer'));
   };
   LZ.act.hWhoSet = function (el, uid) { store.set('lz.who.' + CUR.d.course.id, uid); store.set('lz.cmpMode', 'mem'); LZ.closeSheet(); reCourse(true); };

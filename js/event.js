@@ -12,7 +12,7 @@
       root.innerHTML = LZ.hdr('단체 라운드', { back: true }) + LZ.skeleton(3);
       var r = await LZ.api('eventMine', {}); if (!alive()) return;
       root.innerHTML = LZ.hdr('단체 라운드', { back: true }) + '<div class="wrap">' +
-        '<div class="card org"><h3>' + LZ.ic('trophy') + ' 단체 라운드 만들기</h3><p style="margin:0 0 4px">이름·날짜 → 구장·바퀴·순서 → 조 편성 → 카톡 초대. 회원님 누구나 주최할 수 있어요.</p><button type="button" class="btn org" data-go="evMake" data-p=\'{"step":1}\'>만들기</button></div>' +
+        '<div class="card org"><h3>' + LZ.ic('trophy') + ' 단체 라운드 만들기</h3><p style="margin:0 0 4px">이름·날짜 → 홀 수(9·18·27·36)·코스 순서 → 조 편성 → 카톡 초대. 회원님 누구나 주최할 수 있어요.</p><button type="button" class="btn org" data-go="evMake" data-p=\'{"step":1}\'>만들기</button></div>' +
         '<div class="card"><h3>코드로 입장</h3><p class="muted" style="margin:0 0 6px">주최자가 알려 준 단체 코드 2자리</p><div class="row"><input type="tel" id="ecode" inputmode="numeric" maxlength="2" placeholder="예: 52"><button type="button" class="btn" style="margin:0;flex:none;width:120px" data-act="evEnterCode">입장</button></div></div>' +
         (r.list.length ? '<div class="card"><h3>내 단체 라운드</h3><div class="list">' + r.list.map(function (e) { return '<div style="display:flex;align-items:center;gap:6px">' + itBtn('event', { code: e.code }, '<div class="t"><b>' + esc(e.name) + ' <span class="chip">' + esc(e.code) + '</span>' + (e.status === 'open' ? '<span class="chip cap">진행 중</span>' : '') + (e.isOwner ? '<span class="chip">주최</span>' : '') + '</b><span class="muted">' + esc(e.fname) + ' · ' + LZ.fmtDate(e.created) + '</span></div>') + (e.isOwner ? '<button type="button" class="sm2 r" data-act="evDel" data-v=\'' + esc(JSON.stringify({ id: e.id, name: e.name })) + '\' aria-label="지우기" style="flex:none;width:44px;height:44px;padding:0;border-radius:12px">' + LZ.ic('x') + '</button>' : '') + '</div>'; }).join('') + '</div></div>' : '') + '</div>';
     }
@@ -37,7 +37,7 @@
         $('#mkName').addEventListener('input', function () { MK.name = this.value; }); $('#mkDate').addEventListener('input', function () { MK.date = this.value; });
       } else if (step === 2) {
         var nL = MK.holes / 9;
-        root.innerHTML = H + '<div class="card"><label class="lb" style="margin-top:0">홀 수</label>' + LZ.seg([['18', '18홀'], ['36', '36홀'], ['54', '54홀'], ['72', '72홀']], String(MK.holes), 'mkHoles') + '<p class="muted" style="margin:8px 0 0">9홀 코스를 순서대로 골라요. 1-전·1-후가 1바퀴(18홀)예요. 같은 코스를 여러 번 돌아도 돼요.</p></div>' +
+        root.innerHTML = H + '<div class="card"><label class="lb" style="margin-top:0">홀 수</label>' + LZ.seg([['9', '9홀'], ['18', '18홀'], ['27', '27홀'], ['36', '36홀']], String(MK.holes), 'mkHoles') + '<p class="muted" style="margin:8px 0 0">개인 라운드와 같이 9·18·27·36홀이에요. 9홀 코스를 순서대로 골라요. 같은 코스를 여러 번 돌아도 돼요. 파크골프·일반골프 코스 모두 고를 수 있어요.</p></div>' +
           '<div class="card"><h3>코스 순서</h3>' + Array.from({ length: nL }, function (_, i) { return '<button type="button" class="opt" data-act="mkLap" data-v="' + i + '"><b>' + segLabel(i) + ' · ' + lapLabel(MK.laps[i]) + '</b><span>' + (MK.laps[i] ? '기준 ' + (MK.laps[i].pars || []).reduce(function (a, b) { return a + b; }, 0) + '타 · 누르면 바꾸기' : '누르면 고르기') + '</span></button>'; }).join('') + '</div>' +
           (nL > 1 ? '<div class="card"><h3>조별 진행 순서</h3><p class="muted" style="margin:0 0 8px">조마다 어느 코스부터 돌지 정해요. <b>자동 배치</b>는 조를 둘씩 묶어 시작 코스를 한 칸씩 밀어요. 칸을 누르면 다음 코스로 바뀌어요.</p><button type="button" class="btn o" data-act="mkAutoOrder" style="margin-bottom:10px">' + LZ.ic('play') + ' 자동 배치</button><div class="tblwrap"><table class="tbl ord"><tr><th>조</th>' + Array.from({ length: nL }, function (_, i) { return '<th>' + (i + 1) + '번째</th>'; }).join('') + '</tr>' + Array.from({ length: MK.nTeams }, function (_, t) { var o = MK.order[t + 1] || Array.from({ length: nL }, function (_, i) { return i; }); return '<tr><td><b>' + (t + 1) + '조</b></td>' + o.map(function (li, k) { return '<td><button type="button" class="sm2 pick" data-act="mkOrd" data-v="' + (t + 1) + ':' + k + '">' + esc(segName(MK.laps, li)) + '</button></td>'; }).join('') + '</tr>'; }).join('') + '</table></div></div>' : '') +
           '<div class="row"><button type="button" class="btn g" data-act="mkNext" data-v="1">‹ 이전</button><button type="button" class="btn" data-act="mkNext" data-v="3">다음 · 조 편성</button></div></div>';
@@ -122,7 +122,7 @@
       var ev = EV.d;
       root.innerHTML = LZ.hdr('초대', { back: true, right: '<button type="button" class="ib on" data-go="event" data-p=\'' + esc(JSON.stringify({ code: ev.code })) + '\'>상황판</button>' }) + '<div class="wrap"><div class="card"><div class="code">' + esc(ev.code) + '</div><p class="muted center" style="margin:0">단체 코드 · 참가자는 링크나 이 코드로 들어와요</p></div>' +
         '<div class="card"><h3>편성표</h3><div class="tblwrap"><table class="tbl"><tr><th>조</th><th style="text-align:left">조원</th>' + (ev.nLaps > 1 ? '<th>순서</th>' : '') + '</tr>' + ev.teams.map(function (t) { return '<tr><td><b>' + t.n + '조</b></td><td style="text-align:left">' + (t.members.map(function (m) { return esc(m.nick); }).join(' · ') || '<span class="muted">비어 있음</span>') + '</td>' + (ev.nLaps > 1 ? '<td>' + t.order.map(function (li) { return segName(ev.laps, li); }).join('→') + '</td>' : '') + '</tr>'; }).join('') + '</table></div>' + (ev.nLaps > 1 ? '<p class="muted small" style="margin:6px 0 0">' + ev.laps.map(function (l, i) { return segLabel(i) + ' ' + esc(l.fname); }).join(' · ') + '</p>' : '') + '</div>' +
-        '<button type="button" class="btn kakao" data-act="evInviteKakao">카카오톡으로 초대하기</button><div class="row"><button type="button" class="btn g sm" data-act="copy" data-v="' + esc(inviteText(ev) + '\n' + inviteUrl(ev)) + '">글 복사</button><button type="button" class="btn g sm" data-act="evInviteSms">문자로</button></div>' +
+        '<button type="button" class="btn kakao" data-act="evInviteKakao">카카오톡으로 초대하기</button><div class="row"><button type="button" class="btn g sm" data-act="copy" data-v="' + esc(LZ.shareJoin(inviteText(ev), inviteUrl(ev))) + '">글 복사</button><button type="button" class="btn g sm" data-act="evInviteSms">문자로</button></div>' +
         '<div class="card" style="margin-top:14px"><h3>QR</h3><div class="qr" id="eqr"></div><p class="center muted small">' + esc(inviteUrl(ev)) + '</p></div>' +
         '<button type="button" class="btn" data-go="event" data-p=\'' + esc(JSON.stringify({ code: ev.code })) + '\'>상황판으로</button></div>';
       LZ.qr($('#eqr'), inviteUrl(ev));
@@ -130,7 +130,7 @@
   };
   LZ.act.evInviteKakao = async function () {
     var ev = EV.d, text = inviteText(ev), url = inviteUrl(ev);
-    try { var f = await inviteImage(ev); if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: ev.name, text: text + '\n' + url }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+    try { var f = await inviteImage(ev); if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: ev.name, text: LZ.shareJoin(text, url) }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
     LZ.kakaoShare(text, url);
   };
   LZ.act.evInviteSms = function () { location.href = 'sms:?body=' + encodeURIComponent(inviteText(EV.d) + '\n' + inviteUrl(EV.d)); };
@@ -369,7 +369,7 @@
     rows.forEach(function (r, i) { var y = 210 + i * rh; g.fillStyle = i % 2 ? '#fff' : '#E7F3EF'; g.fillRect(40, y - 36, W - 80, rh); g.fillStyle = '#0B5D4B'; g.font = '800 28px Pretendard, sans-serif'; g.fillText(r[0], 60, y + 2); g.fillStyle = '#172026'; g.font = '700 28px Pretendard, sans-serif'; g.textAlign = 'right'; g.fillText(r[1], W - 60, y + 2); g.textAlign = 'left'; });
     var blob = await new Promise(function (r) { cv.toBlob(r, 'image/png'); }), file = new File([blob], 'awards-' + ev.code + '.png', { type: 'image/png' });
     var text = '🏆 ' + ev.name + ' 시상 결과\n' + rows.map(function (r) { return r[0] + ': ' + r[1]; }).join('\n');
-    try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: ev.name, text: text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+    try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: ev.name, text: LZ.shareJoin(text, ev.local ? LZ.APP_URL : inviteUrl(ev)) }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
     LZ.kakaoShare(text, ev.local ? LZ.APP_URL : inviteUrl(ev));
   };
   /* ───── TV 보드: ?e=코드&tv=1 — 로그인 없이, 큰 글씨, 20초마다 새로 ───── */

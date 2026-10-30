@@ -502,6 +502,9 @@ body[data-scr="login"]{background:#0B3F31}
 .ljbtn{min-height:42px;padding:0 16px;border-radius:12px;border:0;background:linear-gradient(180deg,#E6C76C,#C9A75A);color:#2B2208;font-weight:800;flex:none;white-space:nowrap}
 :root[data-theme="dark"] .ljoin{background:var(--card);color:var(--ink)}
 .lver{margin:4px 0 0;font-size:var(--t0);color:rgba(255,255,255,.55)}
+/* v7.1.0 §15 로그인 구분선: 화면 폭에 가까운 1px 실선 · 테마 경계선 색(어두운 화면은 밝게 해서 초록 배경에서도 보이게) */
+.ldiv{display:block;width:100%;height:0;margin:2px 0;border:0;border-top:1px solid var(--line);opacity:.75}
+:root[data-theme="dark"] .ldiv{border-top-color:#6F8279;opacity:1}
 /* ═════════ v7 2단계: 볼스피드 막대(~17 / 16~) · 홀 번호 · 내 수첩 목록 · 코스 화면 · 치기 · 쉼/끝 화면 · 코스 등록 · 관리자 기준 ═════════ */
 :root{--em:#0F4F3E;--hnc:#0F4F3E;--zb:#F4EFE3;--hbl:#CDBF9C;--au:#C9A75A;--au2:#E6C76C;--auk:#7A5C14;--aubg:#FBF4E2}
 :root[data-theme="dark"]{--hnc:#7FD3B2;--zb:#212C27;--hbl:#5E5638;--auk:#E6C76C;--aubg:#2E2818}
@@ -701,8 +704,8 @@ body[data-scr="play"]:has(.pdone){background:#0B3F31}
 .seath>span{white-space:nowrap}
 .seath>span b{font-size:calc(var(--t3) + 4px);color:var(--em)}
 :root[data-theme="dark"] .seath>span b{color:var(--hnc)}
-.bar.sbar{height:10px;margin:10px 0 4px}
-.bar.sbar.over i{background:#B23A1E}
+.bar.seatbar{height:10px;margin:10px 0 4px}
+.bar.seatbar.over i{background:#B23A1E}
 .cday{margin-top:8px}
 .cday b{color:var(--auk)}
 .celeb{display:flex;gap:10px;align-items:center;margin-top:8px;padding:10px 12px;border-radius:var(--r-in);background:var(--aubg);border:1px solid var(--au)}
@@ -1020,3 +1023,66 @@ b.neg{color:var(--red)}b.pos{color:var(--gt)}:root[data-theme="dark"] b.neg{colo
 .payrow .pn{display:block;font-size:var(--t1);word-break:keep-all}
 .payrow .pl{margin:4px 0 2px;line-height:1.5;word-break:keep-all}
 .payrow .pl b{white-space:nowrap}
+
+/* ───── v7.1.0 회원권(블루·레드·골드) · 포인트 두 줄 · 캡틴 넘겨받기 · 클럽 만들기 회원권 고르기 ───── */
+.pdot{flex:none;width:14px;height:14px;border-radius:50%;margin-top:4px;background:#2563EB;box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)}
+.pdot.red{background:#B23A1E}.pdot.gold{background:#C9A75A}
+.li.pkrow{gap:10px}
+.psum{display:flex;flex-direction:column;gap:2px;margin:2px 0 10px}
+.psr{display:grid;grid-template-columns:14px minmax(0,auto) minmax(0,1fr);column-gap:10px;align-items:start;padding:9px 0;border-bottom:1px solid var(--line)}
+.psr:last-child{border-bottom:0}
+.psr b{white-space:nowrap;font-size:var(--t2)}
+.psr .su{word-break:keep-all;line-height:1.45;min-width:0}
+.ptwo{display:flex;flex-direction:column;gap:6px;width:100%;text-align:left;border:2px solid var(--line);background:var(--soft);border-radius:var(--r-btn);padding:12px 14px;margin:10px 0 12px;color:var(--ink);font:inherit}
+.ptwo[disabled]{cursor:default}
+.ptwo span{display:flex;flex-direction:column;min-width:0}
+.ptwo b{font-size:var(--t2);word-break:keep-all}
+.ptwo em{font-style:normal;color:var(--sub);font-size:var(--t1);word-break:keep-all}
+.ptwo .ptw2 b{color:var(--gt)}
+:root[data-theme="dark"] .ptwo{background:#202B27}
+.ptv .ptsep{color:var(--sub);font-weight:400}
+.ptv .ptlv2{white-space:nowrap}
+.ptl .ptv{text-align:right;white-space:normal;max-width:48%}
+.card.handc{display:flex;gap:12px;align-items:flex-start;border:2px solid #C9A75A;background:#FBF6EA}
+.card.handc>.ic{flex:none;width:26px;height:26px;color:#9A7420;margin-top:2px}
+.card.handc>div{min-width:0;flex:1}
+.card.handc p{margin:4px 0 10px;word-break:keep-all}
+.card.handc .col{display:flex;flex-direction:column;gap:8px}
+.card.handc .col .btn{margin:0}
+:root[data-theme="dark"] .card.handc{background:#2E2A14;border-color:#5C4A12}
+:root[data-theme="dark"] .card.handc>.ic{color:#D9C27A}
+.ckl.mkp{align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.ckl.mkp input{width:26px;height:26px;margin:2px 0 0;flex:none}
+.ckl.mkp>span{display:flex;flex-direction:column;gap:2px;min-width:0;word-break:keep-all}
+.ckl.mkp input:disabled+span{opacity:.55}
+#mkSum{margin:10px 2px}
+.qv{flex-direction:column;gap:0;line-height:1.15}
+.qv .su{color:rgba(255,255,255,.88);font-size:var(--t0);white-space:nowrap}
+
+/* v7.1.0 알림 안 단추(골드 연장 승인·거절 · 남길 회원 고르기) */
+.noti.hasact{border-bottom:0;padding-bottom:8px}
+.nact{display:flex;flex-wrap:wrap;gap:8px;padding:0 0 12px 52px;border-bottom:1px solid var(--line)}
+.nact:last-child{border-bottom:0}
+.nact .btn{margin:0;flex:1 1 128px;min-width:0;white-space:normal;word-break:keep-all}
+
+/* v7.1.0 §17·§18 필드 라운드: 파크골프 + 일반골프 강조 띠 */
+.fban{display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:12px 14px;border-radius:var(--r-in,14px);background:linear-gradient(135deg,#0F4F3E,#17694F);color:#fff;border:2px solid #C9A75A;box-shadow:0 2px 8px rgba(15,79,62,.18)}
+.fban>svg{flex:none;width:28px;height:28px;color:#E6CC8A}
+.fban div{min-width:0;flex:1}.fban b{display:block;font-size:var(--t3);font-weight:800;line-height:1.35;color:#fff;word-break:keep-all}
+.fban .nw{font-style:normal;white-space:nowrap}.fban div>span{display:block;margin-top:3px;font-size:var(--t1,14px);line-height:1.45;color:#F2E6C4;word-break:keep-all}
+.ophint{display:flex;gap:6px;align-items:flex-start;margin:4px 0 6px;font-size:var(--t1,14px);color:var(--sub);line-height:1.45;word-break:keep-all}.ophint svg{flex:none;width:18px;height:18px;margin-top:2px;color:var(--g3)}
+/* v7.1.0 §12–§14 동시 접속 안내 · 관리자 계정·대리 · 카카오 이름 확인·연결 풀기 */
+.kicknote{display:flex;gap:10px;align-items:flex-start;line-height:1.6;margin:0 0 10px}.kicknote svg{width:24px;height:24px;flex:none;color:var(--gt);margin-top:2px}.kicknote span{min-width:0}
+.admnote{display:flex;gap:10px;align-items:flex-start;line-height:1.6;margin:0 0 10px}.admnote svg{width:22px;height:22px;flex:none;color:var(--gt);margin-top:2px}.admnote span{min-width:0;overflow-wrap:anywhere}
+.kconf{text-align:center}.kconf p{margin:0 0 8px;line-height:1.6;overflow-wrap:anywhere}.kconf .hint{display:flex;gap:6px;align-items:center;justify-content:center;text-align:left}.kconf .hint svg{width:16px;height:16px;flex:none}
+.kcav{width:64px;height:64px;border-radius:50%;object-fit:cover;display:block;margin:2px auto 10px;border:2px solid var(--line);background:#FEE500}.kcav.none{display:flex;align-items:center;justify-content:center;color:#191600}.kcav.none svg{width:30px;height:30px}
+.kcname{font-size:var(--t3)}.kcname b{color:var(--gt)}
+.acct h4{margin:14px 0 6px;font-size:var(--t2);display:flex;align-items:center;gap:6px}.acct h4 svg{width:18px;height:18px}
+.depbox{border-top:1px solid var(--line);margin-top:12px}.depnow{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--sf2);margin-bottom:8px}.depnow b{font-size:var(--t3);overflow-wrap:anywhere}.depnow span{overflow-wrap:anywhere}
+.kmrow{border-top:1px solid var(--line2);padding-top:8px;margin-top:6px}.kmrow .su{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.kmrow .su svg{width:16px;height:16px}
+.kunl{margin:0 0 10px;padding-left:20px;line-height:1.6}.kunl li{margin-bottom:4px}
+.kcons{display:flex;gap:6px;align-items:flex-start}.kcons svg{width:16px;height:16px;flex:none;margin-top:3px}.kcons span{min-width:0;overflow-wrap:anywhere}
+
+/* v7.1.0 클럽 색 띠 */
+.li.clr{border-left:6px solid var(--clc,var(--g,#0F4F3E));padding-left:12px}
+.card.clrtop{border-top:6px solid var(--clc,var(--g,#0F4F3E))}

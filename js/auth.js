@@ -25,6 +25,7 @@
           : '<p class="lsub">홀마다 나만의 공략을 적어 두세요</p><label class="sr" for="nick">닉네임</label><input type="text" id="nick" class="lnick" value="' + esc(last) + '" placeholder="닉네임" autocomplete="username" maxlength="8" autocapitalize="off" spellcheck="false">') +
         padHtml(4) + '<p class="lhint" id="lhint">4자리를 누르면 바로 들어가요</p>' +
         '<a href="#" class="lforgot" data-act="forgot">비밀번호를 잊었어요</a>' +
+        '<hr class="ldiv" aria-hidden="true">' +   /* v7.1.0 §15: "비밀번호를 잊었어요"와 다음 줄 사이 긴 구분선(처음 로그인 화면도 같은 자리) */
         (back ? '<a href="#" class="lother" data-act="otherUser">다른 사람으로 로그인</a>' : '') +
         (inv ? '<div class="ljoin" style="margin-top:4px"><div style="flex:1"><b>클럽 초대를 받으셨어요</b><div class="muted">로그인하거나 가입하면 그 클럽에 가입 신청이 돼요.</div></div></div>' : '') +
         (back ? '' : '<div class="ljoin"><div style="flex:1;min-width:0"><b>처음이세요?</b><div class="muted">가입은 무료 · 바로 시작</div></div><button type="button" class="ljbtn" data-go="join">가입하기</button></div>') +
@@ -32,6 +33,7 @@
       var n = $('#nick'); n.addEventListener('input', function () { pinForce = 0; setPadLen(pinLen()); });
       n.addEventListener('keydown', function (e) { if (e.key === 'Enter') n.blur(); });
       setPadLen(pinLen());
+      if (LZ.kickedNote) { LZ.kickedNote = false; LZ.kickNote(); }
       if (LZ.pinChangedNote) { LZ.pinChangedNote = false; LZ.dialog({ title: '비밀번호가 바뀌었어요', body: '다른 휴대폰에서 비밀번호를 새로 정해서 이 휴대폰은 로그아웃됐어요. 새 비밀번호로 로그인해 주세요.' }); }
     }
   };
@@ -79,14 +81,29 @@
   /* ───── 카카오 본인 확인(v7.3 #22): 카카오에서 회원번호만 받아요(이름·전화번호 안 받음) ─────
      카카오 화면으로 갔다가 돌아오면(?code=) 무엇을 하던 중이었는지(lz.kakaoBack: join·verify·pw)에 따라 이어서 해요 */
   LZ.kakaoKey = async function () { if (LZ._kk !== undefined) return LZ._kk; try { var c = await LZ.api('cfg', {}, { noAuth: true }); LZ._kk = c.kakao ? c.kakao.key : ''; LZ.ptRules = c.pt || LZ.ptRules; } catch (e) { return ''; } return LZ._kk; };
-  LZ.kakaoGo = async function (why) {
+  LZ.kakaoGo = async function (why, other) {
     var key = await LZ.kakaoKey(); if (!key) return false;
     store.set('lz.kakaoBack', why);
-    location.href = 'https://kauth.kakao.com/oauth/authorize?client_id=' + encodeURIComponent(key) + '&redirect_uri=' + encodeURIComponent(LZ.APP_URL) + '&response_type=code&state=' + encodeURIComponent(why);
+    location.href = 'https://kauth.kakao.com/oauth/authorize?client_id=' + encodeURIComponent(key) + '&redirect_uri=' + encodeURIComponent(LZ.APP_URL) + '&response_type=code&state=' + encodeURIComponent(why) + (other ? '&prompt=login' : '');   // other: "아니에요" 뒤 다른 카카오 계정으로
     return true;
   };
+  /* v7.1.0 §14 연결 직전 확인: 카카오에서 받은 이름(·사진)을 보여 주고 "본인 카카오가 맞나요?" — 맞으면 1회용 확인표(kc), 아니면 null.
+     이름·사진은 이 화면에만 보여 주고 저장하지 않아요(서버도 카카오 번호를 섞은 값만 둬요) */
+  LZ.kakaoConfirm = async function (kcode, why) {
+    var r = await LZ.api('kakaoPeek', { kcode: kcode, redirect: LZ.APP_URL }, { noAuth: true, retry: 0 });
+    var av = r.img ? '<img class="kcav" src="' + esc(r.img) + '" alt="" referrerpolicy="no-referrer">' : '<span class="kcav none">' + LZ.ic('kakao') + '</span>';
+    var ok = await LZ.dialog({ title: '카카오 계정 확인', html: '<div class="kconf">' + av + (r.has ? '<p class="kcname">카카오 이름 <b>' + esc(r.name) + '</b> 계정이에요.</p><p>본인 카카오가 맞나요?</p>'
+        : '<p class="kcname">카카오 이름을 받지 못했어요.</p><p class="muted">카카오에서 닉네임 제공에 동의하지 않으셨어요. 이 휴대폰의 카카오가 본인 것이 맞으면 연결해 주세요.</p><p>본인 카카오가 맞나요?</p>') +
+        '<p class="hint">' + LZ.ic('lock') + ' 이름·사진은 확인에만 쓰고 저장하지 않아요.</p></div>', cancel: undefined,
+      buttons: [{ label: '맞아요, 연결하기', kind: 'y', value: true }, { label: '아니에요', kind: 'g', value: false }] });
+    if (ok) return r.kc;
+    var again = await LZ.dialog({ title: '본인 카카오로 다시 해 주세요', html: '<p>이 휴대폰에 로그인된 카카오가 본인 것이 아니면 연결하지 않아요.</p><p class="muted">"다른 카카오로 다시"를 누르면 카카오 화면에서 본인 계정으로 로그인할 수 있어요.</p>', cancel: false,
+      buttons: [{ label: '다른 카카오로 다시', kind: 'y', value: true }, { label: '그만두기', kind: 'g', value: false }] });
+    if (again) { LZ.busy(true, '카카오로 가는 중…'); if (!(await LZ.kakaoGo(why, 1))) LZ.busy(false); }
+    return null;
+  };
   var KBTN = function (act, label) { return '<button type="button" class="btn kakao kbtn" data-act="' + act + '">' + LZ.ic('kakao') + '<span>' + (label || '카카오로 본인 확인') + '</span></button>'; };
-  var KNOTE = '<p class="hint knote">' + LZ.ic('lock') + '<span>카카오에서는 <b>회원번호만</b> 받아요. 이름·전화번호는 받지 않아요. 카카오 계정 하나에 회원 한 분이에요.</span></p>';
+  var KNOTE = '<p class="hint knote">' + LZ.ic('lock') + '<span>카카오에서는 <b>회원번호</b>만 저장해요. 카카오 이름은 본인 확인 화면에 한 번 보여 드리기만 하고 저장하지 않아요(전화번호는 받지 않아요). 카카오 계정 하나에 회원 한 분이에요.</span></p>';
   /** 로그인한 뒤 먼저 보여 줄 화면: 블랙 안내 → 기존 회원 카카오 확인. 보여 줬으면 true */
   LZ.acctGate = function () {
     var u = S.user; if (!u) return false;
@@ -103,7 +120,7 @@
       var ref = store.get('lz.ref') || '', refNick = '', kon = !!(cfg && cfg.kakao), kerr = '';
       if (ref) { try { refNick = (await LZ.api('refName', { ref: ref }, { noAuth: true })).nick; } catch (e) { /* 무시 */ } }
       var dr = store.json('lz.jdraft'); if (dr && Date.now() - dr.at < 3600000) JK.nick = dr.nick || JK.nick; store.del('lz.jdraft');
-      if (p.kcode) { try { var k = await LZ.api('kakaoCheck', { kcode: p.kcode, redirect: LZ.APP_URL }, { noAuth: true, retry: 0 }); JK.kt = k.kt; JK.adm = k.adm; JK.at = Date.now(); } catch (e) { kerr = e.message; } p.kcode = ''; }
+      if (p.kcode) { var kc0 = p.kcode; p.kcode = ''; root.innerHTML = LZ.hdr('가입하기', { back: true, noBell: 1 }) + LZ.skeleton(3); try { var kc = await LZ.kakaoConfirm(kc0, 'join'); if (kc) { var k = await LZ.api('kakaoCheck', { kc: kc }, { noAuth: true, retry: 0 }); JK.kt = k.kt; JK.adm = k.adm; JK.at = Date.now(); } else kerr = '본인 카카오가 아니라고 하셨어요. 본인 카카오로 다시 확인해 주세요.'; } catch (e) { kerr = e.message; } }
       if (p.kfail) kerr = '카카오 확인을 마치지 못했어요. 다시 해 주세요.';
       if (JK.kt && Date.now() - (JK.at || 0) > 29 * 60000) JK.kt = '';
       var done = !kon || !!JK.kt;
@@ -116,7 +133,7 @@
         '<label class="lb">비밀번호 숫자 4자리</label>' + padHtml(4) +
         '<label class="lb agl"><input type="checkbox" id="agree"><span class="muted">가입은 무료이고 한 분당 하나예요. 닉네임·기록은 클럽 회원님께 보일 수 있어요. 비밀번호는 암호화해서 저장돼요.</span></label>' +
         '<button type="button" class="btn org" data-act="joinOk">가입하기</button>' + (kon ? '<p class="hint">비밀번호를 잊으면 <b>카카오로 확인</b>하고 새로 정해요.</p>' : '') + '</div>' +
-        '<p class="hint">가입은 무료예요. 기록·라운드·시상식·클럽 가입이 바로 돼요.</p></div>';
+        '<p class="hint">가입은 무료예요. 기록·라운드·시상식·클럽 가입이 바로 돼요. 필드에서는 파크골프·일반골프 스코어도 기록해요.</p></div>';
       pin = '';
       var n = $('#jnick'), chk = null;
       n.addEventListener('input', function () { JK.nick = LZ.stripNick(n.value); clearTimeout(chk); chk = setTimeout(async function () { var v = LZ.stripNick(n.value); if (v.length < 2) return; try { var r = await LZ.api('joinCheck', { nick: v }, { noAuth: true, retry: 0 }); $('#jhint').innerHTML = r.res ? '<span class="err">' + esc(r.res.msg) + '</span>' : '<span class="okt">쓸 수 있는 닉네임이에요 ✓</span>'; } catch (e) { /* 무시 */ } }, 500); });
@@ -151,11 +168,12 @@
     nobar: true,
     show: async function (p, root) {
       var err = '';
-      if (p.kcode) { try { var r = await LZ.api('kakaoVerify', { kcode: p.kcode, redirect: LZ.APP_URL }, { retry: 0 }); S.user = r.user; await LZ.refreshMe().catch(function () {}); p.kcode = ''; LZ.toast('카카오 확인을 마쳤어요. 고맙습니다', 3500); if (S.user.kind === 'admin') { LZ.go('adminCfg', {}, { reset: true }); return; } LZ.go('home', {}, { reset: true }); LZ.afterLogin(''); return; } catch (e) { err = e.message; p.fail = 1; } p.kcode = ''; }
+      if (p.kcode) { var kv0 = p.kcode; p.kcode = ''; root.innerHTML = LZ.hdr('카카오 본인 확인', { noBell: 1, noHelp: 1 }) + LZ.skeleton(3); try { var kcv = await LZ.kakaoConfirm(kv0, 'verify'); if (!kcv) throw new Error('본인 카카오가 아니라고 하셨어요. 본인 카카오로 다시 확인해 주세요.'); var r = await LZ.api('kakaoVerify', { kc: kcv }, { retry: 0 }); S.user = r.user; await LZ.refreshMe().catch(function () {}); p.kcode = ''; LZ.toast('카카오 확인을 마쳤어요. 고맙습니다', 3500); if (S.user.kind === 'admin') { LZ.go('adminCfg', {}, { reset: true }); return; } LZ.go('home', {}, { reset: true }); LZ.afterLogin(''); return; } catch (e) { err = e.message; p.fail = 1; } p.kcode = ''; }
       if (p.kfail) err = err || '카카오 확인을 마치지 못했어요.';
       var key = await LZ.kakaoKey(), fail = p.fail || p.kfail || !key;
       root.innerHTML = LZ.hdr('카카오 본인 확인', LZ.stack.length > 1 ? { back: true, noBell: 1 } : { noBell: 1, noHelp: 1, logout: 1 }) + '<div class="wrap"><div class="card kask"><div class="kic">' + LZ.ic('shield') + '</div>' +
-        '<h3>' + LZ.nimE(S.user.nick) + ', 카카오로 한 번만 확인해 주세요</h3><p>이제 <b>카카오 계정 하나에 회원 한 분</b>이 되도록 바뀌었어요. 확인을 마치면 비밀번호를 잊었을 때도 <b>카카오로 바로 새로 정할 수</b> 있어요.</p>' +
+        (S.user.kunl ? '<h3>' + LZ.nimE(S.user.nick) + ', 카카오를 다시 연결해 주세요</h3><p>카카오 연결이 풀려 있어요. <b>본인 휴대폰의 본인 카카오</b>로 다시 연결하면 기록·결제를 예전처럼 쓸 수 있어요.</p>'
+          : '<h3>' + LZ.nimE(S.user.nick) + ', 카카오로 한 번만 확인해 주세요</h3><p>이제 <b>카카오 계정 하나에 회원 한 분</b>이 되도록 바뀌었어요. 확인을 마치면 비밀번호를 잊었을 때도 <b>카카오로 바로 새로 정할 수</b> 있어요.</p>') +
         (err ? '<p class="err">' + esc(err) + '</p>' : '') + (!key ? '<p class="err">카카오 연결을 불러오지 못했어요.</p>' : '') +
         (key ? KBTN('kidGo', fail ? '다시 해 보기' : '카카오로 본인 확인') : '<button type="button" class="btn" data-act="kidRetry">다시 해 보기</button>') + KNOTE +
         (fail ? '<button type="button" class="btn g" data-go="qnaNew">관리자에게 문의하기</button><p class="hint">카카오 확인을 마쳐야 기록·클럽 같은 기능을 쓸 수 있어요. 잘 안 되면 문의해 주세요.</p>' : '') + '</div></div>';
@@ -191,8 +209,9 @@
       pin = ''; var err = '';
       if (p.kcode) {
         var nk = store.get('lz.pwNick') || '';
-        try { var r = await LZ.api('pwKakao', { nick: nk, kcode: p.kcode, redirect: LZ.APP_URL }, { noAuth: true, retry: 0 }); PF = { kt: r.kt, nick: r.nick, first: '', at: Date.now() }; } catch (e) { err = e.message; PF.kt = ''; PF.nick = nk; PF.code = e.code; }
-        p.kcode = ''; store.del('lz.pwNick');
+        var kp0 = p.kcode; p.kcode = ''; root.innerHTML = LZ.hdr('비밀번호 새로 정하기', { back: true, noBell: 1 }) + LZ.skeleton(3);
+        try { var kcp = await LZ.kakaoConfirm(kp0, 'pw'); if (!kcp) throw new Error('본인 카카오가 아니라고 하셨어요. 가입할 때 확인한 본인 카카오로 다시 해 주세요.'); var r = await LZ.api('pwKakao', { nick: nk, kc: kcp }, { noAuth: true, retry: 0 }); PF = { kt: r.kt, nick: r.nick, first: '', at: Date.now() }; } catch (e) { err = e.message; PF.kt = ''; PF.nick = nk; PF.code = e.code; }
+        store.del('lz.pwNick');
       }
       if (p.kfail) err = '카카오 확인을 마치지 못했어요. 다시 해 주세요.';
       var hd = LZ.hdr('비밀번호 새로 정하기', { back: true, noBell: 1 });

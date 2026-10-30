@@ -15,8 +15,10 @@
       var tile = function (ic, t, su, attr) { return '<button type="button" class="ftile" ' + attr + '>' + LZ.ic(ic) + '<b>' + t + '</b><span>' + su + '</span></button>'; };
       var avgD = m.avgN ? (m.avgPar > 0 ? '+' : '') + m.avgPar : '—';
       root.innerHTML = LZ.hdr('필드 라운드') + '<div id="syncbar" class="sync wait" hidden></div><div class="wrap fmain">' +
+        /* v7.1.0 §17·§18: 파크골프 + 일반골프 강조 띠 */
+        '<div class="fban">' + LZ.ic('flag') + '<div><b>파크골프도, 일반골프도 스코어를 기록해요</b><span><i class="nw">파크골프 9홀 33·18홀 66</i> · <i class="nw">일반골프 9홀 36·18홀 72</i> · <i class="nw">9~36홀</i></span></div></div>' +
         /* 만들기는 위(#18): 라운드 열기 · 번호로 들어가기 */
-        '<div class="row fmk"><button type="button" class="btn gold" data-act="roundOpenS">' + LZ.ic('play') + '라운드 열기</button><button type="button" class="btn o" data-act="roundJoinS">' + LZ.ic('field') + '번호로 들어가기</button></div>' +
+        (S.user.kind === 'admin' ? LZ.admNote('라운드 열기·함께하기·내 라운드 기록') : '<div class="row fmk"><button type="button" class="btn gold" data-act="roundOpenS">' + LZ.ic('play') + '라운드 열기</button><button type="button" class="btn o" data-act="roundJoinS">' + LZ.ic('field') + '번호로 들어가기</button></div>') +
         (m.round ? '<button type="button" class="cont" data-go="round" data-p=\'' + esc(JSON.stringify({ id: m.round.id })) + '\'>' + LZ.ic('flag', 'ci') + '<div style="flex:1;min-width:0"><b>진행 중인 라운드 ' + esc(m.round.code) + '</b><span class="muted">' + esc(m.round.fname) + '</span></div>' + LZ.ic('chev') + '</button>' : '') +
         '<div class="ftiles">' + tile('club', '단체 라운드', '조 편성·상황판', 'data-go="events"') + tile('trophy', '시상식', '끝난 라운드', 'data-act="awPickRound"') + tile('flag', '구장 관리', '등록·고치기', 'data-go="fieldMng"') + '</div>' +
         /* v7.0.3 시상식 안내: 시상식 칸은 그대로(라운드 고르기), 바로 아래 작은 안내 줄 */
@@ -45,7 +47,7 @@
     LZ.sheet('<h2>' + LZ.ic('play') + '라운드 열기</h2>' +
       '<div class="ophd"><b>구장 · 진행 순서</b><span class="muted">9홀씩 최대 4개</span></div>' +
       (sel.length ? '<div class="opsel">' + sel.map(function (x, k) { return '<div class="oprow"><b class="hn opn">' + (k + 1) + '</b><div class="t"><b>' + esc(x.name) + '</b><span class="muted">' + x.n + '홀 · 기준 ' + x.par + (x.area ? ' · ' + esc(x.area) : '') + '</span></div>' + (sel.length > 1 ? '<button type="button" class="opb" data-act="opMove" data-v="' + k + ':-1" aria-label="앞으로"' + (k === 0 ? ' disabled' : '') + '>' + LZ.ic('up') + '</button><button type="button" class="opb" data-act="opMove" data-v="' + k + ':1" aria-label="뒤로"' + (k === sel.length - 1 ? ' disabled' : '') + '>' + LZ.ic('down') + '</button>' : '') + '<button type="button" class="opb x" data-act="opField" data-v="' + esc(x.id) + '" aria-label="빼기">' + LZ.ic('x') + '</button></div>'; }).join('') + '</div><p class="muted small" style="margin:4px 0 8px">합계 ' + holes + '홀 · 기준 ' + sel.reduce(function (a, x) { return a + x.par; }, 0) + '타 · ▲▼로 순서를 바꿔요</p>' : '<p class="hint" style="margin:0 0 8px">아래에서 코스를 누르면 여기에 1·2·3·4 순서로 들어가요.</p>') +
-      '<label class="lb">코스 고르기</label><input type="search" id="opq" placeholder="골프장·지역 찾기" value="' + esc(OP.q || '') + '" style="margin-bottom:6px">' +
+      '<p class="ophint">' + LZ.ic('flag') + '<span>파크골프·일반골프 구장 모두 고를 수 있어요(없으면 구장 관리에서 등록)</span></p><label class="lb">코스 고르기</label><input type="search" id="opq" placeholder="골프장·지역 찾기" value="' + esc(OP.q || '') + '" style="margin-bottom:6px">' +
       '<div class="list" style="max-height:38vh;overflow:auto">' + (function () { var q = (OP.q || '').toLowerCase(), list = OP.fields.filter(function (x) { return OP.fids.indexOf(x.id) < 0 && (!q || (x.name + ' ' + (x.area || '')).toLowerCase().indexOf(q) >= 0); }); return list.length ? list.map(function (x) { return '<button type="button" class="it pickrow" data-act="opField" data-v="' + esc(x.id) + '"><div class="t"><b>' + esc(x.name) + '</b><span class="muted">' + x.n + '홀 · 기준 ' + x.par + (x.ball === 'golf' ? ' · 일반골프' : '') + (x.used ? ' · 최근 ' + LZ.fmtDate(x.used) : '') + '</span></div>' + (x.area ? '<span class="chip">' + esc(x.area) + '</span>' : '') + '</button>'; }).join('') : '<div class="empty">' + (q ? '찾는 코스가 없어요' : '등록된 코스가 없어요') + '</div>'; })() + '</div>' +
       '<button type="button" class="btn o sm" data-go="fieldReg">' + LZ.ic('plus') + '구장 등록</button>' +
       '<label class="lb">함께 치는 분 (' + (OP.players.length + 1) + '명) <span class="muted" style="font-weight:500">· 혼자도 돼요, 시상식은 2명부터</span></label><div class="list"><div class="it"><div class="av">' + esc(S.user.nick.charAt(0)) + '</div><div class="t"><b>' + LZ.nimE(S.user.nick) + ' <span class="chip">나</span></b></div></div>' + OP.players.map(function (p, i) { return '<div class="it"><div class="av">' + esc((p.nick || p.guest).charAt(0)) + '</div><div class="t"><b>' + LZ.nimE(p.nick || p.guest) + ' ' + (p.guest ? '<span class="chip off">손님</span>' : '') + '</b></div><button type="button" class="sm2 g" data-act="opRm" data-v="' + i + '">' + LZ.ic('x') + '빼기</button></div>'; }).join('') + '</div>' +
@@ -97,6 +99,8 @@
   };
 
   /* ───── 점수판 ───── */
+  /** v7.1.0 §17: 일반골프 구장이면 "일반골프 · " (파크골프는 그대로) */
+  LZ.ballTxt = function (rd) { return rd && rd.ball === 'golf' ? '일반골프 · ' : rd && rd.ball === 'mix' ? '파크골프·일반골프 · ' : ''; };
   LZ.screens.round = {
     tab: 'field', wake: true, rt: true,
     show: async function (p, root, alive) {
@@ -124,7 +128,7 @@
     R.lbl = holeNo;
     root.innerHTML = LZ.hdr('점수판 ' + rd.code, { back: true, noBell: 1, inBar: 1, right: '<button type="button" class="ib" data-go="rall">전체</button>' + (ended ? '' : '<button type="button" class="ib" data-act="roundShare">초대</button>') }) + '<div class="wrap sboard">' +
       '<div class="sync ' + (off ? 'wait' : 'ok') + '" id="rsync">' + (ended ? '끝난 라운드예요' : fixing ? '끝남 · ' + Math.max(1, Math.round((rd.editUntil - Date.now()) / 60000)) + '분 동안 고칠 수 있어요' : off ? '신호 약함 · 휴대폰에 저장됨, 연결되면 보내요' : LZ.ic('check') + ' 모두 저장됨 · 실시간으로 함께 보는 중 · ' + LZ.fmtDate(rd.endsAt, true) + ' 자동 종료') + '</div>' +
-      lapTabs + '<div class="sbh"><div class="sbt"><div class="sbn">' + LZ.hn(holeNo, 'xl') + '<span class="muted">/ ' + (lap ? lap.n : nh) + '</span></div><div class="muted sbf">' + esc(rd.fname) + ' · 기준 ' + rd.par + '타' + (rd.grp ? ' · 단체 ' + esc(rd.grp) : '') + '</div>' + (rd.weather ? '<div class="muted sbf">날씨 ' + esc(rd.weather) + '</div>' : '') + '</div>' +
+      lapTabs + '<div class="sbh"><div class="sbt"><div class="sbn">' + LZ.hn(holeNo, 'xl') + '<span class="muted">/ ' + (lap ? lap.n : nh) + '</span></div><div class="muted sbf">' + esc(rd.fname) + ' · ' + LZ.ballTxt(rd) + '기준 ' + rd.par + '타' + (rd.grp ? ' · 단체 ' + esc(rd.grp) : '') + '</div>' + (rd.weather ? '<div class="muted sbf">날씨 ' + esc(rd.weather) + '</div>' : '') + '</div>' +
         (ended ? '<span class="parb off">파 ' + par + '</span>' : '<button type="button" class="parb" data-act="roundPar" aria-label="' + holeNo + '홀 파 고치기">파 ' + par + LZ.ic('edit') + '</button>') + '</div>' +
       '<div class="sbl">' + rd.players.map(function (p, k) { var s = p.s[i], T = tot(p, rd.pars, 0, nh, rd), canEdit = !ended && (!rd.self || p.guest || p.k === S.user.uid), d = s ? s - par : 0, td = T.t - T.par;
         return '<div class="pl2' + (k % 2 ? ' z' : '') + '" id="pl' + k + '"><div class="pn"><b>' + LZ.nimE(p.n) + (p.guest ? ' <span class="chip off">손님</span>' : '') + '</b><span class="su">합계 ' + T.t + '타 · 파 대비 ' + rel(td) + ' <i>(' + T.n + '홀)</i></span><span class="su who">' + (p.b[i] ? LZ.nimE(p.b[i]) + '이 적음' : '아직 안 적었어요') + '</span></div>' +
@@ -176,7 +180,7 @@
     show: function (p, root) {
       var rd = R.round; if (!rd) { LZ.go('field', {}, { replace: true }); return; }
       var nh = rd.pars.length, rs = rd.players.map(function (p) { var T = tot(p, rd.pars, 0, nh, rd); return { n: p.n, t: T.t, d: T.t - T.par, h: T.n }; }).sort(function (a, b) { return (b.h - a.h) || (a.d - b.d); });
-      root.innerHTML = LZ.hdr('라운드 결과', { back: true }) + '<div class="wrap rres2"><div class="rrh"><div class="ctitle">' + esc(rd.fname) + '</div><div class="muted">' + LZ.fmtDate(rd.created) + ' · ' + nh + '홀 · 기준 ' + rd.par + '타' + (rd.weather ? ' · ' + esc(rd.weather) : '') + '</div></div>' +
+      root.innerHTML = LZ.hdr('라운드 결과', { back: true }) + '<div class="wrap rres2"><div class="rrh"><div class="ctitle">' + esc(rd.fname) + '</div><div class="muted">' + LZ.fmtDate(rd.created) + ' · ' + nh + '홀 · ' + LZ.ballTxt(rd) + '기준 ' + rd.par + '타' + (rd.weather ? ' · ' + esc(rd.weather) : '') + '</div></div>' +
         '<div class="card tight" id="resCard"><div class="rrl">' + rs.map(function (r, i) { return '<div class="rrw' + (i % 2 ? ' z' : '') + '"><span class="rrk">' + (i === 0 && rs.length > 1 ? LZ.ic('trophy') : (i + 1)) + '</span><div class="t"><b>' + LZ.nimE(r.n) + '</b>' + (r.h < nh ? '<span class="su">' + r.h + '홀까지 · 진행 중</span>' : '') + '</div><span class="rrc ' + relCls(r.d) + '" aria-label="파 대비 ' + rel(r.d) + '">' + rel(r.d) + '</span><span class="rrt">' + r.t + '타</span></div>'; }).join('') + '</div></div>' +
         (rd.players.length > 1 ? '<button type="button" class="btn gold" data-go="awards" data-p=\'' + esc(JSON.stringify({ rid: rd.id })) + '\'>' + LZ.ic('trophy') + '시상식 열기</button>' : '') +
         '<div class="row"><button type="button" class="btn o sm" data-go="rall">' + LZ.ic('note') + '전체 점수 보기</button><button type="button" class="btn kakao sm" data-act="resShare">' + LZ.ic('kakao') + '카톡으로 보내기</button></div>' +
@@ -186,13 +190,13 @@
   LZ.act.resShare = async function () {
     var rd = R.round, nh = rd.pars.length, lines = rd.players.map(function (p) { var T = tot(p, rd.pars, 0, nh, rd); return p.n + ' ' + T.t + '타 (' + (T.t - T.par > 0 ? '+' : '') + (T.t - T.par) + ')'; });
     var text = '⛳ ' + rd.fname + ' · ' + LZ.fmtDate(rd.created) + '\n' + lines.join('\n') + '\n— 파크골프 공략수첩', url = LZ.APP_URL + '?r=' + rd.code;
-    try { var file = await resultImage(rd); if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: '라운드 결과', text: text }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+    try { var file = await resultImage(rd); if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: '라운드 결과', text: LZ.shareJoin(text, url) }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
     LZ.kakaoShare(text, url);
   };
   async function resultImage(rd) {
     var nh = rd.pars.length, cv = document.createElement('canvas'), W = 1080, rowH = 56, H = 260 + rd.players.length * rowH + 120; cv.width = W; cv.height = H;
     var g = cv.getContext('2d'); g.fillStyle = '#F3F6F4'; g.fillRect(0, 0, W, H); g.fillStyle = '#0B5D4B'; g.fillRect(0, 0, W, 150);
-    g.fillStyle = '#fff'; g.font = '800 46px Pretendard, sans-serif'; g.fillText(rd.fname, 40, 70); g.font = '400 30px Pretendard, sans-serif'; g.fillText(LZ.fmtDate(rd.created) + ' · 기준 ' + rd.par + '타 · 파크골프 공략수첩', 40, 118);
+    g.fillStyle = '#fff'; g.font = '800 46px Pretendard, sans-serif'; g.fillText(rd.fname, 40, 70); g.font = '400 30px Pretendard, sans-serif'; g.fillText(LZ.fmtDate(rd.created) + ' · ' + LZ.ballTxt(rd) + '기준 ' + rd.par + '타 · 파크골프 공략수첩', 40, 118);
     var rs = rd.players.map(function (p) { var T = tot(p, rd.pars, 0, nh, rd); return { n: p.n, t: T.t, d: T.t - T.par, h: T.n }; }).sort(function (a, b) { return (b.h - a.h) || (a.d - b.d); });
     rs.forEach(function (r, i) { var y = 200 + i * rowH; g.fillStyle = i === 0 ? '#FEF3C7' : '#fff'; g.fillRect(40, y - 36, W - 80, 48); g.fillStyle = '#172026'; g.font = '800 32px Pretendard, sans-serif'; g.fillText((i + 1) + '위  ' + LZ.nim(r.n), 60, y); g.textAlign = 'right'; g.fillText(r.t + '타', W - 200, y); g.fillStyle = r.d < 0 ? '#DC2626' : r.d > 0 ? '#2563EB' : '#6B7280'; g.fillText(rel(r.d), W - 70, y); g.textAlign = 'left'; });
     g.fillStyle = '#5F6B72'; g.font = '400 26px Pretendard, sans-serif'; g.fillText('가입하면 내 기록을 볼 수 있어요 · ' + LZ.APP_URL, 40, H - 40);
@@ -211,7 +215,7 @@
     var b = BALL[FR.ball];
     return '<label class="lb" style="margin-top:0">골프장 이름</label><input type="text" id="frGc" maxlength="24" value="' + esc(FR.gc) + '" placeholder="예: 화천파크골프장"><label class="lb">지역 <span class="muted" style="font-weight:400">(날씨 표시용)</span></label><input type="text" id="frArea" maxlength="20" value="' + esc(FR.area) + '" placeholder="예: 양주">' +
       (FR.id ? '' : '<label class="lb">홀 수</label>' + LZ.seg([['9', '9홀'], ['18', '18홀'], ['27', '27홀'], ['36', '36홀']], String(FR.holes), 'frHoles', 's')) +
-      '<label class="lb">공</label>' + LZ.seg([['park', '파크볼 · 9홀 기준 33'], ['golf', '일반골프 · 9홀 기준 36']], FR.ball, 'frBall', 's') +
+      '<label class="lb">공</label>' + LZ.seg([['park', '파크볼 · 9홀 기준 33'], ['golf', '일반골프 · 9홀 기준 36']], FR.ball, 'frBall', 's') + '<p class="hint" style="margin:4px 0 0">파크볼: 9홀 기준 33 · 18홀 66 (파크골프) / 일반골프: 9홀 기준 36 · 18홀 72 — 두 가지 모두 스코어를 기록할 수 있어요</p>' +
       '<p class="muted" style="margin:6px 0 0">코스마다 9홀. 코스 이름은 A·B·C·D 대신 "레이크·마운틴"처럼 바꿔도 돼요 → <b>' + esc(FR.gc || '골프장') + '(' + esc(FR.names[0]) + ')</b> 식으로 저장돼요.</p>' +
       '<div class="tgl" style="margin-top:8px"><span>기준수 자동 맞춤<span class="muted">한 홀을 바꾸면 뒤 홀이 따라 바뀌어 ' + b.std + '을 지켜요. 기준과 다르게 넣으려면 끄고 넣어요</span></span>' + LZ.sw(FR.auto ? 1 : 0, 'frAuto') + '</div>' +
       FR.names.map(function (nm, c) { var sum = FR.pars[c].reduce(function (a, x) { return a + x; }, 0); return '<div class="box" style="margin-top:10px"><div class="row" style="align-items:center"><span class="n" style="width:auto">코스 ' + (c + 1) + '</span><input type="text" id="frName' + c + '" maxlength="12" value="' + esc(nm) + '" placeholder="예: A, 레이크" style="flex:1;margin:0"></div>' + FR.pars[c].map(function (p, h) { return '<div class="frow"><span class="n">' + (h + 1) + '홀</span>' + LZ.seg(LZ.parOpts(p), String(p), 'frPar:' + c + ':' + h, 's par') + '</div>'; }).join('') + '<p class="muted" id="frSum' + c + '" style="margin:6px 0 0">기준 ' + sum + (sum === b.std ? ' ' + LZ.ic('check') : ' (' + b.name + ' 기준 ' + b.std + '보다 ' + (sum > b.std ? sum - b.std + ' 많음' : b.std - sum + ' 적음') + ')') + '</p></div>'; }).join('');

@@ -105,12 +105,12 @@
   /** 예전 표시(● ▲ ▼만) — 다른 화면 호환 */
   LZ.mark = function (p, s) { var d = LZ.dvOf(p, s); if (!d) return '<span class="mk ok">●</span>'; return '<span class="mk ' + (d > 0 ? 'up' : 'dn') + '">' + (d > 0 ? '▲' : '▼') + '</span>'; };
   LZ.markOf = function (r, hm) { return LZ.mark(r.p, LZ.sugOf(hm, r.g || 'p', r.h || 'm')); };
-  /** 레벨(적립 포인트, #25): 새싹·버디·이글·봉황·지존 — 기준 점수는 서버 설정(lv) */
+  /** 레벨(v7.1.0 레벨 점수): 새싹·버디·이글·봉황·지존 — 기준 점수는 서버 설정(lv) */
   LZ.LVN = [['🌱', '새싹'], ['🐦', '버디'], ['🦅', '이글'], ['🪶', '봉황'], ['👑', '지존']];
   LZ.lvOf = function (pts, th) { th = th || [0, 100, 500, 1500, 5000]; var k = 0; for (var i = 0; i < th.length; i++) if ((pts || 0) >= th[i]) k = i; return k; };
   LZ.lvBadge = function (pts, th) { var x = LZ.LVN[LZ.lvOf(pts, th || (S.me && S.me.lv))]; return '<span class="lvb">' + x[0] + ' ' + x[1] + '</span>'; };
-  /** 이름 옆 레벨 배지 + 적립 포인트(모은 포인트) — 목록용 */
-  LZ.lvPts = function (pts, th) { return LZ.lvBadge(pts, th) + ' <span class="lvp">' + Number(pts || 0).toLocaleString('ko-KR') + 'P</span>'; };
+  /** 이름 옆 레벨 배지 + 레벨 점수 — 목록용("이글 · 620점") */
+  LZ.lvPts = function (pts, th) { return LZ.lvBadge(pts, th) + '<span class="lvp"> · ' + Number(pts || 0).toLocaleString('ko-KR') + '점</span>'; };   // v7.1.0 레벨 점수(점)
   LZ.pp = function (d) { return '<span class="pp ' + (d < 0 ? 'u' : d > 0 ? 'o' : 'e') + '">' + (d > 0 ? '+' + d : d === 0 ? 'E' : d) + '</span>'; };
   /* 등급 동그라미: 🔵 블루 · 🔴 레드 · 🟡 골드 · ⚫ 블랙 */
   LZ.dot = function (u) { var t = u && (u.tier || ({ gold: 'gold', blue: 'blue', red: 'red', black: 'black', admin: 'admin' })[u.kind]) || 'blue'; return '<i class="dot ' + t + '" title="' + ({ blue: '블루', red: '레드', gold: '골드', black: '블랙', admin: '관리자' })[t] + '"></i>'; };
@@ -308,17 +308,21 @@
   LZ.sessionLost = async function (e) {
     var was = !!S.user;
     LZ.clearSession();
-    if (was) { if (e && e.data && e.data.pinChanged) await LZ.dialog({ title: '비밀번호가 바뀌었어요', body: '다른 휴대폰에서 비밀번호를 새로 정해서 이 휴대폰은 로그아웃됐어요. 새 비밀번호로 다시 로그인해 주세요.' }); else LZ.toast(e && e.message ? e.message : '다시 로그인해 주세요.', 4000); }
+    if (was) { if (e && e.data && e.data.pinChanged) await LZ.dialog({ title: '비밀번호가 바뀌었어요', body: '다른 휴대폰에서 비밀번호를 새로 정해서 이 휴대폰은 로그아웃됐어요. 새 비밀번호로 다시 로그인해 주세요.' }); else if (e && e.data && e.data.kicked) { LZ.go('login', {}, { reset: true }); LZ.kickNote(); return; } else LZ.toast(e && e.message ? e.message : '다시 로그인해 주세요.', 4000); }
     LZ.go('login', {}, { reset: true });
   };
+  /* v7.1.0 §12 동시 접속: 다른 기기에서 같은 닉네임으로 로그인하면 이 기기는 로그아웃(회원 1대, 관리자 한 사람당 2대) */
+  /* v7.1.0 §13 관리자 계정은 관리 전용: 내 수첩·클럽 가입·라운드 기록은 회원 계정으로(이미 있는 기록은 그대로) */
+  LZ.admNote = function (what) { return S.user && S.user.kind === 'admin' ? '<div class="box admnote">' + LZ.ic('shield') + '<span><b>관리자 계정은 관리 전용이에요.</b> ' + (what || '내 수첩·클럽 가입·라운드 기록') + ' 같은 회원 활동은 회원님 본인 계정으로 해 주세요.</span></div>' : ''; };
+  LZ.kickNote = function () { LZ.closeSheet && LZ.closeSheet(); return LZ.dialog({ title: '다른 기기에서 로그인해서 로그아웃됐어요', html: '<p class="kicknote">' + LZ.ic('lock') + '<span>같은 닉네임으로 다른 휴대폰(또는 컴퓨터)에서 로그인해서 이 기기는 로그아웃됐어요. 회원님은 한 번에 한 기기에서만 쓸 수 있어요.</span></p><p class="muted">이 기기에서 계속 쓰시려면 다시 로그인해 주세요. 본인이 로그인한 게 아니라면 비밀번호를 바꿔 주세요.</p>' }); };
   LZ.clearSession = function () { LZ.cacheDrop(); store.del('lz.k.me'); S.user = null; S.token = ''; S.me = null; store.del('lz.t'); LZ.rt && LZ.rt.stop(); LZ.nrt && LZ.nrt.stop(); document.body.classList.remove('kb'); };
   LZ.setSession = function (r) { S.token = r.token; S.user = r.user; store.set('lz.t', r.token); if (r.pw) S.pw = r.pw; };
   function applyMe(r) { S.me = r; S.user = r.user; S.br = r.br; S.store = r.store; S.pw = r.pw; S.unit = r.user.unit || 'p'; if (r.appVer && LZ.pwa && LZ.pwa.verCheck) LZ.pwa.verCheck(r.appVer); if (r.rt) NR.start(r.rt); LZ.rememberMe(r.user); }
   /* 이 휴대폰으로 들어왔던 분: 다음 로그인 화면에 프로필 사진·닉네임을 미리 보여 줘요(사진은 작게 줄여 이 휴대폰에만) */
   LZ.rememberMe = function (u) {
-    if (!u || !u.nick) return; var old = store.json('lz.who') || {};
-    var o = { nick: u.nick, img: u.img || '', av: old.nick === u.nick && old.img === (u.img || '') ? old.av || '' : '' };
-    store.setJSON('lz.who', o); store.set('lz.nick', u.nick);
+    if (!u || !u.nick) return; var old = store.json('lz.who') || {}, nk = u.kind === 'admin' ? '관리자' : u.nick;   // v7.1.0 §13 관리자 계정은 늘 '관리자'로 로그인(주 관리자·대리 모두, 6자리)
+    var o = { nick: nk, img: u.img || '', av: old.nick === nk && old.img === (u.img || '') ? old.av || '' : '' };
+    store.setJSON('lz.who', o); store.set('lz.nick', nk);
     if (o.img && !o.av && /^[\w-]{4,80}$/.test(o.img)) LZ.api('imgGet', { id: o.img }).then(function (r) { if (r && r.data && r.data.length < 60000) { o.av = r.data; store.setJSON('lz.who', o); } }).catch(function () {});
     else if (o.img && /^(data:image|assets\/)/.test(o.img)) { o.av = o.img; store.setJSON('lz.who', o); }
   };
@@ -358,7 +362,7 @@
   var MODS = { admin: 'js/admin.js', event: 'js/event.js', help: 'js/help.js', qr: 'vendor/qrcode.js' }, modP = {}, modDone = {};
   function lazyMap(o) { var m = {}; Object.keys(o).forEach(function (k) { o[k].split(' ').forEach(function (n) { m[n] = k; }); }); return m; }
   var LAZY_SCR = LZ.lazyScr = lazyMap({ admin: 'adminCfg adminGroup adminPacks adminSeats dash faqAdmin firstAdmin goldList log members moimAll pays promo ptGive ptOwe pwreqs refunds', event: 'awards ceremony evEnter evInvite evMake event events tv' });
-  var LAZY_ACT = LZ.lazyAct = lazyMap({ admin: 'cfgJoin cfgPt cfgPw cfgQna cfgSave cfgSeat cfgSeatTxt faqDel faqEdit faqMove faqReset faqSave fsReset fsSave goldOk logoReset mMore mNew mNewGo mNewKind mOp mOpen mPurge mPurgeOk mbGo moimDrop paClear paGo paOwe paPick paQuick paReset paSign payNo payOk pkD pkDel pkExt pkGrant pkMoveA pkMoveGo pkN promoCopy promoJoin promoReset promoShare promoSms pwNo pwOk refNo refOk testPurge', event: 'awMove awNodup awPart awPick awScopeLap awScopeTeams awShare awTeamSave awTeamSel awTnodup awToggle ceremonyEnd evDel evEnd evEnterCode evEnterGo evHelperSave evHelperSel evHelpers evInviteKakao evInviteSms evLock evMore evPickTeam evTab evTeamEdit evTm fullscreen luckAdd mkAdd mkAuto mkAutoOrder mkClubAdd mkClubPick mkClubSel mkCreate mkFromClub mkHoles mkLap mkLapNew mkLapPick mkLapSave mkMove mkNext mkOrd mkOut mkSel mkTeams teAdd teMove teOut teSave teSel twLuckAdd twMove' });
+  var LAZY_ACT = LZ.lazyAct = lazyMap({ admin: 'cfgJoin cfgPt cfgPw cfgQna cfgSave cfgSeat cfgSeatTxt depNew depOff faqDel faqEdit faqMove faqReset faqSave fsReset fsSave goldOk logoReset mGrant mGrantGo mMore mNew mNewGo mNewKind mOp mOpen mPurge mPurgeOk mbGo mgD mgKind mgN moimDrop paClear paGo paOwe paPick paQuick paReset paSign payNo payOk pkD pkDel pkExt pkGrant pkK pkMoveA pkMoveGo pkN pkRevoke promoCopy promoJoin promoReset promoShare promoSms pwNo pwOk refNo refOk testPurge', event: 'awMove awNodup awPart awPick awScopeLap awScopeTeams awShare awTeamSave awTeamSel awTnodup awToggle ceremonyEnd evDel evEnd evEnterCode evEnterGo evHelperSave evHelperSel evHelpers evInviteKakao evInviteSms evLock evMore evPickTeam evTab evTeamEdit evTm fullscreen luckAdd mkAdd mkAuto mkAutoOrder mkClubAdd mkClubPick mkClubSel mkCreate mkFromClub mkHoles mkLap mkLapNew mkLapPick mkLapSave mkMove mkNext mkOrd mkOut mkSel mkTeams teAdd teMove teOut teSave teSel twLuckAdd twMove' });
   /** 모듈 하나를 불러옴 → Promise. 두 번 불러도 한 번만 받아요. 실패하면 다음에 다시 시도 */
   LZ.need = function (name) {
     if (modP[name]) return modP[name];
@@ -432,7 +436,7 @@
   /* 깊은 링크: #club:id · #course:id · #round:id · #event:code · #inv=코드 · #pwreq 등 */
   LZ.goTo = function (to) {
     to = String(to || ''); var m = /^([a-z]+)(?::(.*))?$/.exec(to); if (!m) return;
-    var map = { home: ['home'], me: ['me'], pay: [LZ.S.user && LZ.S.user.kind === 'admin' ? 'pays' : 'meTier'], join: ['join'], courses: ['courses'], club: ['club', { id: m[2] }], reqs: ['club', { id: m[2], reqs: 1 }], course: ['holes', { id: m[2] }], round: ['round', { id: m[2] }], event: ['event', { code: m[2] }], find: ['find'], qna: ['qnaList'], notices: ['notices'], dash: ['dash'], members: ['members'], pwreq: ['pwreqs'], refund: ['refunds'], fb: ['feedbacks'], meTier: ['meTier'], goldList: ['goldList'], points: ['mePoints'] };
+    var map = { home: ['home'], me: ['me'], pay: [LZ.S.user && LZ.S.user.kind === 'admin' ? 'pays' : 'meTier'], join: ['join'], courses: ['courses'], club: ['club', { id: m[2] }], reqs: ['club', { id: m[2], reqs: 1 }], keep: ['clubKeep', { id: m[2] }], course: ['holes', { id: m[2] }], round: ['round', { id: m[2] }], event: ['event', { code: m[2] }], find: ['find'], qna: ['qnaList'], notices: ['notices'], dash: ['dash'], members: ['members'], pwreq: ['pwreqs'], refund: ['refunds'], fb: ['feedbacks'], meTier: ['meTier'], goldList: ['goldList'], points: ['mePoints'] };
     var x = map[m[1]]; if (x) LZ.go(x[0], x[1] || {});
   };
   /* 단추 공통 처리: data-go / data-tab / data-act */
@@ -477,12 +481,14 @@
   document.addEventListener('click', function (e) { var p = $('#vpop'); if (p && !e.target.closest('#vpop') && !e.target.closest('[data-act="viewPop"]')) p.remove(); }, true);
   LZ.act.logout = async function () { if (!(await LZ.confirm('로그아웃할까요?', '다시 들어올 때 닉네임과 비밀번호를 넣어요.', '로그아웃'))) return; try { await post('logout', {}); } catch (e) { /* 무시 */ } LZ.clearSession(); LZ.go('login', {}, { reset: true }); };
   LZ.act.copy = async function (el, v) { try { await navigator.clipboard.writeText(v); LZ.toast('복사했어요'); } catch (e) { LZ.toast('복사하지 못했어요. 길게 눌러 복사해 주세요.'); } };
-  LZ.act.share = async function (el, v) { var o = JSON.parse(v); try { if (navigator.share) { await navigator.share(o); return; } } catch (e) { if (e && e.name === 'AbortError') return; } try { await navigator.clipboard.writeText((o.text ? o.text + '\n' : '') + (o.url || '')); LZ.toast('내용을 복사했어요. 카톡에 붙여 넣어 주세요.'); } catch (e2) { LZ.toast('공유하지 못했어요.'); } };
+  /** v7.1.0 §16 공유 글: 링크는 글 맨 끝 줄에 붙여 글 하나로(카톡이 링크 카드를 글 아래에 붙이게) */
+  LZ.shareJoin = function (text, url) { var t = String(text || '').replace(/\s+$/, ''); if (!url) return t; if (t.slice(-String(url).length) === url) return t; return (t ? t + '\n' : '') + url; };
+  LZ.act.share = async function (el, v) { var o = JSON.parse(v), p = { title: o.title, text: LZ.shareJoin(o.text, o.url) }; try { if (navigator.share) { await navigator.share(p); return; } } catch (e) { if (e && e.name === 'AbortError') return; } try { await navigator.clipboard.writeText(p.text); LZ.toast('내용을 복사했어요. 카톡에 붙여 넣어 주세요.'); } catch (e2) { LZ.toast('공유하지 못했어요.'); } };
   /** 초대 시트 하나: 글+링크를 카카오톡 / 문자 / QR 로. (그림은 안 붙임 — 링크 미리보기 카드가 그림을 보여 줌) */
   LZ.inviteSheet = function (title, text, url, extra) {
-    var full = text + '\n' + url;
+    var full = LZ.shareJoin(text, url);
     LZ.sheet('<h2>' + esc(title) + '</h2><div class="box" style="white-space:pre-wrap;font-size:var(--t1);margin-top:0">' + esc(full) + '</div>' +
-      '<button type="button" class="btn kakao" data-act="share" data-v=\'' + esc(JSON.stringify({ title: title, text: text, url: url })) + '\'>카카오톡으로 보내기</button>' +
+      '<button type="button" class="btn kakao" data-act="share" data-v=\'' + esc(JSON.stringify({ title: title, text: full })) + '\'>카카오톡으로 보내기</button>' +
       '<div class="row" style="margin-top:8px"><a class="btn o" style="margin:0" href="sms:?&body=' + encodeURIComponent(full) + '">문자로</a><button type="button" class="btn o" style="margin:0" data-act="inviteQrShow" data-v="' + esc(url) + '">QR 보기</button></div>' +
       '<button type="button" class="btn g sm" data-act="copy" data-v="' + esc(full) + '">글 복사</button>' + (extra || ''));
   };
@@ -523,7 +529,7 @@
     try {
       var ws = NR.ws = new WebSocket(url);
       ws.onopen = function () { NR.tries = 0; send('phx_join', { config: { broadcast: { self: false }, presence: { key: '' } } }); NR.hb = setInterval(function () { send('heartbeat', {}, 'phoenix'); }, 25000); };
-      ws.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.topic === topic && m.event === 'broadcast' && m.payload && m.payload.event === 'noti') { var x = m.payload.payload || {}; LZ.meSync(x.t || '새 알림이 왔어요'); } } catch (x2) { /* 무시 */ } };
+      ws.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.topic === topic && m.event === 'broadcast' && m.payload && m.payload.event === 'noti') { var x = m.payload.payload || {}; if (x.kind === 'kick') { LZ.api('ping', {}).catch(function () { /* 끊긴 기기면 api 가 로그인 화면으로 */ }); return; } LZ.meSync(x.t || '새 알림이 왔어요'); } } catch (x2) { /* 무시 */ } };
       ws.onclose = function () { if (ws !== NR.ws) return; clearInterval(NR.hb); NR.ws = null; if (S.user && NR.key === key) { NR.tries++; NR.again = setTimeout(function () { if (S.user && NR.key === key) { NR.key = ''; NR.start(key); } }, Math.min(60000, 3000 * NR.tries)); } };
       ws.onerror = function () { /* onclose 에서 다시 */ };
     } catch (e) { NR.ws = null; }
@@ -559,7 +565,7 @@
         LZ.refreshMe().then(function () { if (LZ.cur().name === 'home') LZ.redraw(); else LZ.paintBell(); }).catch(function (e) { if (e.code === 'auth') LZ.sessionLost(e); });
       } else {
         try { await LZ.refreshMe(); LZ.stack = [{ name: 'home', p: {} }]; }
-        catch (e) { if (e.code === 'auth') { LZ.clearSession(); if (e.data && e.data.pinChanged) LZ.pinChangedNote = true; } else { S.token = t; LZ.stack = [{ name: 'offline', p: { err: e } }]; } }
+        catch (e) { if (e.code === 'auth') { LZ.clearSession(); if (e.data && e.data.pinChanged) LZ.pinChangedNote = true; if (e.data && e.data.kicked) LZ.kickedNote = true; } else { S.token = t; LZ.stack = [{ name: 'offline', p: { err: e } }]; } }
       }
     }
     if (!S.user && store.get('lz.joinNow') === '1') { store.del('lz.joinNow'); LZ.stack = [{ name: 'join', p: {} }]; }
