@@ -21,7 +21,7 @@
       root.innerHTML = '<div class="login"><div class="lhero" aria-hidden="true"></div>' +
         '<button type="button" class="tb ga lga' + (big ? ' on' : '') + '" data-act="big" aria-pressed="' + (big ? 'true' : 'false') + '" aria-label="큰 글씨">가<sup>+</sup></button>' +
         '<div class="lbody"><div class="ltitle"><img src="icons/icon-192.png" alt="" class="llogo"><h1>파크골프 공략수첩</h1></div>' +
-        (back ? '<p class="lsub">다시 오셨네요</p><div class="lwho">' + av + '<b>' + esc(who.nick) + ' <span>회원님</span></b><input type="text" id="nick" class="nick-ghost" value="' + esc(last) + '" autocomplete="username" maxlength="8" tabindex="-1" aria-label="닉네임"></div>'
+        (back ? '<p class="lsub">다시 오셨네요</p><div class="lwho">' + av + '<b>' + esc(who.nick) + (who.nick === '관리자' ? '' : ' <span>회원님</span>') + '</b><input type="text" id="nick" class="nick-ghost" value="' + esc(last) + '" autocomplete="username" maxlength="8" tabindex="-1" aria-label="닉네임"></div>'
           : '<p class="lsub">홀마다 나만의 공략을 적어 두세요</p><label class="sr" for="nick">닉네임</label><input type="text" id="nick" class="lnick" value="' + esc(last) + '" placeholder="닉네임" autocomplete="username" maxlength="8" autocapitalize="off" spellcheck="false">') +
         padHtml(4) + '<p class="lhint" id="lhint">4자리를 누르면 바로 들어가요</p>' +
         '<a href="#" class="lforgot" data-act="forgot">비밀번호를 잊었어요</a>' +
@@ -245,7 +245,7 @@
     nobar: true,
     show: function (p, root) {
       root.innerHTML = LZ.hdr('관리자에게 찾기 신청', { back: true, noBell: 1 }) + '<div class="wrap"><div class="card"><p class="muted" style="margin:0 0 6px">본인 확인용으로 세 가지만 적어 주세요. 처리가 끝나면 연락처는 바로 지워요.</p>' +
-        '<label class="lb">닉네임</label><input type="text" id="qnick" value="' + esc(p.nick || '') + '" maxlength="8"><label class="lb">가입한 때</label><input type="text" id="qwhen" placeholder="예: 올해 9월쯤, 작년 봄" maxlength="30"><label class="lb">연락받을 곳</label><input type="text" id="qcontact" placeholder="카톡 아이디나 전화번호" maxlength="40">' +
+        '<label class="lb">닉네임</label><input type="text" id="qnick" value="' + esc(p.nick || '') + '" maxlength="8"><label class="lb">가입한 때</label><input type="text" id="qwhen" placeholder="예: 올해 9월쯤, 작년 봄" maxlength="30"><label class="lb">연락받을 곳</label><input type="text" id="qcontact" placeholder="카카오톡 아이디나 전화번호" maxlength="40">' +
         '<button type="button" class="btn" data-act="pwReqOk">신청하기</button></div><p class="hint">관리자가 확인한 뒤 <b>임시 번호(24시간)</b>를 연락드려요. 이 휴대폰에서 "비밀번호를 잊었어요 → 내 신청 확인"으로도 볼 수 있어요. 임시 번호로 들어오면 바로 나만의 번호로 바꾸게 돼요.</p></div>';
     }
   };

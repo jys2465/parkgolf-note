@@ -16,7 +16,7 @@
       var d = await LZ.api('dash', {}); if (!alive()) return; DASH = d;
       var t = d.total, chip = function (label, n, to) { return '<button type="button" class="tchip' + (n ? ' on' : '') + '" data-go="' + to + '">' + label + ' ' + n + '</button>'; };
       root.innerHTML = LZ.hdr('관리자', { back: true }) + '<div class="wrap">' +
-        '<div class="card todo"><h3>지금 처리할 일</h3><div class="tchips">' + chip('결제 확인', d.pending, 'pays') + chip('환불', d.refundReq, 'refunds') + chip('비밀번호', d.pwReq, 'pwreqs') + chip('문의', d.qnaOpen, 'qnaList') + (d.goldSoon ? chip('골드 만기', d.goldSoon + '명', 'goldList') : '') + (d.blackSoon ? '<button type="button" class="tchip on" data-act="mbGo" data-v="_black">블랙 삭제 예정 ' + d.blackSoon + '</button>' : '') + (d.ptOwe ? '<button type="button" class="tchip on warn" data-go="ptOwe">포인트 회수 부족 ' + d.ptOwe + '명</button>' : '') + (d.soon.length ? '<button type="button" class="tchip on" data-go="adminGroup" data-p=\'{"g":"log"}\'>곧 끝나는 회원 ' + d.soon.length + '</button>' : '') + '</div></div>' +
+        '<div class="card todo"><h3>지금 처리할 일</h3><div class="tchips">' + chip('결제 확인', d.pending, 'pays') + chip('환불', d.refundReq, 'refunds') + chip('비밀번호', d.pwReq, 'pwreqs') + chip('문의', d.qnaOpen, 'qnaList') + (d.goldSoon ? chip('골드 만기', d.goldSoon + '명', 'goldList') : '') + (d.goldCand ? chip('골드 후보', d.goldCand + '명', 'goldCand') : '') + (d.blackSoon ? '<button type="button" class="tchip on" data-act="mbGo" data-v="_black">블랙 삭제 예정 ' + d.blackSoon + '</button>' : '') + (d.ptOwe ? '<button type="button" class="tchip on warn" data-go="ptOwe">포인트 회수 부족 ' + d.ptOwe + '명</button>' : '') + (d.soon.length ? '<button type="button" class="tchip on" data-go="adminGroup" data-p=\'{"g":"log"}\'>곧 끝나는 회원 ' + d.soon.length + '</button>' : '') + '</div></div>' +
         '<div class="kv dkv"><div><b>' + t.all + '</b><span>회원</span></div><div><b>' + d.moims.length + '</b><span>클럽</span></div><div><b>' + d.today + '</b><span>오늘</span></div></div>' +
         '<div class="card tight groups">' +
         gli('user', '회원', '만들기 · 회원권 지급 · 블랙 · 테스트 계정' + (d.tests ? ' ' + d.tests : ''), 'data-go="members"') +
@@ -39,7 +39,7 @@
       var t = d.total, badge = function (n) { return n ? ' <i class="bdg">' + n + '</i>' : ''; }, body = '';
       if (g === 'pay') body = '<div class="card tight groups">' + gli('check', '결제 승인' + badge(d.pending), '입금 확인 후 승인 · 비밀번호 재확인', 'data-go="pays"') + gli('back', '환불 신청' + badge(d.refundReq), '확인 후 환불 처리', 'data-go="refunds"') + gli('coin', '포인트 주기·회수', '회원 찾기 · 사유 적기 · 회원님께 알림', 'data-go="ptGive"') + (d.ptOwe ? gli('coin', '포인트 회수 부족' + badge(d.ptOwe), '환불 때 다 거두지 못한 적립 포인트', 'data-go="ptOwe"') : '') + '</div>' +
         '<div class="card"><h3>이달 결제 (' + esc(d.month.label) + ')</h3><div class="kv"><div><b>' + d.month.count + '</b><span>건</span></div><div><b>' + won(d.month.amount) + '</b><span>결제</span></div><div><b>' + won(d.month.net) + '</b><span>환불 뺀 금액</span></div></div></div>';
-      else if (g === 'promo') body = '<div class="card tight groups">' + gli('note', '공지 관리', '모든 회원님께 보이는 공지', 'data-go="notices" data-p=\'{"manage":1}\'') + gli('chat', '홍보 안내문', '카톡·문자로 보낼 가입 안내 글 · QR', 'data-go="promo"') + gli('help', '자주 묻는 질문', '문의 화면 위에 보이는 질문과 답', 'data-go="faqAdmin"') + gli('ball', '파크골프 첫걸음', '처음 오신 분께 보이는 안내 카드 6장', 'data-go="firstAdmin"') + gli('trophy', '시상식 안내', '상 종류·차례를 알려 주는 안내 카드 6장', 'data-go="firstAdmin" data-p=\'{"g":"awards"}\'') + gli('lock', '비밀번호 찾기 신청' + badge(d.pwReq), '임시 번호 24시간', 'data-go="pwreqs"') + '</div>';
+      else if (g === 'promo') body = '<div class="card tight groups">' + gli('note', '공지 관리', '모든 회원님께 보이는 공지', 'data-go="notices" data-p=\'{"manage":1}\'') + gli('chat', '홍보 안내문', '카카오톡·문자로 보낼 가입 안내 글 · QR', 'data-go="promo"') + gli('help', '자주 묻는 질문', '문의 화면 위에 보이는 질문과 답', 'data-go="faqAdmin"') + gli('ball', '파크골프 첫걸음', '처음 오신 분께 보이는 안내 카드 6장', 'data-go="firstAdmin"') + gli('trophy', '시상식 안내', '상 종류·차례를 알려 주는 안내 카드 6장', 'data-go="firstAdmin" data-p=\'{"g":"awards"}\'') + gli('lock', '비밀번호 찾기 신청' + badge(d.pwReq), '임시 번호 24시간', 'data-go="pwreqs"') + '</div>';
       else body = '<div class="card"><h3>오늘</h3><div class="kv"><div><b>' + d.today + '</b><span>오늘 사용</span></div><div><b>' + d.joinsToday + '</b><span>오늘 가입</span></div><div><b>' + t.all + '</b><span>회원 전체</span></div></div><div class="kv" style="margin-top:6px"><div><b>' + (t.blue || 0) + '</b><span>블루</span></div><div><b>' + (t.red || 0) + '</b><span>레드</span></div><div><b>' + (t.gold || 0) + '</b><span>골드</span></div></div><p class="muted" style="margin:8px 0 0">최근 30일 가입 ' + d.conv.joined + '명 중 결제 ' + d.conv.paid + '명 · 직접 가입 ' + d.conv.self + '명</p></div>' +
         (d.soon.length ? '<div class="card"><h3>곧 끝나는 회원</h3><div class="list">' + d.soon.map(function (u) { return '<div class="it"><div class="t"><b>' + esc(u.nick) + '</b><span class="muted">' + esc(u.kindName) + ' · ' + (u.left === 0 ? '오늘까지' : u.left + '일 남음') + '</span></div></div>'; }).join('') + '</div></div>' : '') +
         '<div class="card"><h3>클럽 ' + d.moims.length + '개</h3><div class="list">' + d.moims.slice(0, 8).map(function (m) { return '<button type="button" class="li" data-go="club" data-p=\'' + esc(JSON.stringify({ id: m.id })) + '\'><div class="t"><b>' + esc(m.name) + (m.official ? ' <span class="chip cap">공식</span>' : '') + '</b><span class="su">캡틴 ' + esc(m.captainNick || '—') + ' · 회원 ' + m.members + '명</span></div>' + LZ.ic('chev') + '</button>'; }).join('') + '</div><button type="button" class="btn g sm" data-go="moimAll">클럽 모두 보기</button></div>' +
@@ -101,7 +101,7 @@
   LZ.act.paOwe = async function (el, v) {
     var d = PA.d; if (!d) return; var ow = d.owe.tot;
     if (v === 'take') { PA.sign = -1; PA.clear = 1; PA.amt = String(Math.min(ow, d.member.bal)); PA.why = PA.why || '환불 부족분 회수'; LZ.redraw(); return; }
-    if (!(await LZ.confirm('거두지 않고 정리할까요?', d.member.nick + '님의 회수 부족 ' + ow.toLocaleString('ko-KR') + 'P를 거두지 않고 0으로 정리해요. 회원님의 포인트는 그대로예요.', '정리하기'))) return;
+    if (!(await LZ.confirm('거두지 않고 정리할까요?', LZ.nim(d.member.nick) + '의 회수 부족 ' + ow.toLocaleString('ko-KR') + 'P를 거두지 않고 0으로 정리해요. 회원님의 포인트는 그대로예요.', '정리하기'))) return;
     await paSend(0, '거두지 않고 정리', 1);
   };
   /* 관리자 비밀번호로 확인 → 보내기(같은 요청을 두 번 보내지 않게 key) */
@@ -114,14 +114,14 @@
     try { await LZ.api('sure', { pin: pin }, { noSure: true }); } catch (e) { LZ.toast(LZ.errText(e), 4000); return; }
     var r = await LZ.api('ptAdjust', { uid: m.uid, amt: amt, why: why, clear: clear ? 1 : 0, key: Date.now().toString(36) + Math.random().toString(36).slice(2, 8) });
     PA.d.member.bal = r.info.bal; PA.d.member.tot = r.info.tot; PA.d.owe = r.owe; PA.amt = ''; PA.why = ''; PA.clear = 0; DASH = null;
-    LZ.toast(!amt ? '회수 부족을 정리했어요' : m.nick + '님께 ' + (amt > 0 ? Math.abs(amt).toLocaleString('ko-KR') + 'P를 드렸어요' : Math.abs(amt).toLocaleString('ko-KR') + 'P를 회수했어요') + ' · 알림을 보냈어요', 3500);
+    LZ.toast(!amt ? '회수 부족을 정리했어요' : LZ.nim(m.nick) + '께 ' + (amt > 0 ? Math.abs(amt).toLocaleString('ko-KR') + 'P를 드렸어요' : Math.abs(amt).toLocaleString('ko-KR') + 'P를 회수했어요') + ' · 알림을 보냈어요', 3500);
     LZ.redraw();
   }
   LZ.act.paGo = async function () {
     var d = PA.d; if (!d) return; var n = Math.round(Number(($('#paAmt') || {}).value || PA.amt)), why = String(($('#paWhy') || {}).value || PA.why).replace(/\s+/g, ' ').trim();
     if (!(n > 0)) { LZ.toast('포인트를 숫자로 넣어 주세요.'); var a = $('#paAmt'); if (a) a.focus(); return; }
     if (!why) { LZ.toast('사유를 적어 주세요. 회원님 내역에 그대로 보여요.'); var w = $('#paWhy'); if (w) w.focus(); return; }
-    if (PA.sign < 0 && n > d.member.bal) { LZ.toast(d.member.nick + '님의 쓸 수 있는 포인트는 ' + Number(d.member.bal).toLocaleString('ko-KR') + 'P예요.', 4000); return; }
+    if (PA.sign < 0 && n > d.member.bal) { LZ.toast(LZ.nim(d.member.nick) + '의 쓸 수 있는 포인트는 ' + Number(d.member.bal).toLocaleString('ko-KR') + 'P예요.', 4000); return; }
     PA.amt = String(n); PA.why = why;
     await paSend(PA.sign * n, why, PA.sign < 0 && PA.clear && d.owe.tot ? 1 : 0);
   };
@@ -146,9 +146,9 @@
       var url = LZ.APP_URL + '?join=1', saved = store.get('lz.promo') || '';
       var def = '파크골프 공략수첩\n\n스크린 파크골프, 홀마다 어디로 얼마나 쳐야 할지 매번 헷갈리셨죠?\n공략수첩은 홀별 좌우·볼스피드를 적어 두고, 클럽 회원들의 기록과 평균까지 한눈에 봐요.\n\n✔ 홀 표 한 장에 내 공략 · 회원 공략 · 클럽 평균\n✔ 아마추어·프로·마스터 모드 자동 환산\n✔ 필드 라운드: 파크골프·일반골프 스코어도 기록, 한 조가 같이 적기\n✔ 단체 라운드 상황판과 시상식까지\n\n🎁 ' + ((S.me && S.me.seat && S.me.seat.promo) || '가입은 무료') + '\n\n👇 아래 링크를 누르면 바로 가입 화면이 열려요\n' + url;
       var text = saved || def;
-      root.innerHTML = LZ.hdr('홍보 안내문', { back: true }) + '<div class="wrap"><div class="card"><p class="muted" style="margin-top:0">카카오톡·문자로 보낼 가입 안내 글이에요. 링크를 누르면 가입 화면이 바로 열려요. 글은 자유롭게 고쳐 쓰고, 이 휴대폰에 저장돼요.</p><textarea id="promoT" rows="14" maxlength="1000">' + esc(text) + '</textarea><div class="row"><button type="button" class="btn kakao" data-act="promoShare">카톡으로 보내기</button><button type="button" class="btn g" data-act="promoCopy">복사</button></div><div class="row"><button type="button" class="btn g sm" data-act="promoSms">문자로 보내기</button><button type="button" class="btn g sm" data-act="promoReset">처음 글로</button></div></div>' +
+      root.innerHTML = LZ.hdr('홍보 안내문', { back: true }) + '<div class="wrap"><div class="card"><p class="muted" style="margin-top:0">카카오톡·문자로 보낼 가입 안내 글이에요. 링크를 누르면 가입 화면이 바로 열려요. 글은 자유롭게 고쳐 쓰고, 이 휴대폰에 저장돼요.</p><textarea id="promoT" rows="14" maxlength="1000">' + esc(text) + '</textarea><div class="row"><button type="button" class="btn kakao" data-act="promoShare">카카오톡으로 보내기</button><button type="button" class="btn g" data-act="promoCopy">복사</button></div><div class="row"><button type="button" class="btn g sm" data-act="promoSms">문자로 보내기</button><button type="button" class="btn g sm" data-act="promoReset">처음 글로</button></div></div>' +
         '<div class="card"><h3>가입 홍보 공지</h3><p class="muted" style="margin:0 0 8px">친구 초대와 상관없이 모든 회원님께 보이는 공지예요(맨 위 고정, 처음 한 번 팝업). 공지 안의 "가입 안내 보내기"로 회원님들이 주변에 퍼뜨릴 수 있어요.</p><button type="button" class="btn" data-act="promoJoin">가입 홍보 공지 올리기</button><button type="button" class="btn g sm" data-go="notices" data-p=\'{"manage":1}\'>공지 관리</button></div>' +
-        '<div class="card"><h3>안내장 그림</h3><p class="muted" style="margin:0 0 8px">카톡·밴드·인쇄용 1080×1350 그림. QR이 들어 있어요.</p><button type="button" class="btn o" data-act="posterJoin">가입 안내장 그림 받기</button></div>' +
+        '<div class="card"><h3>안내장 그림</h3><p class="muted" style="margin:0 0 8px">카카오톡·밴드·인쇄용 1080×1350 그림. QR이 들어 있어요.</p><button type="button" class="btn o" data-act="posterJoin">가입 안내장 그림 받기</button></div>' +
         '<div class="card"><h3>가입 링크 QR</h3><p class="muted" style="margin:0 0 8px">인쇄해서 매장에 붙여 두면 휴대폰 카메라로 찍고 바로 가입해요.</p><div class="qr" id="pqr"></div><p class="center muted small">' + esc(url) + '</p><button type="button" class="btn g sm" data-act="copy" data-v="' + esc(url) + '">링크만 복사</button></div>' +
         '<div class="card"><h3>회원용 친구 초대 글</h3><p class="muted" style="margin:0">회원들이 친구를 초대하는 안내는 홈과 내 정보의 <b>친구 초대하기</b>에 있고, 공지 "친구 초대하기" 팝업으로도 보여 줄 수 있어요.</p><button type="button" class="btn g sm" data-go="notices" data-p=\'{"manage":1}\'>공지 관리로</button></div></div>';
       LZ.qr($('#pqr'), url);
@@ -208,7 +208,7 @@
   };
   LZ.act.mNewKind = function (el, v) { $('#ck').value = v; $$('[data-act="mNewKind"]').forEach(function (b) { b.classList.toggle('on', b.dataset.v === v); }); };
   LZ.act.mNewGo = async function () { try { var r = await LZ.api('mCreate', { nick: $('#cn').value, kind: $('#ck').value, mid: $('#cm').value }); LZ.closeSheet(); showPin(r.member.nick, r.pin); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e), 5000); } };
-  function showPin(nick, pin) { LZ.dialog({ title: LZ.nim(nick) + ' 임시 비밀번호', html: '<div class="code" style="font-size:var(--t6)">' + esc(pin) + '</div><p class="muted center">24시간 안에 로그인해서 새 비밀번호로 바꿔야 해요. 새 계정은 3일 동안 로그인이 없으면 저절로 지워져요.</p><button type="button" class="btn kakao" data-act="share" data-v=\'' + esc(JSON.stringify({ title: '파크골프 공략수첩', text: '파크골프 공략수첩 · ' + LZ.nim(nick) + '\n임시 비밀번호: ' + pin + '\n24시간 안에 로그인해서 새 비밀번호로 바꿔 주세요.', url: LZ.APP_URL })) + '\'>카톡으로 알려 주기</button>' }); }
+  function showPin(nick, pin) { LZ.dialog({ title: LZ.nim(nick) + ' 임시 비밀번호', html: '<div class="code" style="font-size:var(--t6)">' + esc(pin) + '</div><p class="muted center">24시간 안에 로그인해서 새 비밀번호로 바꿔야 해요. 새 계정은 3일 동안 로그인이 없으면 저절로 지워져요.</p><button type="button" class="btn kakao" data-act="share" data-v=\'' + esc(JSON.stringify({ title: '파크골프 공략수첩', text: '파크골프 공략수첩 · ' + LZ.nim(nick) + '\n임시 비밀번호: ' + pin + '\n24시간 안에 로그인해서 새 비밀번호로 바꿔 주세요.', url: LZ.APP_URL })) + '\'>카카오톡으로 알려 주기</button>' }); }
   LZ.act.mOpen = function (el, uid) {
     var u = MB.d.members.filter(function (x) { return x.uid === uid; })[0]; if (!u) return;
     var isMe = u.uid === S.user.uid, adm = u.kind === 'admin';
@@ -229,7 +229,7 @@
       '<label class="lb" style="margin-top:0">종류</label>' + LZ.seg([['red', '레드회원권'], ['gold', '골드회원권']], 'red', 'mgKind') + '<input type="hidden" id="mgk" value="red">' +
       '<label class="lb">장수</label>' + LZ.seg([['1', '1장'], ['2', '2장'], ['5', '5장'], ['10', '10장']], '1', 'mgN') + '<input type="hidden" id="mgn" value="1">' +
       '<div id="mgDays"><label class="lb">기간(레드)</label>' + LZ.seg(EXTS.map(function (x) { return [String(x), x + '일']; }), '365', 'mgD', 's') + '<input type="hidden" id="mgd" value="365"></div>' +
-      '<label class="lb" for="mgm">넣을 곳</label><select id="mgm" class="in"><option value="">보관(회원이 나중에 클럽에 넣기)</option>' + (u.mids || []).map(function (m) { return '<option value="' + esc(m.id) + '">' + esc(m.name) + '</option>'; }).join('') + '</select>' +
+      '<label class="lb" for="mgm">넣을 곳</label><select id="mgm" class="in"><option value="">보관(회원이 나중에 클럽에 넣기)</option>' + (u.mids || []).map(function (m, i) { var id = m && m.id ? m.id : m, nm = m && m.name ? m.name : (u.moims || [])[i] || ''; return '<option value="' + esc(id) + '">' + esc(nm) + '</option>'; }).join('') + '</select>' +
       '<button type="button" class="btn" data-act="mGrantGo" data-v="' + esc(uid) + '">' + LZ.ic('check') + '지급하기</button>');
   };
   LZ.act.mgKind = function (el, v) { $('#mgk').value = v; $$('[data-act="mgKind"]').forEach(function (b) { b.classList.toggle('on', b.dataset.v === v); }); var dz = $('#mgDays'); if (dz) dz.hidden = v === 'gold'; };
@@ -343,7 +343,7 @@
   LZ.act.logoReset = async function (el, slot) { try { await LZ.api('logoReset', { slot: slot }); LZ.toast('되돌렸어요'); } catch (e) { LZ.toast(LZ.errText(e)); } };
 
   /* 적립 포인트·레벨·블랙 기준(v7.3 #21 #25): 화면의 모든 포인트 안내가 이 값으로 바뀌어요 */
-  var PT_KEYS = ['pt_hole_new', 'pt_hole_fix', 'pt_course_reg', 'pt_course_fix', 'pt_claw_days', 'pt_import', 'pt_day_cap', 'pt_remind', 'pt_keep_months', 'lv_th', 'lv_mul', 'dorm_days', 'black_del_days', 'black_warn_days'];
+  var PT_KEYS = ['pt_hole_new', 'pt_hole_fix', 'pt_course_reg', 'pt_course_fix', 'pt_claw_days', 'pt_import', 'pt_day_cap', 'pt_remind', 'pt_keep_months', 'lv_th', 'lv_mul', 'dorm_days', 'black_del_days', 'black_warn_days', 'gold_inv', 'gold_act'];
   function ptCfgCard(d) {
     var v = d.pt || {}, nm = d.ptName || {};
     return '<div class="card"><h3>' + LZ.ic('star') + ' 적립 포인트 · 레벨 · 블랙</h3><p class="muted" style="margin:0 0 8px">적립률·사용 단위·유효 기간은 위 "회원권 기준"에서 정해요. 레벨은 레벨 점수(구매 적립 빼고) 기준이에요. 레벨은 5개(새싹·버디·이글·봉황·지존)를 쉼표로 넣어요.</p><div class="scfg">' +
@@ -378,7 +378,7 @@
   /** 대리 정하기: 회원 닉네임 → 대리 비밀번호 6자리 두 번 → 주 관리자 비밀번호 확인 */
   LZ.act.depNew = async function (el, v) {
     var same = v === 'pin' && DP && DP.dep, cur = same ? DP.dep.nick : '';
-    var r = await LZ.dialog({ title: same ? '대리 비밀번호 새로 정하기' : '관리자 대리 정하기', html: (same ? '<p class="muted">' + esc(cur) + '님의 대리 비밀번호를 새로 정해요. 그분의 관리자 로그인은 모두 끊겨요.</p>' : '<label class="lb" for="dpNick" style="margin-top:0">대리로 정할 회원 닉네임</label><input type="text" id="dpNick" class="in" maxlength="8" placeholder="회원 닉네임">' + (DP && DP.dep ? '<p class="hint">지금 대리(' + esc(DP.dep.nick) + ')는 바로 해제돼요.</p>' : '')) +
+    var r = await LZ.dialog({ title: same ? '대리 비밀번호 새로 정하기' : '관리자 대리 정하기', html: (same ? '<p class="muted">' + LZ.nim(esc(cur)) + '의 대리 비밀번호를 새로 정해요. 그분의 관리자 로그인은 모두 끊겨요.</p>' : '<label class="lb" for="dpNick" style="margin-top:0">대리로 정할 회원 닉네임</label><input type="text" id="dpNick" class="in" maxlength="8" placeholder="회원 닉네임">' + (DP && DP.dep ? '<p class="hint">지금 대리(' + esc(DP.dep.nick) + ')는 바로 해제돼요.</p>' : '')) +
       '<label class="lb" for="dpPin">대리 비밀번호 숫자 6자리</label><input type="password" inputmode="numeric" maxlength="6" id="dpPin" class="in" autocomplete="off" placeholder="6자리"><label class="lb" for="dpPin2">한 번 더</label><input type="password" inputmode="numeric" maxlength="6" id="dpPin2" class="in" autocomplete="off" placeholder="6자리">' +
       '<p class="hint">주 관리자 비밀번호와 다른 번호로요. 이 번호는 대리 본인에게만 직접 알려 주세요.</p>', cancel: null, focus: same ? '#dpPin' : '#dpNick',
       buttons: [{ label: '다음', kind: 'y', value: 'ok' }, { label: '취소', kind: 'g', value: null }] }).then(function (x) { return x === 'ok' ? { nick: same ? cur : LZ.stripNick(($('#dpNick') || {}).value), pin: $('#dpPin').value, pin2: $('#dpPin2').value } : null; });
@@ -419,7 +419,7 @@
       root.innerHTML = LZ.hdr('클럽·회원권', { back: true }) + LZ.skeleton(5);
       var d = await LZ.api('packList', {}); if (!alive()) return; var sc = d.seat;
       root.innerHTML = LZ.hdr('클럽·회원권', { back: true }) + '<div class="wrap">' +
-        '<div class="card tight groups">' + gli('star', '골드회원권', '관리자 지급 골드 연장 승인·거절 · 회수', 'data-go="goldList"') + gli('gear', '회원권 기준', '레드 ' + won(sc.seat_price) + ' · 새 클럽 첫 장 ' + won(sc.club_price) + ' · 골드 ' + won(sc.gold_price) + ' · 최대 ' + sc.seat_max + '자리', 'data-go="adminCfg"') + '</div>' +
+        '<div class="card tight groups">' + gli('star', '골드회원권', '관리자 지급 골드 연장 승인·거절 · 회수', 'data-go="goldList"') + gli('trophy', '골드 후보', '레벨 지존·봉황 · 친구 초대 많이 · 활발한 클럽 캡틴 → 지급', 'data-go="goldCand"') + gli('gear', '회원권 기준', '레드 ' + won(sc.seat_price) + ' · 새 클럽 첫 장 ' + won(sc.club_price) + ' · 골드 ' + won(sc.gold_price) + ' · 최대 ' + sc.seat_max + '자리', 'data-go="adminCfg"') + '</div>' +
         '<div class="card tight"><h3 class="ih">' + LZ.ic('club') + '클럽 ' + d.clubs.length + '개</h3>' + d.clubs.map(function (m) { return '<button type="button" class="li" data-go="adminPacks" data-p=\'' + esc(JSON.stringify({ mid: m.id })) + '\'><div class="t"><b>' + esc(m.name) + (m.locked ? ' <span class="chip gray">잠김</span>' : '') + '</b><span class="su">' + (m.staffClub ? m.n + '명 · 자리 제한 없음' : m.n + '명 / ' + m.seats + '자리 (회원권 ' + m.passes + '장)') + ' · 캡틴 ' + esc(m.captainNick) + (m.nextEnd ? ' · 다음 끝 ' + LZ.dd(m.nextEnd) : '') + '</span></div>' + LZ.ic('chev') + '</button>'; }).join('') + '</div>' +
         '<button type="button" class="btn g sm" data-go="moimAll">클럽 전체 목록(코드·삭제)</button></div>';
     }
@@ -439,7 +439,7 @@
           if (x.kind !== 'blue') btn += '<button type="button" class="sm2 g" data-act="pkMoveA" data-v="' + esc(x.id) + '">옮기기</button><button type="button" class="sm2 r" data-act="pkDel" data-v="' + esc(x.id) + '">지우기</button>';
           btn += '</div>';
         }
-        return LZ.packLine(x, { club: !!p.uid, who: 1, btns: (x.inUse ? '<span class="su">쓰는 중</span>' : '') + (x.note ? '<span class="su">' + esc(x.note) + '</span>' : '') + btn });
+        return LZ.packLine(x, { club: !!p.uid, who: 1, btns: (x.inUse && x.live ? '<span class="su">쓰는 중</span>' : '') + (x.note ? '<span class="su">' + esc(x.note) + '</span>' : '') + btn });
       }).join('');
       var grant = function (to, mids) { return '<div class="card"><h3>' + LZ.ic('plus') + ' 회원권 지급(무료)' + (to ? ' · ' + esc(to) : '') + '</h3><p class="muted" style="margin:0 0 8px">' + sc.seat_size + '자리 회원권을 무료로 드려요. 최대 ' + sc.seat_max + '자리를 넘어도 돼요. 받는 분께 알림이 가요.</p>' +
         '<label class="lb" style="margin-top:0">종류</label>' + LZ.seg([['red', '레드'], ['gold', '골드(365일)']], 'red', 'pkK') + '<input type="hidden" id="pkk" value="red">' +
@@ -451,7 +451,7 @@
         (c ? '<div class="card seatc"><div class="seath"><h3>' + LZ.ic('seat') + ' 자리</h3><span><b>' + c.n + '</b>명 / ' + (c.staffClub ? '제한 없음' : c.seats + '자리 (' + c.passes + '장)') + '</span></div><p class="su" style="margin:4px 0 0">캡틴 ' + esc(c.captainNick) + ' · 개설 ' + LZ.fmtDate(c.created) + ' · 함께한 지 ' + LZ.daysSince(c.created) + '일 · 캡틴은 자리 밖</p></div>' : '') +
         (mb ? '<div class="card"><p style="margin:0"><b>' + esc(mb.nick) + '</b> · ' + esc(mb.tierName) + '</p><p class="su" style="margin:4px 0 0">블루 ' + mb.pass.blue.total + '장(남음 ' + mb.pass.blue.left + ') · 레드 ' + mb.pass.red.n + '장(보관 ' + mb.pass.red.stored + ') · 골드 ' + mb.pass.gold.n + '장(보관 ' + mb.pass.gold.stored + ')</p></div>' : '') +
         '<div class="card tight"><h3 class="ih">' + LZ.ic('seat') + '회원권 ' + d.packs.length + '장</h3>' + (rows || '<p class="muted" style="margin:6px 0">회원권이 없어요.</p>') + '</div>' +
-        (c ? grant('캡틴 ' + c.captainNick + '님께', null) : mb ? grant('', mb.clubs) : '') + '</div>';
+        (c ? grant('캡틴 ' + LZ.nim(c.captainNick) + '께', null) : mb ? grant('', mb.clubs) : '') + '</div>';
     }
   };
   var PK = {};
@@ -484,6 +484,20 @@
         }).join('') : '<p class="muted" style="margin:6px 0">골드회원권이 없어요. 회원 화면의 "회원권 지급"에서 드려요.</p>') + '</div></div>';
     }
   };
+  /* v8 골드 후보: 레벨 지존·봉황 · 친구 초대 많이(설정) · 최근 30일 활발한 클럽 캡틴(설정) → [지급](회원권 지급 · 비밀번호 다시 확인) */
+  var GW = { lv: '레벨', inv: '친구 초대', cap: '활발한 클럽' };
+  LZ.screens.goldCand = {
+    tab: 'me',
+    show: async function (p, root, alive) {
+      if (!needAdmin()) return;
+      root.innerHTML = LZ.hdr('골드 후보', { back: true }) + LZ.skeleton(4);
+      var d = await LZ.api('goldCand', {}); if (!alive()) return;
+      root.innerHTML = LZ.hdr('골드 후보', { back: true }) + '<div class="wrap v8 gcand"><h1 class="vt">골드 후보 ' + d.list.length + '명</h1>' +
+        '<div class="sub kwrow">' + LZ.kw('누가 후보인가요', '레벨 <b>지존·봉황</b>인 분, 친구를 <b>' + d.inv + '명 이상</b> 초대한 분, 최근 30일 활동(그 클럽 기록 홀 + 회원 라운드)이 <b>' + d.act + ' 이상</b>인 클럽의 캡틴이에요. 이미 골드회원권이 있는 분은 빠져요. 기준은 설정 › 적립 포인트·레벨·블랙에서 바꿔요. <b>[지급]</b>은 골드회원권 1장(' + d.days + '일, 보관)을 드려요.') + '</div>' +
+        (d.list.length ? '<div class="list">' + d.list.map(function (x) { return '<div class="li gcrow"><div class="t"><b>' + esc(x.nick) + '</b><span class="gwhy">' + x.why.map(function (w) { return '<span class="pill">' + esc(GW[w.k] || '') + ' · ' + esc(w.t) + '</span>'; }).join('') + '</span></div><button type="button" class="sm2" data-act="goldGive" data-v=\'' + esc(JSON.stringify({ uid: x.uid, nick: x.nick })) + '\'>지급</button></div>'; }).join('') + '</div>' : '<p class="muted" style="margin:12px 4px">지금은 후보가 없어요.</p>') + '</div>';
+    }
+  };
+  LZ.act.goldGive = async function (el, v) { var o = JSON.parse(v); if (!(await LZ.confirm(LZ.nim(o.nick) + '께 골드회원권을 드릴까요?', '골드회원권 1장(365일)을 보관함에 드려요. 받는 분께 알림이 가요.', '지급'))) return; try { await LZ.api('packAdmin', { op: 'grant', kind: 'gold', n: 1, uid: o.uid, mid: '' }); LZ.toast('골드회원권을 드렸어요', 3500); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e), 5000); } };
   LZ.act.goldOk = async function (el, v) { var o = JSON.parse(v); if (!(await LZ.confirm(LZ.nim(o.nick) + '의 골드회원권을 ' + (o.ok ? '연장할까요?' : '오늘로 끝낼까요?'), o.ok ? '끝나는 날부터 365일 이어져요.' : '오늘까지만 골드회원권이고, 내일부터 그 자리가 빠져요.', o.ok ? '승인' : '거절', o.ok ? 'y' : 'r'))) return; try { var r = await LZ.api('goldRenew', o.end ? { id: o.id, ok: o.ok, end: o.end } : { id: o.id, ok: o.ok }); LZ.toast(LZ.fmtYmd(r.end) + '까지예요', 4000); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e), 5000); } };
 
   /* ───── 기록 · 의견 · 클럽 전체 · FAQ ───── */

@@ -91,12 +91,28 @@
     return int ? { t: '~' + v, lo: v - 1, hi: v, pos: 100, int: true, v: v } : { t: lo + '~', lo: lo, hi: lo + 1, pos: Math.round((v - lo) * 100), int: false, v: v };
   };
   LZ.bsTxt = function (v) { return LZ.bsParts(v).t; };
-  /** cls: '' 보통 · 'sm' 작게 · 'lg' 치기 화면 크게 · 'xl' 내 기록만 */
+  /** cls: '' 보통 · 'sm' 작게 · 'lg' 플레이 화면 크게 · 'xl' 내 기록만 */
   LZ.bs = function (v, cls) { var b = LZ.bsParts(v); return '<span class="vs ' + (cls || '') + '" data-bs="' + b.v + '"><b>' + b.t + '</b><span class="vr"><span>' + b.lo + '</span><span class="vb"><i style="left:' + b.pos + '%"></i></span><span>' + b.hi + '</span></span></span>'; };
   /** 기준과 차이(#27): 1 이내 초록 ● · 1 넘게 많으면 ▲(빨강) · 적으면 ▼(파랑) + 차이 */
   LZ.dvOf = function (p, s) { var d = LZ.r1(p - s); return Math.abs(d) <= 1 + 1e-9 ? 0 : d; };
   LZ.dv = function (p, s) { var d = LZ.dvOf(p, s); return !d ? '<span class="dv ok" title="기준과 1 이내"></span>' : '<span class="dv ' + (d > 0 ? 'up' : 'dn') + '">' + (d > 0 ? '▲' : '▼') + ' ' + LZ.fmtP(Math.abs(d)) + '</span>'; };
   /** 홀 번호(앱 전체 같은 모양): 크게·진하게·기울인 에메랄드 숫자 + 작은 "홀" */
+  /* v8 동타 백카운트(서버 bcKey_ 와 같아요): 9홀 → 9홀부터 거꾸로 / 18홀 이상 → 마지막 9홀 합계 → 마지막 홀부터 거꾸로. 개인·조별 같게 */
+  function bcKey(s) { var n = s.length, k = []; if (n > 9) { var t = 0; for (var i = n - 9; i < n; i++) t += +s[i] || 0; k.push(t); } for (var j = n - 1; j >= 0; j--) k.push(+s[j] || 0); return k; }
+  LZ.bcKey = bcKey;
+  /** a, b(타수 배열) → { c: 음수면 a 가 앞섬, at: 갈린 단계('back' 마지막 9홀 합계 · 'hole'), h: 갈린 홀(1부터), va, vb } */
+  LZ.bcCmp = function (a, b) { var x = bcKey(a), y = bcKey(b), n = a.length, off = n > 9 ? 1 : 0; for (var i = 0; i < x.length && i < y.length; i++) if (x[i] !== y[i]) return { c: x[i] - y[i], at: off && i === 0 ? 'back' : 'hole', h: n - (i - off), va: x[i], vb: y[i] }; return { c: 0 }; };
+  /** 순위 매기기: list 를 v(작을수록 앞) → 백카운트로 줄 세우고, 동타 이웃이 있으면 x.tie 에 "동타 · 후반 9홀 31타로 앞섬" 같은 말 */
+  LZ.bcRank = function (list, sOf, vOf) {
+    var out = list.slice().sort(function (a, b) { return (vOf(a) - vOf(b)) || LZ.bcCmp(sOf(a), sOf(b)).c; });
+    var nm = function (r, n) { return r.at === 'back' ? (n > 18 ? '마지막 9홀' : '후반 9홀') : r.h + '홀'; };
+    out.forEach(function (x, i) {
+      var p = out[i - 1], q = out[i + 1]; x.tie = '';
+      if (p && vOf(p) === vOf(x)) { var r = LZ.bcCmp(sOf(p), sOf(x)); x.tie = r.c ? '동타 · ' + nm(r, sOf(x).length) + ' ' + r.vb + '타' : '동타'; }
+      else if (q && vOf(q) === vOf(x)) { var r2 = LZ.bcCmp(sOf(x), sOf(q)); x.tie = r2.c ? '동타 · ' + nm(r2, sOf(x).length) + ' ' + r2.va + '타로 앞섬' : '동타'; }
+    });
+    return out;
+  };
   LZ.hn = function (n, cls) { return '<b class="hn' + (cls ? ' ' + cls : '') + '">' + n + '<small>홀</small></b>'; };
   /* 좌우: 0 = "그대로"(희미하게) · 왼쪽은 빨강 · 오른쪽은 파랑 */
   LZ.lrPlain = function (r) { var n = r.n | 0; return !n ? '그대로' : (r.d === 'L' ? '좌 ' : '우 ') + n; };
@@ -111,6 +127,8 @@
   LZ.lvBadge = function (pts, th) { var x = LZ.LVN[LZ.lvOf(pts, th || (S.me && S.me.lv))]; return '<span class="lvb">' + x[0] + ' ' + x[1] + '</span>'; };
   /** 이름 옆 레벨 배지 + 레벨 점수 — 목록용("이글 · 620점") */
   LZ.lvPts = function (pts, th) { return LZ.lvBadge(pts, th) + '<span class="lvp"> · ' + Number(pts || 0).toLocaleString('ko-KR') + '점</span>'; };   // v7.1.0 레벨 점수(점)
+  /** 다음 레벨까지: "봉황까지 1,900점"(지존이면 빈칸) */
+  LZ.lvNext = function (pts, th) { th = th || (S.me && S.me.lv) || [0, 100, 500, 1500, 5000]; var k = LZ.lvOf(pts, th); return k >= th.length - 1 ? '' : LZ.LVN[k + 1][1] + '까지 ' + Number(th[k + 1] - (pts || 0)).toLocaleString('ko-KR') + '점'; };
   LZ.pp = function (d) { return '<span class="pp ' + (d < 0 ? 'u' : d > 0 ? 'o' : 'e') + '">' + (d > 0 ? '+' + d : d === 0 ? 'E' : d) + '</span>'; };
   /* 등급 동그라미: 🔵 블루 · 🔴 레드 · 🟡 골드 · ⚫ 블랙 */
   LZ.dot = function (u) { var t = u && (u.tier || ({ gold: 'gold', blue: 'blue', red: 'red', black: 'black', admin: 'admin' })[u.kind]) || 'blue'; return '<i class="dot ' + t + '" title="' + ({ blue: '블루', red: '레드', gold: '골드', black: '블랙', admin: '관리자' })[t] + '"></i>'; };
@@ -226,21 +244,31 @@
   LZ.errText = function (e) { return (e && e.message) || '문제가 생겼어요. 잠시 뒤에 다시 해 주세요.'; };
   /* 상단 막대(v7): 뒤로 · 화면 이름(길면 줄임표) · 가+ 큰 글씨 · ◐ 보기 · ? 도움 · 🔔 알림 · (홈·내 정보만) 로그아웃.
      단추는 34~36px 고정이라 알림 숫자가 잘리지 않고, 제목만 줄어요. 긴 제목(코스·클럽 이름)과 동작 단추는 막대 아래 줄(.subh)로 내려요 */
-  var BAR = { holes: '내 수첩', play: '치기', edit: '홀 기록', courseEdit: '코스 정보', courses: '스크린 공략', club: '클럽', round: '점수판', rall: '전체 점수', rres: '라운드 결과', event: '상황판', evInvite: '초대', awards: '시상식', members: '회원', notices: '공지·소식', faqAdmin: '자주 묻는 질문', reg: '새 코스 등록', capDash: '캡틴 대시보드', tv: 'TV' };
+  /* v8 위 막대: ‹ · 정해진 제목 · 그 화면 단추 묶음(가+ · 🔔(홈만) · 화면 단추). ◐ · ? 는 없앰(설정 · ⓘ 로).
+     사용자가 정한 이름(코스·클럽·라운드·질문 제목)은 위 막대에 쓰지 않고 본문 제목(.ttl, 두 줄까지)으로 */
+  var BAR = { play: '플레이', edit: '플레이', courseEdit: '코스 정보', courses: '내 수첩', club: '클럽', events: '단체 라운드', evMake: '단체 만들기', goldList: '골드회원권', goldCand: '골드 후보', moimAll: '클럽 전체', fieldMng: '구장 관리', round: '점수판', rall: '전체 점수', rres: '라운드 결과', event: '상황판', evInvite: '초대', evEnter: '단체 입장', awards: '시상식', members: '회원', notices: '공지·소식', faqAdmin: '자주 묻는 질문', reg: '새 코스 등록', capDash: '캡틴 대시보드', tv: 'TV', qnaGet: '문의', adminPacks: '회원권', clubKeep: '남길 회원', home: '홈', me: '내 정보', field: '필드' };
+  LZ.BAR = BAR;
   LZ.topBtns = function (o) {
     o = o || {}; var big = LZ.big.get(), name = LZ.cur().name, n = S.me && S.me.noti ? S.me.noti : 0;
-    return (o.sound || '') + '<button type="button" class="tb ga' + (big ? ' on' : '') + '" data-act="big" aria-pressed="' + (big ? 'true' : 'false') + '" aria-label="큰 글씨" title="큰 글씨">가<sup>+</sup></button>' +
-      '<button type="button" class="tb" data-act="viewPop" aria-label="보기 설정" title="보기 설정">' + LZ.ic('moon') + '</button>' +
-      (o.noHelp ? '' : '<button type="button" class="tb" data-act="help" aria-label="도움" title="도움">' + LZ.ic('help') + '</button>') +
-      (S.user && !o.noBell ? '<button type="button" class="tb bell" data-go="noti" aria-label="알림' + (n ? ' ' + n + '개' : '') + '" title="알림">' + LZ.ic('bell') + (n ? '<i>' + (n > 99 ? '99+' : n) + '</i>' : '') + '</button>' : '') +
-      (S.user && o.logout ? '<button type="button" class="tb" data-act="logout" aria-label="로그아웃" title="로그아웃">' + LZ.ic('logout') + '</button>' : '');
+    return '<div class="tbr">' + (o.sound || '') + (o.noGa ? '' : '<button type="button" class="tb ga' + (big ? ' on' : '') + '" data-act="big" aria-pressed="' + (big ? 'true' : 'false') + '" aria-label="큰 글씨" title="큰 글씨">가<sup>+</sup></button>') +
+      (S.user && name === 'home' && !o.noBell ? '<button type="button" class="tb bell" data-go="noti" aria-label="알림' + (n ? ' ' + n + '개' : '') + '" title="알림">' + LZ.ic('bell') + (n ? '<i>' + (n > 99 ? '99+' : n) + '</i>' : '') + '</button>' : '') +
+      (o.btns || '') +
+      (S.user && o.logout ? '<button type="button" class="tb" data-act="logout" aria-label="로그아웃" title="로그아웃">' + LZ.ic('logout') + '</button>' : '') + '</div>';
   };
   LZ.hdr = function (title, o) {
     o = o || {};
-    var name = LZ.cur().name, sub = !o.nosub && (!!o.right || String(title).length > 9), bar = sub ? (o.bar || BAR[name] || title) : title;
-    return '<div class="top">' + (o.back ? '<button type="button" class="bk" data-act="back" aria-label="' + esc(o.backLabel || '뒤로') + '">' + LZ.ic('back') + '<span>' + esc(o.backLabel || '뒤로') + '</span></button>' : '') + '<h2>' + esc(bar) + '</h2>' + LZ.topBtns(o) +
-      '</div>' + (sub ? '<div class="subh">' + (bar !== title ? '<h2>' + esc(title) + '</h2>' : '') + (o.right ? '<div class="acts">' + o.right + '</div>' : '') + '</div>' : '');
+    var name = LZ.cur().name, bar = o.bar || BAR[name] || title, head = !o.nosub && String(title) !== String(bar);
+    return '<div class="top">' + (o.back ? '<button type="button" class="bk" data-act="back" aria-label="' + esc(o.backLabel || '뒤로') + '">' + LZ.ic('back') + '</button>' : '') + '<h2>' + esc(bar) + '</h2>' + LZ.topBtns(o) +
+      '</div>' + (head || o.right ? '<div class="subh">' + (head ? '<h1 class="vt">' + esc(title) + '</h1>' : '') + (o.right ? '<div class="acts">' + o.right + '</div>' : '') + '</div>' : '');
   };
+  /** v8 ⓘ / ▾ 낱말: 누르면 바로 아래 열리고, 다시 누르면 닫혀요 */
+  var kwSeq = 0;
+  LZ.kw = function (label, detail, o) {
+    o = o || {}; var id = 'kwd' + (++kwSeq);
+    return '<button type="button" class="kw" aria-expanded="false" aria-controls="' + id + '" data-kw>' + label + (o.chev ? LZ.ic('down', 'cv') : '<i class="ii" aria-hidden="true">i</i>') + '</button>' +
+      '<div class="det" id="' + id + '" hidden>' + detail + '</div>';
+  };
+  document.addEventListener('click', function (e) { var k = e.target.closest('[data-kw]'); if (!k) return; e.preventDefault(); var d = document.getElementById(k.getAttribute('aria-controls')); if (!d) return; var on = k.getAttribute('aria-expanded') !== 'true'; k.setAttribute('aria-expanded', on ? 'true' : 'false'); d.hidden = !on; });
   LZ.skeleton = function (n) { var s = ''; for (var i = 0; i < (n || 4); i++) s += '<div class="sk" style="width:' + (60 + (i * 13) % 40) + '%"></div>'; return '<div class="wrap">' + s + '</div>'; };
   LZ.seg = function (opts, on, act, cls) { return '<div class="seg ' + (cls || '') + '">' + opts.map(function (x) { return '<button type="button" class="' + (on === x[0] ? 'on' : '') + '" data-act="' + act + '" data-v="' + esc(x[0]) + '">' + esc(x[1]) + '</button>'; }).join('') + '</div>'; };
   LZ.sw = function (on, act, arg, dis) { return '<button type="button" class="sw ' + (on ? 'on' : '') + '" data-act="' + act + '" data-v="' + esc(arg || '') + '"' + (dis ? ' disabled' : '') + ' aria-pressed="' + (on ? 'true' : 'false') + '"></button>'; };
@@ -268,8 +296,14 @@
       });
   }
   var inflight = 0; function bar(on) { inflight += on ? 1 : -1; var b = $('#pbar'); if (!b) { b = document.createElement('div'); b.id = 'pbar'; document.body.appendChild(b); } b.classList.toggle('on', inflight > 0); }
+  /* v7.1.1 읽기만 하는 요청(다시 보내도 괜찮음). 나머지(쓰기)는 요청 번호(rq)를 붙여 보내고, 서버가 같은 번호는 10분 동안 한 번만 처리해요
+     → 응답이 끊겨 다시 보내도 결제·환불·회원권 옮기기·클럽 만들기가 두 번 되지 않아요. 번호 없이 보내는 쓰기(o.rq === false)는 저절로 다시 보내지 않아요 */
+  var READS = /^(cfg|firstSteps|firstAdmin|guideCards|guideAdmin|me|ping|bye|nickCheck|depGet|courses|course|nameCheck|prefs|trust|qnaList|noticeList|payInfo|payList|points|ptLook|ptOwe|packList|goldList|goldCand|members|dash|adminCfg|log|refundInfo|refundList|imgGet|joinCheck|refName|moimFind|moimCode|moimGet|moimAll|feedbackList|fieldList|roundGet|roundMine|eventGet|eventBoard|capDash|eventMine|kakaoCheck|kakaoPeek|pwKakao|pwReqStatus|pwReqList)$/;
+  LZ.isRead = function (a) { return READS.test(a); };
+  LZ.rqId = function () { var s = Date.now().toString(36); try { var b = new Uint8Array(9); crypto.getRandomValues(b); for (var i = 0; i < b.length; i++) s += (b[i] % 36).toString(36); } catch (e) { s += Math.random().toString(36).slice(2, 12); } return s.slice(0, 32); };
   LZ.api = async function (a, body, o) {
     o = o || {}; var tries = o.retry === undefined ? 1 : o.retry;
+    if (!READS.test(a)) { if (o.rq === false) tries = 0; else { var b2 = {}; for (var k in (body || {})) b2[k] = body[k]; if (!b2.rq) b2.rq = LZ.rqId(); body = b2; } }
     bar(true);
     try { for (var i = 0; ; i++) {
       try { return await post(a, body, o); }
@@ -308,11 +342,17 @@
   LZ.sessionLost = async function (e) {
     var was = !!S.user;
     LZ.clearSession();
-    if (was) { if (e && e.data && e.data.pinChanged) await LZ.dialog({ title: '비밀번호가 바뀌었어요', body: '다른 휴대폰에서 비밀번호를 새로 정해서 이 휴대폰은 로그아웃됐어요. 새 비밀번호로 다시 로그인해 주세요.' }); else if (e && e.data && e.data.kicked) { LZ.go('login', {}, { reset: true }); LZ.kickNote(); return; } else LZ.toast(e && e.message ? e.message : '다시 로그인해 주세요.', 4000); }
+    if (was) { if (e && e.data && e.data.pinChanged) await LZ.dialog({ title: '비밀번호가 바뀌었어요', body: '다른 휴대폰에서 비밀번호를 새로 정해서 이 휴대폰은 로그아웃됐어요. 새 비밀번호로 다시 로그인해 주세요.' }); else if (e && e.data && e.data.kicked) { LZ.go('login', {}, { reset: true }); LZ.kickNote(); return; } else if (e && e.data && e.data.depOff) { LZ.go('login', {}, { reset: true }); LZ.dialog({ title: '관리자 대리가 해제되어 로그아웃됐어요', body: '주 관리자가 관리자 대리를 거둬서 이 기기의 관리자 로그인이 끊겼어요. 회원 계정으로는 그대로 쓰실 수 있어요.' }); return; } else LZ.toast(e && e.message ? e.message : '다시 로그인해 주세요.', 4000); }
     LZ.go('login', {}, { reset: true });
   };
   /* v7.1.0 §12 동시 접속: 다른 기기에서 같은 닉네임으로 로그인하면 이 기기는 로그아웃(회원 1대, 관리자 한 사람당 2대) */
   /* v7.1.0 §13 관리자 계정은 관리 전용: 내 수첩·클럽 가입·라운드 기록은 회원 계정으로(이미 있는 기록은 그대로) */
+  /** v8 관리자 계정: 스크린·필드 탭은 안내 한 줄(기록하지 않음) · '그래도 보기'로 아래 화면 */
+  LZ.admTab = function (p, root, title) {
+    if (!S.user || S.user.kind !== 'admin' || (p && p.peek)) return false;
+    root.innerHTML = LZ.hdr(title) + '<div class="wrap v8"><div class="admtab">' + LZ.ic('shield') + '<b>관리자 계정에서는 기록하지 않아요 · 회원 계정으로</b></div><button type="button" class="lnk" data-act="admPeek">그래도 보기</button></div>';
+    return true;
+  };
   LZ.admNote = function (what) { return S.user && S.user.kind === 'admin' ? '<div class="box admnote">' + LZ.ic('shield') + '<span><b>관리자 계정은 관리 전용이에요.</b> ' + (what || '내 수첩·클럽 가입·라운드 기록') + ' 같은 회원 활동은 회원님 본인 계정으로 해 주세요.</span></div>' : ''; };
   LZ.kickNote = function () { LZ.closeSheet && LZ.closeSheet(); return LZ.dialog({ title: '다른 기기에서 로그인해서 로그아웃됐어요', html: '<p class="kicknote">' + LZ.ic('lock') + '<span>같은 닉네임으로 다른 휴대폰(또는 컴퓨터)에서 로그인해서 이 기기는 로그아웃됐어요. 회원님은 한 번에 한 기기에서만 쓸 수 있어요.</span></p><p class="muted">이 기기에서 계속 쓰시려면 다시 로그인해 주세요. 본인이 로그인한 게 아니라면 비밀번호를 바꿔 주세요.</p>' }); };
   LZ.clearSession = function () { LZ.cacheDrop(); store.del('lz.k.me'); S.user = null; S.token = ''; S.me = null; store.del('lz.t'); LZ.rt && LZ.rt.stop(); LZ.nrt && LZ.nrt.stop(); document.body.classList.remove('kb'); };
@@ -361,8 +401,8 @@
      ★ admin.js·event.js 에 화면(LZ.screens.X)이나 단추(LZ.act.X)를 새로 만들면 아래 목록에도 이름을 넣으세요(v701.mjs 가 검사해요) */
   var MODS = { admin: 'js/admin.js', event: 'js/event.js', help: 'js/help.js', qr: 'vendor/qrcode.js' }, modP = {}, modDone = {};
   function lazyMap(o) { var m = {}; Object.keys(o).forEach(function (k) { o[k].split(' ').forEach(function (n) { m[n] = k; }); }); return m; }
-  var LAZY_SCR = LZ.lazyScr = lazyMap({ admin: 'adminCfg adminGroup adminPacks adminSeats dash faqAdmin firstAdmin goldList log members moimAll pays promo ptGive ptOwe pwreqs refunds', event: 'awards ceremony evEnter evInvite evMake event events tv' });
-  var LAZY_ACT = LZ.lazyAct = lazyMap({ admin: 'cfgJoin cfgPt cfgPw cfgQna cfgSave cfgSeat cfgSeatTxt depNew depOff faqDel faqEdit faqMove faqReset faqSave fsReset fsSave goldOk logoReset mGrant mGrantGo mMore mNew mNewGo mNewKind mOp mOpen mPurge mPurgeOk mbGo mgD mgKind mgN moimDrop paClear paGo paOwe paPick paQuick paReset paSign payNo payOk pkD pkDel pkExt pkGrant pkK pkMoveA pkMoveGo pkN pkRevoke promoCopy promoJoin promoReset promoShare promoSms pwNo pwOk refNo refOk testPurge', event: 'awMove awNodup awPart awPick awScopeLap awScopeTeams awShare awTeamSave awTeamSel awTnodup awToggle ceremonyEnd evDel evEnd evEnterCode evEnterGo evHelperSave evHelperSel evHelpers evInviteKakao evInviteSms evLock evMore evPickTeam evTab evTeamEdit evTm fullscreen luckAdd mkAdd mkAuto mkAutoOrder mkClubAdd mkClubPick mkClubSel mkCreate mkFromClub mkHoles mkLap mkLapNew mkLapPick mkLapSave mkMove mkNext mkOrd mkOut mkSel mkTeams teAdd teMove teOut teSave teSel twLuckAdd twMove' });
+  var LAZY_SCR = LZ.lazyScr = lazyMap({ admin: 'adminCfg adminGroup adminPacks adminSeats dash faqAdmin firstAdmin goldCand goldList log members moimAll pays promo ptGive ptOwe pwreqs refunds', event: 'awards ceremony evEnter evInvite evMake event events tv' });
+  var LAZY_ACT = LZ.lazyAct = lazyMap({ admin: 'cfgJoin cfgPt cfgPw cfgQna cfgSave cfgSeat cfgSeatTxt depNew depOff faqDel faqEdit faqMove faqReset faqSave fsReset fsSave goldGive goldOk logoReset mGrant mGrantGo mMore mNew mNewGo mNewKind mOp mOpen mPurge mPurgeOk mbGo mgD mgKind mgN moimDrop paClear paGo paOwe paPick paQuick paReset paSign payNo payOk pkD pkDel pkExt pkGrant pkK pkMoveA pkMoveGo pkN pkRevoke promoCopy promoJoin promoReset promoShare promoSms pwNo pwOk refNo refOk testPurge', event: 'awMove awNodup awPart awPick awScopeLap awScopeTeams awShare awTeamSave awTeamSel awTnodup awToggle ceremonyEnd evDel evEnd evEnterCode evEnterGo evHelperSave evHelperSel evHelpers evInviteKakao evInviteSms evLock evMore evPickTeam evTab evTeamEdit evTm fullscreen luckAdd mkAdd mkAuto mkAutoOrder mkClubAdd mkClubPick mkClubSel mkCreate mkFromClub mkHoles mkLap mkLapNew mkLapPick mkLapSave mkMove mkNext mkOrd mkOut mkSel mkTeams teAdd teMove teOut teSave teSel twLuckAdd twMove' });
   /** 모듈 하나를 불러옴 → Promise. 두 번 불러도 한 번만 받아요. 실패하면 다음에 다시 시도 */
   LZ.need = function (name) {
     if (modP[name]) return modP[name];
@@ -395,7 +435,7 @@
     else if (S.user && S.user.needKid && S.user.kind !== 'admin' && !BLK_OK[cur.name] && cur.name !== 'kakaoAsk') { cur.name = 'kakaoAsk'; cur.p = {}; s = LZ.screens.kakaoAsk; }   // v7.0 카카오 확인 전: 확인·문의·알림만
     var boot = $('#boot'); if (boot) boot.remove();
     root.hidden = false; if (!keep) window.scrollTo(0, 0);
-    root.classList.toggle('nobar', !!s.nobar); LZ.tabs(s.tab); document.body.dataset.scr = cur.name; var vp = $('#vpop'); if (vp) vp.remove();
+    root.classList.toggle('nobar', !!s.nobar); LZ.tabs(s.tab); document.body.dataset.scr = cur.name; 
     if (s.wake) LZ.wake.on(); else LZ.wake.off();
     if (!s.rt && LZ.rt) LZ.rt.stop();
     try { await s.show(cur.p || {}, root, alive); if (alive()) { LZ.enhance(root); if (LZ.fillImgs) LZ.fillImgs(root); } }
@@ -427,7 +467,7 @@
     LZ.guard = null; LZ.closeSheet(); LZ.stack.pop(); var y = LZ.cur().y || 0; await render(); if (y) requestAnimationFrame(function () { window.scrollTo(0, y); });
   });
   /* 아래 탭 */
-  var TABS = [['home', '홈', 'home'], ['courses', '스크린 공략', 'flag'], ['field', '필드 라운드', 'field'], ['me', '내 정보', 'user']];
+  var TABS = [['home', '홈', 'home'], ['courses', '스크린', 'flag'], ['field', '필드', 'field'], ['me', '내 정보', 'user']];
   LZ.tabs = function (on) {
     var t = $('#tabs'); if (!t) return;
     if (!S.user || !on || S.user.kind === 'black') { t.hidden = true; return; }
@@ -451,6 +491,7 @@
     run.catch(function (err) { LZ.toast(LZ.errText(err), 4500); });
   });
   LZ.act.back = function () { LZ.back(); };
+  LZ.act.admPeek = function () { LZ.go(LZ.cur().name, { peek: 1 }, { replace: true }); };
   /* 꾹 누르면 연속으로(좌우·볼스피드·점수 단추) */
   var HOLD = /^(edLr|edP|plLr|plP|sc|regLr:|regP:)/, holdT = null, holdI = null, held = false;
   function holdStop() { clearTimeout(holdT); clearInterval(holdI); holdT = holdI = null; }
@@ -468,22 +509,11 @@
   LZ.act.theme = function (el) { LZ.theme.set(!LZ.theme.get()); if (!LZ.flip(el)) LZ.redraw(); };
   LZ.act.big = function () { LZ.big.set(!LZ.big.get()); LZ.toast(LZ.big.get() ? '글씨를 크게 했어요' : '보통 글씨로 했어요'); };
   LZ.act.buzz = function (el) { store.set('lz.buzz', store.get('lz.buzz') === '0' ? '1' : '0'); if (!LZ.flip(el)) LZ.redraw(); };
-  /* ◐ 보기: 어두운 화면 · 단추 진동을 켜고 끄는 작은 창(상단 막대 바로 아래) */
-  LZ.act.viewPop = function (el) {
-    var old = $('#vpop'); if (old) { old.remove(); return; }
-    var d = document.createElement('div'); d.id = 'vpop'; d.className = 'vpop'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', '보기 설정');
-    var paint = function () { d.innerHTML = '<div class="vpane"><div class="tgl"><span>' + LZ.ic('moon') + ' 어두운 화면</span>' + LZ.sw(LZ.theme.get(), 'theme') + '</div><div class="tgl"><span>' + LZ.ic('play') + ' 단추 진동</span>' + LZ.sw(store.get('lz.buzz') !== '0', 'buzz') + '</div>' + (LZ.sayPopRows ? LZ.sayPopRows() : '') + '</div>'; };
-    paint(); var r = el && el.getBoundingClientRect ? el.getBoundingClientRect() : { bottom: 60 };
-    d.firstChild.style.top = Math.round(r.bottom + 8) + 'px';
-    d.addEventListener('click', function (e) { if (e.target === d) d.remove(); });
-    $('#layer').appendChild(d);
-  };
-  document.addEventListener('click', function (e) { var p = $('#vpop'); if (p && !e.target.closest('#vpop') && !e.target.closest('[data-act="viewPop"]')) p.remove(); }, true);
   LZ.act.logout = async function () { if (!(await LZ.confirm('로그아웃할까요?', '다시 들어올 때 닉네임과 비밀번호를 넣어요.', '로그아웃'))) return; try { await post('logout', {}); } catch (e) { /* 무시 */ } LZ.clearSession(); LZ.go('login', {}, { reset: true }); };
   LZ.act.copy = async function (el, v) { try { await navigator.clipboard.writeText(v); LZ.toast('복사했어요'); } catch (e) { LZ.toast('복사하지 못했어요. 길게 눌러 복사해 주세요.'); } };
-  /** v7.1.0 §16 공유 글: 링크는 글 맨 끝 줄에 붙여 글 하나로(카톡이 링크 카드를 글 아래에 붙이게) */
+  /** v7.1.0 §16 공유 글: 링크는 글 맨 끝 줄에 붙여 글 하나로(카카오톡이 링크 카드를 글 아래에 붙이게) */
   LZ.shareJoin = function (text, url) { var t = String(text || '').replace(/\s+$/, ''); if (!url) return t; if (t.slice(-String(url).length) === url) return t; return (t ? t + '\n' : '') + url; };
-  LZ.act.share = async function (el, v) { var o = JSON.parse(v), p = { title: o.title, text: LZ.shareJoin(o.text, o.url) }; try { if (navigator.share) { await navigator.share(p); return; } } catch (e) { if (e && e.name === 'AbortError') return; } try { await navigator.clipboard.writeText(p.text); LZ.toast('내용을 복사했어요. 카톡에 붙여 넣어 주세요.'); } catch (e2) { LZ.toast('공유하지 못했어요.'); } };
+  LZ.act.share = async function (el, v) { var o = JSON.parse(v), p = { title: o.title, text: LZ.shareJoin(o.text, o.url) }; try { if (navigator.share) { await navigator.share(p); return; } } catch (e) { if (e && e.name === 'AbortError') return; } try { await navigator.clipboard.writeText(p.text); LZ.toast('내용을 복사했어요. 카카오톡에 붙여 넣어 주세요.'); } catch (e2) { LZ.toast('공유하지 못했어요.'); } };
   /** 초대 시트 하나: 글+링크를 카카오톡 / 문자 / QR 로. (그림은 안 붙임 — 링크 미리보기 카드가 그림을 보여 줌) */
   LZ.inviteSheet = function (title, text, url, extra) {
     var full = LZ.shareJoin(text, url);

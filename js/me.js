@@ -27,24 +27,57 @@
     return '<button type="button" class="ptwo" ' + (link === false ? 'disabled' : 'data-go="mePoints"') + '><span class="ptw1"><b>적립 포인트 ' + Number(pi.bal || 0).toLocaleString('ko-KR') + 'P</b><em>회원권 살 때 쓸 수 있어요</em></span>' +
       '<span class="ptw2"><b>레벨 점수 ' + Number(pi.lvp || 0).toLocaleString('ko-KR') + '점 · ' + esc(pi.lvName || '새싹') + '</b><em>' + (nx ? esc(nx.name) + '까지 ' + Number(nx.need).toLocaleString('ko-KR') + '점' : '가장 높은 레벨이에요') + '</em></span></button>';
   };
+  /** v8 내 정보: 프로필 · 적립 포인트 P · 레벨 점수 점 · 내 회원권 · 포인트 내역 · 친구 초대 · 설정 */
   LZ.screens.me = {
     tab: 'me',
     show: async function (p, root, alive) {
-      if (!S.me) { root.innerHTML = LZ.hdr('내 정보', { logout: 1 }) + LZ.skeleton(5); await LZ.refreshMe(); if (!alive()) return; }
-      var u = S.user, m = S.me, ad = m.admin || {}, isCap = u.kind === 'admin' || (m.moims || []).some(function (x) { return x.role === 'cap' || x.role === 'mgr'; }), pi = m.points || {};
-      root.innerHTML = LZ.hdr('내 정보', { logout: 1 }) + '<div class="wrap">' +
-        '<div class="hello"><button type="button" class="avbtn" data-act="avatarMenu" aria-label="프로필 사진 바꾸기">' + LZ.avatar(u, 'big') + '<span class="avedit">' + LZ.ic('edit') + '</span></button><div style="flex:1;min-width:0"><div class="hname"><b>' + esc(u.nick) + '</b> <span>회원님</span></div><div class="tier">' + LZ.tierLines(u) + '</div><div class="su">' + LZ.lvBadge(pi.lvp || 0) + ' 레벨 점수 ' + Number(pi.lvp || 0).toLocaleString('ko-KR') + '점</div></div></div>' +
-        (u.kind === 'admin' ? '<button type="button" class="cont" data-go="dash">' + LZ.ic('gear', 'ci') + '<div style="flex:1;min-width:0"><b>관리자</b><span class="muted">결제 ' + (ad.pay || 0) + ' · 환불 ' + (ad.refund || 0) + ' · 비밀번호 ' + (ad.pw || 0) + ' · 문의 ' + (ad.qna || 0) + (ad.gold ? ' · 골드 만기 ' + ad.gold : '') + '</span></div>' + LZ.ic('chev') + '</button>' : LZ.ptTwo(pi)) +
-        '<div class="card tight groups">' +
+      if (!S.me) { root.innerHTML = LZ.hdr('내 정보') + LZ.skeleton(5); await LZ.refreshMe(); if (!alive()) return; }
+      var u = S.user, m = S.me, ad = m.admin || {}, pi = m.points || {}, adm = u.kind === 'admin', nx = pi.next, so = pi.soon;
+      var nf = function (n) { return Number(n || 0).toLocaleString('ko-KR'); };
+      root.innerHTML = LZ.hdr('내 정보') + '<div class="wrap v8">' +
+        '<div class="prof"><button type="button" class="avbtn" data-act="avatarMenu" aria-label="프로필 사진 바꾸기">' + LZ.avatar(u, 'big') + '</button><div class="pt"><div class="nm">' + esc(adm ? '관리자' : u.nick) + '</div><div class="su tier">' + esc(tierShort(u)) + '</div></div></div>' +
+        (adm ? '<div class="list"><button type="button" class="li cont" data-go="dash">' + LZ.ic('gear', 'gi') + '<div class="t"><b>관리자</b><span class="su">결제 ' + (ad.pay || 0) + ' · 환불 ' + (ad.refund || 0) + ' · 비밀번호 ' + (ad.pw || 0) + ' · 문의 ' + (ad.qna || 0) + (ad.gold ? ' · 골드 만기 ' + ad.gold : '') + '</span></div>' + LZ.ic('chev') + '</button></div>'
+          : '<button type="button" class="pts ptwo" data-go="mePoints"><span><em>적립 포인트</em><b>' + nf(pi.bal) + 'P</b><small>' + (so && so.amt && so.left <= 30 ? '곧 사라질 ' + nf(so.amt) + 'P' + (so.date ? ' · ' + LZ.fmtYmd(so.date) : '') : '회원권 살 때 써요') + '</small></span>' +
+            '<span><em>레벨 점수</em><b>' + nf(pi.lvp) + '점</b><small>' + esc(pi.lvName || '새싹') + ' · ' + (nx ? esc(nx.name) + '까지 ' + nf(nx.need) + '점' : '가장 높은 레벨') + '</small></span></button>' +
+            '<div class="kwrow">' + LZ.kw('P와 점은 달라요', '<b>적립 포인트(P)</b>는 회원권 살 때 쓰는 돈이에요. <b>레벨 점수(점)</b>는 레벨을 정해요(새싹 · 버디 · 이글 · 봉황 · 지존).') + '</div>') +
+        '<div class="list">' +
         grow('seat', '내 회원권', esc(tierShort(u)) + (passShort(u) ? ' · ' + esc(passShort(u)) + '장' : '') + (m.pending ? ' · 결제 ' + esc(m.pending.stName) : ''), 'data-go="meTier"') +
-        grow('star', '적립 포인트', Number(pi.bal || 0).toLocaleString() + 'P · ' + esc(pi.lvName || '새싹') + ' ' + Number(pi.lvp || 0).toLocaleString() + '점' + (pi.soon && pi.soon.left <= 30 ? ' · 곧 사라질 ' + pi.soon.amt.toLocaleString() + 'P' : ''), 'data-go="mePoints"') +
-        grow('bell', '알림 설정', '푸시' + (isCap ? ' · 카카오톡' : '') + ' · 조용한 시간', 'data-go="notiCfg"') +
-        grow('shield', '계정·안전', '닉네임 · 비밀번호 · 프로필 사진', 'data-go="meAcct"') +
-        grow('chat', '도움', '파크골프 첫걸음 · 사용 안내 · 문의 · 공지' + (m.qna ? ' · 답변 ' + m.qna + '건' : ''), 'data-go="helpHub"') +
-        '</div>' + LZ.inviteCard(true) +
-        '<button type="button" class="verline" data-act="verRefresh">파크골프 공략수첩 v' + esc(window.LZ_VER || '4.0') + ' · ' + (S.me && S.me.appVer && S.me.appVer !== window.LZ_VER ? '최신 v' + esc(S.me.appVer) + '로 새로 고침' : '최신 버전으로 새로 고침') + '</button></div>';
+        grow('star', '포인트 내역', nf(pi.bal) + 'P · ' + esc(pi.lvName || '새싹') + ' ' + nf(pi.lvp) + '점', 'data-go="mePoints"') +
+        (adm ? '' : grow('club', '친구 초대', '클럽 고르기 · 링크 보내기', 'data-act="inviteKakao"')) +
+        '</div><div class="list">' + grow('gear', '설정', '화면 · 소리 · 알림 · 계정 · 도움말', 'data-go="settings"') + '</div></div>';
     }
   };
+  /** v8 설정(한 곳): 화면 · 소리·진동 · 알림 · 계정 · 도움말 · 버전 */
+  LZ.screens.settings = {
+    tab: 'me',
+    show: function (p, root) {
+      var u = S.user, m = S.me || {}, adm = u.kind === 'admin', v = LZ.myVoice ? LZ.myVoice() : null;
+      var tg = function (t, sub, sw) { return '<div class="tgl"><span>' + t + (sub ? '<span class="muted">' + sub + '</span>' : '') + '</span>' + sw + '</div>'; };
+      var sg = function (t) { return '<div class="sgh">' + t + '</div>'; };
+      root.innerHTML = LZ.hdr('설정', { back: true }) + '<div class="wrap v8 sett">' +
+        sg('화면') + '<div class="list">' + tg('어두운 화면', '', LZ.sw(LZ.theme.get(), 'theme')) + '</div>' +
+        sg('소리·진동') + '<div class="list">' + tg('단추 진동', '', LZ.sw(store.get('lz.buzz') !== '0', 'buzz')) +
+          grow('sound', '홀 안내 목소리', esc(v ? v.name : '휴대폰 기본') + ' · 켬·끔은 플레이 화면에서', 'data-act="voicePick"') + '</div>' +
+        sg('알림') + '<div class="list">' + grow('bell', '알림 종류', '푸시 · 카카오톡 · 받을 알림 · 조용한 시간', 'data-go="notiCfg"') + '</div>' +
+        sg('계정') + '<div class="list">' +
+          grow('user', '프로필 사진', u.img ? '사진 바꾸기·지우기' : '사진 넣기', 'data-act="avatarMenu"') +
+          grow('edit', '닉네임', esc(u.nick) + ' · 7일에 한 번', 'data-go="nickChange"') +
+          grow('lock', '비밀번호', '숫자 ' + (u.pinLen || 4) + '자리', 'data-go="pinChange"') +
+          (adm ? '' : grow('kakao', '카카오 본인 확인', u.kid ? '확인했어요' : '아직 안 했어요', u.kid ? 'data-act="kidInfo"' : 'data-go="kakaoAsk"')) +
+          (adm || !u.kid ? '' : grow('unlock', '카카오 연결 풀기', u.kunNext ? LZ.fmtDate(u.kunNext) + '부터' : (u.kunDays || 30) + '일에 한 번', 'data-act="kunSelf"')) +
+          grow('logout', '로그아웃', '', 'data-act="logout"') + '</div>' +
+        sg('도움말') + '<div class="list">' +
+          grow('ball', '파크골프 첫걸음', '규칙 · 점수 · 매너', 'data-go="firstSteps"') +
+          grow('trophy', '시상식 안내', '상 종류 · 발표 차례', 'data-go="awGuide"') +
+          grow('book', '사용 안내', '권한과 기준', 'data-go="guide"') +
+          (m.qnaOn ? grow('chat', '문의하기', '관리자에게 1:1' + (m.qna ? ' · 답변 ' + m.qna + '건' : ''), 'data-go="qnaList"') : '') +
+          grow('note', '공지·소식', '관리자 공지 · 클럽 소식', 'data-go="notices" data-p=\'{"manage":0}\'') +
+          grow('home', '홈 화면에 추가', '앱처럼 열기', 'data-act="homeAdd"') +
+          grow('help', '처음 안내 다시 보기', '코치 말풍선', 'data-act="coachAgain"') + '</div>' +
+        '<button type="button" class="verline" data-act="verRefresh">파크골프 공략수첩 v' + esc(window.LZ_VER || '4.0') + ' · ' + (m.appVer && m.appVer !== window.LZ_VER ? '최신 v' + esc(m.appVer) + '로 새로 고침' : '새로 고침') + '</button></div>';
+    }
+  };
+  LZ.act.coachAgain = function () { try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('lz.coach.') === 0) localStorage.removeItem(k); }); } catch (e) { /* 무시 */ } LZ.firstGuide = true; LZ.go('home', {}, { reset: true }); };
   /* 내 회원권(v7.1.0): 등급(가진 회원권으로) · 결제 상태 · 블루·레드·골드 장수 · 한 장씩(연장·넣기·옮기기) · 사기 · 환불 · 안내(관리자 설정 글) */
   var won = function (n) { return Number(n || 0).toLocaleString() + '원'; }, pt = function (n) { return Number(n || 0).toLocaleString() + 'P'; };
   function dd(x) { return '<span class="nw">' + LZ.fmtYmd(x) + '</span>'; }
@@ -83,7 +116,10 @@
       var d = await LZ.api('payInfo', {}); if (!alive()) return; var m = S.me || {};
       var u = d.user, sc = d.seat, pend = d.pending, rf = d.refund || {}, staffed = d.clubs || [], mine = d.mine || [];
       var list = mine.filter(function (x) { return x.kind !== 'blue'; }).sort(function (a, b) { return (b.live - a.live) || ((a.end || '') < (b.end || '') ? -1 : 1); });
-      root.innerHTML = LZ.hdr('내 회원권', { back: true }) + '<div class="wrap">' +
+      var blues = mine.filter(function (x) { return x.kind === 'blue'; }), bl = (u.pass && u.pass.blue) || { left: 0 };
+      for (var bi = 0; bi < (bl.left || 0); bi++) blues.push({ kind: 'blue', mid: '', id: '' });   // 아직 안 넣은 블루
+      TIER = { list: list.concat(blues), staffed: staffed, sc: sc, mine: mine };
+      root.innerHTML = LZ.hdr('내 회원권', { back: true }) + '<div class="wrap v8 tierv8">' +
         '<div class="card"><h3>' + LZ.ic('seat') + ' 내 등급</h3>' + LZ.tierLines(u) + '<p class="muted" style="margin:6px 0 0">' + esc(LZ.tierDesc(u, sc)) + '</p>' +
           (u.wasRed && u.tier === 'blue' ? '<p class="muted" style="margin:6px 0 0">레드·골드회원권 기간이 끝나 블루회원이에요. 회원권을 다시 사면 바로 바뀌어요.</p>' : '') + LZ.ptTwo(d.points) + '</div>' +
         (pend ? '<div class="card pendc"><h3>' + LZ.ic('bell') + ' 결제 ' + esc(pend.stName) + '</h3><p style="margin:0"><b>' + esc(pend.planName) + '</b></p><p class="muted" style="margin:4px 0 0">보낼 금액 ' + won(pend.cash) + (pend.pts ? ' · 포인트 ' + pt(pend.pts) : '') + (pend.depLabel ? ' · 보낸 분 ' + esc(pend.depLabel) : '') + '<br>관리자가 입금을 확인하면 회원권이 생기고 알림이 와요.</p><button type="button" class="btn g sm" data-act="payCancel">요청 취소</button></div>' : '') +
@@ -91,20 +127,36 @@
         '<div class="card"><h3>' + LZ.ic('club') + ' 내 회원권 <span class="muted small">1장 = ' + sc.seat_size + '자리</span></h3><div class="psum">' + passRows(u, mine) + '</div>' +
           '<div class="row"><button type="button" class="btn sm" data-go="pay" data-p=\'' + esc(JSON.stringify({ plan: 'red' })) + '\'>' + LZ.ic('plus') + '레드회원권 사기</button><button type="button" class="btn o sm" data-go="pay" data-p=\'' + esc(JSON.stringify({ plan: 'gold' })) + '\'>' + LZ.ic('star') + '골드회원권 사기</button></div>' +
           '<p class="hint" style="margin:6px 2px 0">레드 ' + won(sc.seat_price) + '/장 · ' + (sc.seat_days % 365 === 0 ? sc.seat_days / 365 + '년' : sc.seat_days + '일') + ' · 골드 ' + won(sc.gold_price) + '/장 · ' + sc.gold_years + '년. 산 회원권은 보관했다가 클럽을 만들 때나 내가 캡틴·매니저인 클럽에 넣어요.</p></div>' +
-        (list.length ? '<div class="card tight"><h3 class="ih">' + LZ.ic('seat') + '레드·골드회원권 ' + list.length + '장</h3>' + list.map(function (x) {
-          var b = '<div class="pkb">';
-          if (!(x.kind === 'gold' && x.admin)) b += '<button type="button" class="sm2" data-go="pay" data-p=\'' + esc(JSON.stringify({ plan: 'renew', pack: x.id })) + '\'>연장</button>';
-          if (x.live && !x.inUse && (staffed.length > (x.mid ? 1 : 0) || x.mid)) b += '<button type="button" class="sm2 g" data-act="packMove" data-v=\'' + esc(JSON.stringify({ id: x.id, from: x.mid })) + '\'>' + (x.mid ? '옮기기' : '클럽에 넣기') + '</button>';
-          else if (x.inUse) b += '<span class="muted small">자리를 쓰는 중</span>';
-          if (x.kind === 'gold' && x.admin) b += '<span class="muted small">관리자 지급 · 연장은 관리자가 정해요</span>';
-          return LZ.packLine(x, { club: 1, btns: b + '</div>' });
-        }).join('') + '<p class="hint" style="margin:6px 2px 4px">연장하면 끝나는 날부터 이어져요. 자리를 쓰지 않는 회원권은 보관함으로 빼거나 내가 캡틴·매니저인 다른 클럽으로 옮길 수 있어요(끝나는 날 그대로).</p></div>' : '') +
+        '<div class="sec">' + LZ.kw('가진 회원권 ' + (list.length + blues.length) + '장', '회원권을 누르면 그 회원권으로 할 수 있는 일이 나와요. <b>블루</b>는 넣은 클럽 보기만 · <b>레드</b>는 연장 · 회원권 옮기기 · 클럽에 넣기 · 환불(같이 산 회원권 함께) · <b>골드</b>는 연장(관리자 지급은 관리자가) · 회원권 옮기기(주인만) · 클럽에 넣기, 양도는 없어요.') + '</div>' +
+        '<div class="list passes">' + list.concat(blues).map(function (x, k) {
+          var blue = x.kind === 'blue', chip = !blue && !x.live ? ' <span class="pill">끝남</span>' : !blue && x.left !== null && x.left <= 30 ? ' <span class="pill">곧 끝나요</span>' : '';
+          var su = blue ? (x.mid ? esc(x.club) + '에 넣음' : '남음 · 아직 안 넣음') : (x.mid ? esc(x.club) + ' · ' : '보관 중인 회원권 · ') + '<span class="nw">' + (x.seats || sc.seat_size) + '자리 (회원권 1장)</span> · <span class="nw">~' + LZ.fmtYmd(x.end) + '</span>' + (x.inUse ? ' · 자리를 쓰는 중' : '');
+          return '<button type="button" class="li pkrow" data-act="passSheet" data-v="' + k + '"><span class="pdot ' + x.kind + '" aria-hidden="true"></span><div class="t"><b>' + (PKN[x.kind] || '회원권') + chip + '</b><span class="su">' + su + '</span></div>' + LZ.ic('chev') + '</button>';
+        }).join('') + '</div>' +
         (rf.can || rf.recent ? '<button type="button" class="btn g sm" data-go="refund">' + LZ.ic('back') + '환불' + (rf.recent ? ' · ' + esc(rf.recent.stName) : '') + '</button>' : '') +
         '<details class="card acc"><summary><h3>' + LZ.ic('help') + ' 회원권 안내</h3></summary><div class="accb seatguide">' + LZ.cleanHtml(sc.guide) + '</div></details></div>';
     }
   };
   /** "회원 24명 / 30자리 (회원권 3장)" — 캡틴은 자리 밖. 관리자 클럽은 제한 없음 */
   LZ.seatTxt = function (m) { var n = Number(m.n !== undefined ? m.n : (m.members || 0)).toLocaleString('ko-KR'); return m.staffClub ? '회원 ' + (m.members || 0) + '명 · 자리 제한 없음' : '회원 ' + n + '명 / ' + Number(m.seats || m.cap || 0).toLocaleString('ko-KR') + '자리' + (m.passes !== undefined ? ' (회원권 ' + m.passes + '장)' : ''); };
+  /* v8 회원권마다 메뉴: 블루 — 넣은 클럽 보기만 / 레드 — 연장 · 회원권 옮기기 · 클럽에 넣기 · 환불(같이 산 n장 함께) / 골드 — 연장(관리자 지급은 관리자) · 회원권 옮기기(주인만) · 클럽에 넣기 · 양도 없음 */
+  var TIER = null;
+  LZ.act.passSheet = function (el, v) {
+    var x = TIER && TIER.list[+v]; if (!x) return;
+    var o = function (t, su, attr, off) { return '<button type="button" class="opt' + (off ? ' off' : '') + '" ' + (off ? 'disabled ' : '') + attr + '><b>' + t + '</b>' + (su ? '<span>' + su + '</span>' : '') + '</button>'; }, h = '';
+    var canMove = x.live && !x.inUse && (TIER.staffed.length > (x.mid ? 1 : 0) || x.mid), mv = esc(JSON.stringify({ id: x.id, from: x.mid }));
+    if (x.kind === 'blue') h = x.mid ? o('넣은 클럽 보기', esc(x.club), 'data-go="club" data-p=\'' + esc(JSON.stringify({ id: x.mid })) + '\'') + '<p class="hint">블루회원권은 연장 · 옮기기 · 환불이 없어요. 클럽을 닫으면 돌아와요.</p>' : '<p class="hint">아직 넣지 않은 블루회원권이에요. 클럽 만들기에서 새 클럽을 무료로 열 때 써요. 연장 · 옮기기 · 환불은 없어요.</p>' + o('클럽 만들기', '이 블루회원권으로', 'data-go="make"');
+    else {
+      var gAdm = x.kind === 'gold' && x.admin, same = TIER.mine.filter(function (y) { return y.pid && y.pid === x.pid; }).length;
+      h += gAdm ? o('연장', '관리자 지급 · 연장은 관리자가 정해요', '', 1) : o('연장', x.kind === 'gold' ? '끝나는 날부터 ' + TIER.sc.gold_years + '년 · 구매 규칙' : '끝나는 날부터 이어져요', 'data-go="pay" data-p=\'' + esc(JSON.stringify({ plan: 'renew', pack: x.id })) + '\'');
+      if (x.mid) h += o('회원권 옮기기', x.kind === 'gold' ? '주인만 · 다른 클럽으로' : '다른 클럽으로 · 끝나는 날 그대로', 'data-act="packMove" data-v=\'' + mv + '\'', !canMove);
+      else h += o('클럽에 넣기', '보관 중인 회원권을', 'data-act="packMove" data-v=\'' + mv + '\'', !canMove);
+      if (x.inUse) h += '<p class="hint">지금 그 자리를 쓰는 회원님이 있어서 옮길 수 없어요.</p>';
+      if (x.kind === 'red' && x.pid && !gAdm) h += o('환불', (same > 1 ? '같이 산 ' + same + '장 함께 · ' : '') + TIER.sc.refund_days + '일 안 · 아무도 안 쓴 것만', 'data-go="refund" data-p=\'' + esc(JSON.stringify({ pid: x.pid })) + '\'');
+      if (x.kind === 'gold') h += '<p class="hint">골드회원권은 양도할 수 없어요.</p>';
+    }
+    LZ.sheet('<h2>' + (PKN[x.kind] || '회원권') + '</h2><p class="muted" style="margin:0 0 8px">' + (x.kind === 'blue' ? (x.mid ? esc(x.club) + '에 넣음' : '남음 · 아직 안 넣음') : (x.mid ? esc(x.club) : '보관 중인 회원권') + ' · ' + (x.seats || TIER.sc.seat_size) + '자리 (회원권 1장) · ' + (x.start ? LZ.fmtYmd(x.start) + ' ~ ' : '~') + LZ.fmtYmd(x.end)) + '</p>' + h);
+  };
   /* 회원권 옮기기·넣기: 내가 캡틴·매니저인 다른 클럽 또는 보관함 */
   LZ.act.packMove = async function (el, v) {
     var o = JSON.parse(v), list = (S.me && S.me.moims || []).filter(function (m) { return (m.role === 'cap' || m.role === 'mgr') && m.id !== o.from && !m.staffClub; });
@@ -168,9 +220,7 @@
         (u.kind === 'admin' ? '' : grow('kakao', '카카오 본인 확인', u.kid ? '확인했어요 · 비밀번호를 잊으면 카카오로 찾아요' : '아직 안 했어요 · 눌러서 확인하기', u.kid ? 'data-act="kidInfo"' : 'data-go="kakaoAsk"')) +
         (u.kind === 'admin' || !u.kid ? '' : grow('unlock', '카카오 연결 풀기', u.kunNext ? LZ.fmtDate(u.kunNext) + '부터 할 수 있어요' : '다른 카카오로 잘못 연결했을 때 · ' + (u.kunDays || 30) + '일에 한 번', 'data-act="kunSelf"')) +   /* v7.1.0 §14 */
         '</div>' +
-        '<div class="card"><h3>치기 화면</h3><div class="tgl"><span>말해 주기<span class="muted">홀을 넘길 때마다 소리로 읽어 드려요</span></span>' + LZ.sw(LZ.store.get('lz.say') === '1', 'sayTgl') + '</div>' +
-        '<button type="button" class="li" data-act="voicePick">' + LZ.ic('sound') + '<span class="t"><b>말해 주기 목소리</b><span class="muted">휴대폰에 있는 한국어 목소리 고르기 · 미리 듣기</span></span>' + LZ.ic('chev') + '</button>' +
-        '<p class="hint" style="margin:8px 0 0">' + LZ.ic('lock') + ' 내 기록 공개는 이제 <b>코스마다</b> 정해요 · 스크린 공략 → 내 수첩의 자물쇠</p></div></div>';
+        '<p class="hint" style="margin:8px 0 0">' + LZ.ic('lock') + ' 내 기록 공개는 <b>코스마다</b> 정해요 · 스크린 › 내 수첩의 자물쇠</p></div>';
     }
   };
   /* 도움 */
@@ -178,7 +228,7 @@
     tab: 'me',
     show: function (p, root) {
       var m = S.me || {};
-      root.innerHTML = LZ.hdr('도움', { back: true, noHelp: 1 }) + '<div class="wrap"><div class="card tight groups">' +
+      root.innerHTML = LZ.hdr('도움말', { back: true }) + '<div class="wrap"><div class="card tight groups">' +
         grow('ball', '파크골프 첫걸음', '처음 오신 분께 · 규칙 · 점수 세는 법 · 매너', 'data-go="firstSteps"') +
         grow('trophy', '시상식 안내', '상 종류 · 발표 차례 · 결과 그림 보내기', 'data-go="awGuide"') +
         grow('book', '사용 안내', '권한과 기준을 한눈에', 'data-go="guide"') +
@@ -419,12 +469,12 @@
   LZ.screens.notiCfg = {
     tab: 'me',
     show: async function (p, root, alive) {
-      root.innerHTML = LZ.hdr('알림 설정', { back: true }) + LZ.skeleton(4);
+      root.innerHTML = LZ.hdr('알림 종류', { back: true }) + LZ.skeleton(4);
       var d = await LZ.api('notiCfg', {}); if (!alive()) return; NC = d; var c = d.cfg, isCap = S.user.kind === 'admin' || (S.me.moims || []).some(function (x) { return x.role === 'cap' || x.role === 'mgr'; });
       var perm = ('Notification' in window) ? Notification.permission : 'none', canPush = 'serviceWorker' in navigator && 'PushManager' in window && !!d.vapid;
-      root.innerHTML = LZ.hdr('알림 설정', { back: true }) + '<div class="wrap">' +
+      root.innerHTML = LZ.hdr('알림 종류', { back: true }) + '<div class="wrap">' +
         '<div class="card"><h3>' + LZ.ic('bell') + ' 앱 푸시</h3><p class="muted" style="margin:0 0 6px">' + (canPush ? (perm === 'denied' ? '휴대폰 설정에서 이 앱의 알림이 꺼져 있어요. 설정 → 알림에서 켜 주세요.' : LZ.pwa && LZ.pwa.isIOS && !LZ.pwa.standalone() ? '아이폰은 "홈 화면에 추가"한 뒤에 알림을 받을 수 있어요.' : '앱을 닫아도 알림이 와요. 휴대폰 ' + d.pushN + '대에 켜져 있어요.') : '이 브라우저는 푸시를 지원하지 않거나 서버 준비가 안 됐어요.') + '</p><div class="tgl"><span>이 휴대폰에서 푸시 받기</span>' + LZ.sw(c.push && d.pushN, 'pushTgl', '', !canPush || perm === 'denied') + '</div></div>' +
-        (isCap ? '<div class="card"><h3>' + LZ.ic('kakao') + ' 카카오톡으로 받기</h3><p class="muted" style="margin:0 0 6px">' + (d.kakaoKey ? '카카오 "나에게 보내기"로 같은 알림을 카톡으로도 받아요. 앱을 안 열어도 돼요.' : '관리자가 카카오 앱 키를 넣으면 쓸 수 있어요.') + '</p>' + (d.kakaoLinked ? '<div class="tgl"><span>카카오톡으로도 받기<span class="muted">' + LZ.fmtDate(d.kakaoAt) + ' 연결됨</span></span>' + LZ.sw(c.kakao, 'kakaoTgl') + '</div><button type="button" class="btn g sm" data-act="kakaoUnlink">연결 끊기</button>' : (d.kakaoKey ? '<button type="button" class="btn kakao" data-act="kakaoLinkGo">카카오 연결하기</button>' : '')) + '</div>' : '') +
+        (isCap ? '<div class="card"><h3>' + LZ.ic('kakao') + ' 카카오톡으로 받기</h3><p class="muted" style="margin:0 0 6px">' + (d.kakaoKey ? '카카오 "나에게 보내기"로 같은 알림을 카카오톡으로도 받아요. 앱을 안 열어도 돼요.' : '관리자가 카카오 앱 키를 넣으면 쓸 수 있어요.') + '</p>' + (d.kakaoLinked ? '<div class="tgl"><span>카카오톡으로도 받기<span class="muted">' + LZ.fmtDate(d.kakaoAt) + ' 연결됨</span></span>' + LZ.sw(c.kakao, 'kakaoTgl') + '</div><button type="button" class="btn g sm" data-act="kakaoUnlink">연결 끊기</button>' : (d.kakaoKey ? '<button type="button" class="btn kakao" data-act="kakaoLinkGo">카카오 연결하기</button>' : '')) + '</div>' : '') +
         '<div class="card"><h3>받을 알림</h3>' + d.kinds.map(function (k) { return '<div class="tgl"><span>' + esc(NK[k] || k) + '</span>' + LZ.sw(c.kinds[k] !== 0, 'kindTgl', k) + '</div>'; }).join('') + '</div>' +
         '<div class="card"><div class="tgl"><span>조용한 시간<span class="muted">밤 10시~아침 7시 알림은 아침 7시에 모아서 보내요</span></span>' + LZ.sw(c.quiet, 'quietTgl') + '</div></div>' +
         '<p class="hint">앱 안 알림함(상단 종)에는 설정과 상관없이 모두 남아요.</p></div>';
