@@ -19,7 +19,6 @@
       var who = store.json('lz.who'), back = !!(who && who.nick), last = back ? who.nick : (store.get('lz.nick') || ''), inv = store.get('lz.inv'), big = LZ.big.get();
       var av = back ? (who.av ? '<img class="lav" src="' + esc(who.av) + '" alt="">' : '<span class="lav">' + esc(who.nick.charAt(0)) + '</span>') : '';
       root.innerHTML = '<div class="login"><div class="lhero" aria-hidden="true"></div>' +
-        '<button type="button" class="tb ga lga' + (big ? ' on' : '') + '" data-act="big" aria-pressed="' + (big ? 'true' : 'false') + '" aria-label="큰 글씨">가<sup>+</sup></button>' +
         '<div class="lbody"><div class="ltitle"><img src="icons/icon-192.png" alt="" class="llogo"><h1>파크골프 공략수첩</h1></div>' +
         (back ? '<p class="lsub">다시 오셨네요</p><div class="lwho">' + av + '<b>' + esc(who.nick) + (who.nick === '관리자' ? '' : ' <span>회원님</span>') + '</b><input type="text" id="nick" class="nick-ghost" value="' + esc(last) + '" autocomplete="username" maxlength="8" tabindex="-1" aria-label="닉네임"></div>'
           : '<p class="lsub">홀마다 나만의 공략을 적어 두세요</p><label class="sr" for="nick">닉네임</label><input type="text" id="nick" class="lnick" value="' + esc(last) + '" placeholder="닉네임" autocomplete="username" maxlength="8" autocapitalize="off" spellcheck="false">') +

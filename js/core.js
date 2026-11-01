@@ -189,6 +189,8 @@
   /** 이름 + 님(손님 이름이 이미 "…님"으로 끝나면 그대로: 박손님 → 박손님) */
   LZ.nim = function (n) { n = n === undefined || n === null ? '' : String(n); return /님$/.test(n) ? n : n + '님'; };
   LZ.nimE = function (n) { return LZ.esc(LZ.nim(n)); };
+  /** v8.1 이름 규칙: 목록(순위·점수판·시상식·회원 목록)은 이름만 → LZ.nm, 문장("…님께", "주최 …님", 알림 글)은 님 → LZ.nim / LZ.nimE */
+  LZ.nm = function (n) { return LZ.esc(n === undefined || n === null ? '' : String(n)); };
   /** 끝나기 전 알림 날(관리자 설정) → "30일·7일 전과 당일" */
   LZ.remindTxt = function (a) { a = (a || [30, 7, 0]).slice().sort(function (x, y) { return y - x; }); var d = a.filter(function (x) { return x > 0; }).map(function (x) { return x + '일'; }), z = a.indexOf(0) >= 0; return d.length ? d.join('·') + ' 전' + (z ? '과 당일' : '') : z ? '당일' : '정한 날'; };
   LZ.stars = function (n) { n = Math.max(1, Math.min(5, n | 0)) || 3; return '<span class="star">' + '★'.repeat(n) + '<s>' + '★'.repeat(5 - n) + '</s></span>'; };

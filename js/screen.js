@@ -50,21 +50,31 @@
         var cnt = { all: all.length, done: 0, ing: 0, no: 0 }; all.forEach(function (c) { cnt[cStat(c)]++; });
         var list = all.filter(function (c) { return flt === 'all' || cStat(c) === flt; });
         list.sort(sortFn(sort));
-        root.innerHTML = LZ.hdr('내 수첩') + '<div id="syncbar" class="sync wait" hidden></div><div class="wrap clist">' + (LZ.admNote ? LZ.admNote('홀 기록(내 수첩)·클럽 가입·라운드 기록') : '') +
-          (r.canReg ? '<button type="button" class="btn mk1" data-go="reg">' + LZ.ic('plus') + '새 코스</button>' : '') +
+        /* v8.1 설계안 R.list: 위 막대 ＋(새 코스) · 🔍(누르면 찾기 칸) · 본문은 보기 4칸 + "정렬 ▾" 하나(거꾸로 순서도 그 창에서) */
+        var srch = CQ_OPEN || !!q, sortName = SORTS.filter(function (x) { return x[0] === sort; })[0][1];
+        root.innerHTML = LZ.hdr('내 수첩', { btns: (r.canReg ? '<button type="button" class="tb" data-go="reg" aria-label="새 코스 등록" title="새 코스 등록">' + LZ.ic('plus') + '</button>' : '') + '<button type="button" class="tb' + (srch ? ' on' : '') + '" data-act="cSrch" aria-label="코스 찾기" aria-expanded="' + srch + '" title="코스 찾기">' + LZ.ic('search') + '</button>' }) + '<div id="syncbar" class="sync wait" hidden></div><div class="wrap clist">' + (LZ.admNote ? LZ.admNote('홀 기록(내 수첩)·클럽 가입·라운드 기록') : '') +
           '<div class="flt" role="tablist">' + FLT.map(function (x) { return '<button type="button" role="tab" aria-selected="' + (flt === x[0]) + '" class="' + (flt === x[0] ? 'on' : '') + '" data-act="cFlt" data-v="' + x[0] + '">' + x[1] + ' <b>' + cnt[x[0]] + '</b></button>'; }).join('') + '</div>' +
-          '<div class="csort"><span class="muted">정렬</span><button type="button" class="sortb" data-act="cSort">' + SORTS.filter(function (x) { return x[0] === sort; })[0][1] + ' ▾</button><button type="button" class="sortr" data-act="cSortRev" aria-label="순서 거꾸로 · 지금 ' + SORTS.filter(function (x) { return x[0] === sort; })[0][1] + '" title="순서 거꾸로">' + LZ.ic('sort') + '</button><input type="search" id="cq" value="' + esc(store.get('lz.cq') || '') + '" placeholder="코스 찾기" aria-label="코스 이름 찾기"></div>' +
+          '<div class="csort2"><button type="button" class="chip sortc" data-act="cSort" aria-label="정렬 · 지금 ' + sortName + '"><span class="lb">정렬</span><b>' + sortName + '</b>' + LZ.ic('down') + '</button></div>' +
+          (srch ? '<div class="csrch"><input type="search" id="cq" value="' + esc(store.get('lz.cq') || '') + '" placeholder="코스 이름" aria-label="코스 이름 찾기"></div>' : '') +
           (list.length ? list.map(cCard).join('') : '<div class="empty">' + (all.length ? '고른 조건에 맞는 코스가 없어요.' : '아직 코스가 없어요. 첫 코스를 등록해 보세요.') + '</div>') + '</div>';
         LZ.paintSync();
         var cq = $('#cq'), filt = function () { var v = cq.value.toLowerCase(); store.set('lz.cq', cq.value); $$('.ccard', root).forEach(function (b) { b.hidden = !!v && b.querySelector('.ct b').textContent.toLowerCase().indexOf(v) < 0; }); };
-        cq.addEventListener('input', filt); if (q) filt();
+        if (cq) { cq.addEventListener('input', filt); if (q) filt(); }
       }
     }
   };
   LZ.act.openC = function (el, id) { LZ.go('holes', { id: id }); };
   LZ.act.cFlt = function (el, v) { store.set('lz.cflt', v); LZ.redraw(); };
-  LZ.act.cSort = function () { var cur = store.get('lz.csort') || 'new'; if (!SORT_REV[cur]) cur = 'new'; LZ.sheet('<h2>정렬</h2><p class="muted" style="margin-top:0">위아래 두 개씩 짝이에요. 목록 옆 ' + LZ.ic('sort') + ' 단추로도 거꾸로 바꿔요.</p>' + SORTS.map(function (x) { return '<button type="button" class="opt ' + (cur === x[0] ? 'on' : '') + '" data-act="cSortSet" data-v="' + x[0] + '"><b>' + x[1] + '</b>' + (cur === x[0] ? '<span>' + LZ.ic('check') + ' 지금</span>' : '') + '</button>'; }).join('')); };
-  LZ.act.cSortRev = function () { var cur = store.get('lz.csort') || 'new'; store.set('lz.csort', SORT_REV[cur] || 'old'); LZ.redraw(); };
+  LZ.act.cSort = function () { var cur = store.get('lz.csort') || 'new'; if (!SORT_REV[cur]) cur = 'new'; LZ.sheet('<h2>정렬</h2><p class="muted" style="margin-top:0">위아래 두 개씩 짝이에요(거꾸로 순서).</p>' + SORTS.map(function (x) { return '<button type="button" class="opt ' + (cur === x[0] ? 'on' : '') + '" data-act="cSortSet" data-v="' + x[0] + '"><b>' + x[1] + '</b>' + (cur === x[0] ? '<span>' + LZ.ic('check') + ' 지금</span>' : '') + '</button>'; }).join('') + '<button type="button" class="opt" data-act="cSortSet" data-rev="1" data-v="' + SORT_REV[cur] + '"><b>' + LZ.ic('sort') + ' 지금 순서를 거꾸로</b><span>' + SORTS.filter(function (x) { return x[0] === SORT_REV[cur]; })[0][1] + '</span></button>'); };
+  var CQ_OPEN = false;
+  /* 🔍: 다시 그리지 않고 찾기 칸만 열고 닫아요(누른 그 순간에 글자판이 뜨게) */
+  LZ.act.cSrch = function (el) {
+    var box = $('.csrch'), on = !box; CQ_OPEN = on; el.setAttribute('aria-expanded', on ? 'true' : 'false'); el.classList.toggle('on', on);
+    if (!on) { box.parentNode.removeChild(box); store.set('lz.cq', ''); $$('.ccard').forEach(function (b) { b.hidden = false; }); return; }
+    var w = document.createElement('div'); w.className = 'csrch'; w.innerHTML = '<input type="search" id="cq" placeholder="코스 이름" aria-label="코스 이름 찾기">';
+    var at = $('.csort2'); at.parentNode.insertBefore(w, at.nextSibling);
+    var cq = $('#cq'); cq.addEventListener('input', function () { var v = cq.value.toLowerCase(); store.set('lz.cq', cq.value); $$('.ccard').forEach(function (b) { b.hidden = !!v && b.querySelector('.ct b').textContent.toLowerCase().indexOf(v) < 0; }); }); cq.focus();
+  };
   LZ.act.cSortSet = function (el, v) { store.set('lz.csort', v); LZ.closeSheet(); LZ.redraw(); };
   /* 코스마다 자물쇠: 공개 ↔ 비공개 */
   async function setPub(cid, pub) {
@@ -367,7 +377,7 @@
     } else {
       var base = baseOf(c, i, 0, v), b = LZ.bsParts(ED.disp);
       aim = '<section class="aim" aria-label="방향, 좌우, 볼스피드"><div class="lbl" style="grid-area:1/1">' + dirI + '</div><div class="lbl r" style="grid-area:1/3">' + bsI + '</div><span class="dvd" aria-hidden="true"></span>' +
-        '<div class="val dirv" style="grid-area:2/1"><span>' + esc(LZ.refTxt(r)) + '</span></div>' +
+        (r.r === 'u' ? '<button type="button" class="val dirv dirb" style="grid-area:2/1" data-act="plDirect" aria-label="직접 위치 고치기"><span>' + esc(LZ.refTxt(r)) + '</span></button>' : '<div class="val dirv" style="grid-area:2/1"><span>' + esc(LZ.refTxt(r)) + '</span></div>') +
         '<div class="vref" style="grid-area:2/3">기준 <b>' + LZ.bsTxt(base) + '</b>' + dTxt(ED.disp, base, sl) + '</div>' +
         '<div class="val lrb' + (dim ? ' dim' : '') + '" style="grid-area:3/1" aria-live="polite">' + LZ.lrTxt(r) + '</div>' +
         '<div class="val bsv pbig' + (dim ? ' dim' : '') + '" style="grid-area:3/3" data-bs="' + b.v + '" aria-live="polite">' + b.t + '</div>' +
@@ -382,7 +392,6 @@
       '<span class="hdist' + (sl ? (sl === 'up' ? ' up' : ' dn') : '') + '">' + LZ.fmtM(h[1]) + '<small>m</small>' + (sl ? (sl === 'up' ? '↑' : '↓') : '') + '</span></div>' +
       '<div class="opts"><button type="button" class="chip oc" data-act="plLaySheet"><span class="ot">' + (L ? '끊어 <b>' + LZ.fmtM(L) + 'm</b>' : '끊어가기') + '</span>' + LZ.ic('down') + '</button>' +
       '<button type="button" class="chip oc" data-act="plSlope"><span class="ot">' + (sl ? '<b>' + slTag(sl) + '</b>' : '주의 · 보통') + '</span>' + LZ.ic('down') + '</button></div>' + aim +
-      (sx.r === 'u' ? '<label class="pltl" for="plT">' + (lay ? (sh ? '2nd ' : '1st ') : '') + '직접 · 어디서 잰 칸인지(20자)</label><textarea id="plT" class="plt" maxlength="20" rows="1" placeholder="예: 큰 나무 밑">' + esc(sx.t) + '</textarea>' : '') +
       '<button type="button" class="nrow" data-act="plNoteTgl" aria-expanded="' + !!ED.note + '" aria-controls="notep"><span class="lb">참고</span><span class="tx' + (r.o ? '' : ' e') + '">' + (r.chg ? '<b class="chgt">기준 바뀜</b> · ' : '') + noteTx + '</span>' + LZ.ic('down') + '</button>' +
       '<div class="notep" id="notep"' + (ED.note ? '' : ' hidden') + '>' + (r.o ? '<div class="full">' + hiNote(r.o) + '</div>' : '') + '<input type="text" id="plO" maxlength="20" value="' + esc(r.o) + '" placeholder="예: 맞바람, **반 칸** 세게" aria-label="참고(20자)">' +
       (r.chg ? '<p class="chgn">다른 회원님이 끊는 거리·주의를 바꿔서 기준이 바뀌었어요. 확인하고 저장하면 표시가 없어져요.</p>' : '') +
@@ -390,31 +399,43 @@
   }
   function playFix() {
     var d = ED.d, c = d.course, i = ED.i, n = nOf(c), lay = !!(layAt(c, i) && ED.r.r && ED.r.s2), sh = lay ? ED.shot : 0, sx = curShot();
-    var st = ED.dirty ? '● 고침 · 넘어가면 저장' : ED.isNew ? '기준값이에요 · 저장하면 내 수첩에 적혀요' : '내 수첩 기록이에요';
+    var st = ED.dirty ? '● 고침 · 넘어가면 저장' : ED.isNew ? '기준값 · 저장하면 수첩에 적혀요' : '내 수첩 기록이에요';   // v8.1 한 줄 고정(조정 칸 자리가 늘 같게)
     var nxt = lay && sh === 0 ? '2nd ›' : (i >= n - 1 ? '저장하고 끝내기 ›' : '저장하고 다음 홀 ›');
     return '<div class="pfix" id="pfix"><div class="ctlp"><div class="ctr2"><button type="button" class="stp tri" data-act="plLr" data-v="-1" aria-label="좌로 한 칸">' + LZ.ic('tl') + '</button><button type="button" class="stp tri" data-act="plLr" data-v="1" aria-label="우로 한 칸">' + LZ.ic('tr') + '</button></div>' +
       '<span class="vd" aria-hidden="true"></span><div class="ctr2"><button type="button" class="stp tri" data-act="plP" data-v="-0.5" aria-label="볼스피드 0.5 낮추기">' + LZ.ic('td') + '</button><button type="button" class="stp tri" data-act="plP" data-v="0.5" aria-label="볼스피드 0.5 높이기">' + LZ.ic('tu') + '</button></div>' +
       '<div class="seg ref3" role="group" aria-label="방향">' + [['f', '첫화면'], ['c', '홀컵'], ['u', '직접']].map(function (x) { return '<button type="button" class="' + (sx.r === x[0] ? 'on' : '') + '" data-act="plRef" data-v="' + x[0] + '" aria-pressed="' + (sx.r === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div></div>' +
       '<div class="pbar2"><div class="pst saved' + (ED.dirty ? ' no' : '') + '">' + (lay ? (sh ? '2nd · ' : '1st · ') : '') + st + '</div><div class="pbtns pnav"><button type="button" class="btn g" data-act="plNav" data-v="-1"' + (i <= 0 && !sh ? ' disabled' : '') + '>‹ ' + (sh ? '1st' : '이전') + '</button><button type="button" class="btn" data-act="plNext">' + nxt + '</button></div></div></div>';
   }
-  function fitPad() { var f = $('#pfix'), w = $('.play3'); if (f && w) w.style.paddingBottom = (f.offsetHeight + 16) + 'px'; }
+  /* v8.1 조정 칸(#pfix)은 보통·큰 글씨·모든 홀에서 같은 자리(높이 px 고정). 그 위 내용은 자기 칸(.play3) 안에서만 스크롤 → 아무것도 조정 칸 뒤에 숨지 않고, 참고를 열어도 위 막대·홀 줄이 움직이지 않아요 */
+  function fitPad() {
+    var f = $('#pfix'), w = $('.play3'); if (!f || !w) return;
+    window.scrollTo(0, 0);
+    var top = w.getBoundingClientRect().top, h = Math.max(160, Math.floor(f.getBoundingClientRect().top - top));
+    w.style.height = h + 'px'; w.style.paddingBottom = '';
+  }
   function paintPlay(root) {
     root = root || $('#app');
     root.innerHTML = playHdr() + '<div class="wrap play3 play2">' + playBody() + '</div>' + playFix();
     fitPad();
     var o = $('#plO'); if (o) o.addEventListener('input', function () { ED.r.o = o.value; ED.dirty = true; var t = $('.nrow .tx'); if (t) { t.innerHTML = o.value ? hiNote(o.value) : '없음'; t.classList.toggle('e', !o.value); } var ps = $('.pfix .pst'); if (ps) { ps.textContent = '● 고침 · 넘어가면 저장'; ps.classList.add('no'); } });
-    var t = $('#plT'); if (t) { var grow = function () { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }; grow(); t.addEventListener('input', function () { curShot().t = t.value; ED.dirty = true; grow(); }); }
   }
   window.addEventListener('resize', function () { if (LZ.cur && LZ.cur().name === 'play') fitPad(); });
-  function rep() { var y = window.scrollY, f = document.activeElement && document.activeElement.id; paintPlay(); window.scrollTo(0, y); }
+  function rep() { var w = $('.play3'), y = w ? w.scrollTop : 0; paintPlay(); w = $('.play3'); if (w) w.scrollTop = y; }
   LZ.act.plP = function (el, v) {
     var k = ED.shot && ED.r.s2 ? 1 : 0, x = k ? ED.disp2 : ED.disp, st = +v, nx = LZ.clampP(LZ.r1(st > 0 ? Math.floor(x * 2 + 1e-6) / 2 + 0.5 : Math.ceil(x * 2 - 1e-6) / 2 - 0.5));   // 0.5 칸에 맞춰 움직임(환산값 22.7 → + 23 · − 22.5)
     var p = LZ.conv(nx, ED.v.g, ED.v.h, ED.r.g, ED.r.h); if (k) { ED.disp2 = nx; ED.r.s2.p = p; } else { ED.disp = nx; ED.r.p = p; } ED.dirty = true; rep();
   };
   LZ.act.plLr = function (el, v) { var r = curShot(), cur = Math.max(-10, Math.min(10, lrNum(r) + (+v))); r.d = cur < 0 ? 'L' : 'R'; r.n = Math.abs(cur); ED.dirty = true; rep(); };
-  LZ.act.plRef = function (el, v) { curShot().r = v; ED.dirty = true; rep(); if (v === 'u') { var t = $('#plT'); if (t && !t.value) t.focus(); } };
+  /* v8.1 직접: 아래에 칸이 새로 생기지 않고, 작은 창에서 위치 글(20자)을 적으면 방향 자리에 보여요(줄바꿈 · 글씨는 그대로) */
+  LZ.act.plRef = function (el, v) { var was = curShot().r; curShot().r = v; ED.dirty = ED.dirty || was !== v; rep(); if (v === 'u') LZ.act.plDirect(); };
+  LZ.act.plDirect = function () {
+    var x = curShot(), lay = !!(ED.r.s2 && layAt(ED.d.course, ED.i)), who = lay ? (ED.shot ? '2nd ' : '1st ') : '';
+    var d = LZ.sheet('<h2>' + who + '직접 · 어디서 잰 칸인지</h2><p class="muted" style="margin-top:0">20자까지 · 방향 자리에 그대로 보여요.</p><input type="text" id="plTx" class="in" maxlength="20" value="' + esc(x.t || '') + '" placeholder="예: 큰 나무 밑" aria-label="직접 위치(20자)" autocomplete="off"><p class="muted plcnt" style="text-align:right;margin:4px 2px 0"><span id="plTn">' + String(x.t || '').length + '</span>/20</p><button type="button" class="btn" data-act="plDirectSave">저장</button>');
+    var t = $('#plTx', d); if (t) { t.addEventListener('input', function () { var n = $('#plTn', d); if (n) n.textContent = t.value.length; }); t.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); LZ.act.plDirectSave(); } }); setTimeout(function () { t.focus(); }, 60); }
+  };
+  LZ.act.plDirectSave = function () { var t = $('#plTx'), x = curShot(); if (!t) return; var v = t.value.replace(/\s+/g, ' ').trim().slice(0, 20); if (v !== (x.t || '') || x.r !== 'u') { x.t = v; x.r = 'u'; ED.dirty = true; } LZ.closeSheet(); rep(); };
   LZ.act.plShot = function (el, v) { ED.shot = +v ? 1 : 0; rep(); };
-  LZ.act.plNote = LZ.act.plNoteTgl = function () { ED.note = !ED.note; rep(); if (ED.note) { var o = $('#plO'); if (o && !o.value) o.focus(); } };
+  LZ.act.plNote = LZ.act.plNoteTgl = function () { ED.note = !ED.note; rep(); if (ED.note) { var w = $('.play3'), np = $('#notep'); if (w && np) { var b = np.getBoundingClientRect(), wb = w.getBoundingClientRect(); if (b.bottom > wb.bottom) w.scrollTop += b.bottom - wb.bottom + 8; } var o = $('#plO'); if (o && !o.value) o.focus({ preventScroll: true }); } };
   LZ.act.plUndo = function () {
     var r = ED.r, v = ED.v;
     if (r.ohs && r.ohs.length) {
@@ -531,13 +552,13 @@
       var R = changesOf(d, 0, 9);
       html = '<div class="pdone v8d"><div class="pdi">' + LZ.ic('flag') + '</div><h1>전반 끝</h1><p class="pds">' + esc(c.name) + '</p><p class="pds sm">자동으로 저장됐어요 · 적립 포인트 +' + pts + 'P</p></div>' +
         '<div class="kwrow">' + LZ.kw('전반에 고친 홀 ' + R.list.length, '누르면 그 홀을 다시 쳐요. 기록은 그대로 있어요. 끊어 가는 홀은 1st · 2nd 모두 보여요.') + '</div>' + chgList(d, R) +
-        '<button type="button" class="btn gold" data-act="plGo" data-v="9">후반 시작 · 10홀 ›</button><button type="button" class="lnk pdl" data-act="plEnd">여기서 끝내기</button>';
+        '<button type="button" class="btn pgo" data-act="plGo" data-v="9">후반 시작 · 10홀 ›</button><button type="button" class="lnk pdl" data-act="plEnd">여기서 끝내기</button>';
     } else {
       var E = changesOf(d, 0, n), filled = d.mine.slice(0, n).filter(function (r) { return r.r; }).length, oddL = oddOf(d, n), odd = oddL.length; ODD = oddL;
       html = '<div class="pdone v8d"><div class="pdi">' + LZ.ic('trophy') + '</div><h1>경기 끝</h1><p class="pds">' + esc(c.name) + '</p><p class="pds sm">' + n + '홀 · ' + LZ.modeTxt(v) + '</p></div>' +
         '<div class="ptiles"><div><span>내 수첩</span><b>' + filled + '/' + n + '홀' + (filled >= n ? LZ.ic('check', 'tk') : '') + '</b></div><div><span>적립 포인트</span><b class="au">+' + pts + 'P</b></div>' + (odd ? '<button type="button" class="ptodd" data-act="plOdd"><span>기준과 다른 홀</span><b>' + odd + '개 ›</b></button>' : '<div><span>기준과 다른 홀</span><b>0개</b></div>') + '</div>' +
         '<div class="kwrow">' + LZ.kw('오늘 고친 홀 ' + E.list.length, '볼스피드 · 좌우 · 방향이 바뀐 홀이에요(끊어 가는 홀은 1st · 2nd 모두). 누르면 그 홀을 다시 쳐요. 기준과 다른 홀은 두 샷을 모두 세고, 주의(오르막·내리막)로 설명되는 홀은 빼요.') + '</div>' + chgList(d, E) +
-        '<button type="button" class="btn gold" data-act="plFinish">저장하고 코스 화면으로 ›</button><button type="button" class="lnk pdl" data-act="plRestart">1홀부터 다시 플레이</button>';
+        '<button type="button" class="btn pgo" data-act="plFinish">저장하고 코스 화면으로 ›</button><button type="button" class="lnk pdl" data-act="plRestart">1홀부터 다시 플레이</button>';
     }
     root.innerHTML = LZ.hdr('플레이', { back: true, nosub: 1 }) + '<div class="wrap v8c">' + html + '</div>';
   }

@@ -47,10 +47,19 @@
         '</div><div class="list">' + grow('gear', '설정', '화면 · 소리 · 알림 · 계정 · 도움말', 'data-go="settings"') + '</div></div>';
     }
   };
+  /** v8.1 설정 › 알림(설계안): 앱 푸시 · 카카오톡(캡틴·매니저) · 알림 종류 ▸ · 조용한 시간. 켬·끔은 알림 종류 화면과 같은 설정(ncfg)이에요 */
+  var NC_AT = 0;
+  function setNotiRows(tg) {
+    var d = NC, c = d ? d.cfg : null, isCap = S.user.kind === 'admin' || (S.me && S.me.moims || []).some(function (x) { return x.role === 'cap' || x.role === 'mgr'; });
+    var perm = ('Notification' in window) ? Notification.permission : 'none', canPush = 'serviceWorker' in navigator && 'PushManager' in window && !!(d && d.vapid);
+    var push = tg('앱 푸시', !d ? '불러오는 중…' : !canPush ? '이 휴대폰에서는 못 받아요' : perm === 'denied' ? '휴대폰 설정에서 알림이 꺼져 있어요' : d.pushN ? '이 휴대폰에서 받아요' : '', LZ.sw(!!(c && c.push && d.pushN), 'pushTgl', '', !d || !canPush || perm === 'denied'));
+    var kakao = !isCap ? '' : d && d.kakaoLinked ? tg('카카오톡', '캡틴·매니저 · 같은 알림을 카카오톡으로', LZ.sw(!!c.kakao, 'kakaoTgl')) : grow('kakao', '카카오톡', '캡틴·매니저 · ' + (d && !d.kakaoKey ? '관리자가 준비하면 쓸 수 있어요' : '연결하기'), 'data-go="notiCfg"');
+    return push + kakao + grow('bell', '알림 종류', '가입 신청 · 회원권 끝남 · 챌린지 · 공지 · 라운드', 'data-go="notiCfg"') + tg('조용한 시간', '22:00–07:00 · 아침 7시에 모아서 보내요', LZ.sw(!!(c && c.quiet), 'quietTgl', '', !d));
+  }
   /** v8 설정(한 곳): 화면 · 소리·진동 · 알림 · 계정 · 도움말 · 버전 */
   LZ.screens.settings = {
     tab: 'me',
-    show: function (p, root) {
+    show: function (p, root, alive) {
       var u = S.user, m = S.me || {}, adm = u.kind === 'admin', v = LZ.myVoice ? LZ.myVoice() : null;
       var tg = function (t, sub, sw) { return '<div class="tgl"><span>' + t + (sub ? '<span class="muted">' + sub + '</span>' : '') + '</span>' + sw + '</div>'; };
       var sg = function (t) { return '<div class="sgh">' + t + '</div>'; };
@@ -58,7 +67,7 @@
         sg('화면') + '<div class="list">' + tg('어두운 화면', '', LZ.sw(LZ.theme.get(), 'theme')) + '</div>' +
         sg('소리·진동') + '<div class="list">' + tg('단추 진동', '', LZ.sw(store.get('lz.buzz') !== '0', 'buzz')) +
           grow('sound', '홀 안내 목소리', esc(v ? v.name : '휴대폰 기본') + ' · 켬·끔은 플레이 화면에서', 'data-act="voicePick"') + '</div>' +
-        sg('알림') + '<div class="list">' + grow('bell', '알림 종류', '푸시 · 카카오톡 · 받을 알림 · 조용한 시간', 'data-go="notiCfg"') + '</div>' +
+        sg('알림') + '<div class="list" id="setNoti">' + setNotiRows(tg) + '</div>' +
         sg('계정') + '<div class="list">' +
           grow('user', '프로필 사진', u.img ? '사진 바꾸기·지우기' : '사진 넣기', 'data-act="avatarMenu"') +
           grow('edit', '닉네임', esc(u.nick) + ' · 7일에 한 번', 'data-go="nickChange"') +
@@ -75,6 +84,7 @@
           grow('home', '홈 화면에 추가', '앱처럼 열기', 'data-act="homeAdd"') +
           grow('help', '처음 안내 다시 보기', '코치 말풍선', 'data-act="coachAgain"') + '</div>' +
         '<button type="button" class="verline" data-act="verRefresh">파크골프 공략수첩 v' + esc(window.LZ_VER || '4.0') + ' · ' + (m.appVer && m.appVer !== window.LZ_VER ? '최신 v' + esc(m.appVer) + '로 새로 고침' : '새로 고침') + '</button></div>';
+      if (!NC_AT || Date.now() - NC_AT > 60000) LZ.api('notiCfg', {}).then(function (d) { NC = d; NC_AT = Date.now(); var el = $('#setNoti'); if (el && LZ.cur().name === 'settings') el.innerHTML = setNotiRows(tg); }).catch(function () { /* 다음에 */ });
     }
   };
   LZ.act.coachAgain = function () { try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('lz.coach.') === 0) localStorage.removeItem(k); }); } catch (e) { /* 무시 */ } LZ.firstGuide = true; LZ.go('home', {}, { reset: true }); };
@@ -470,7 +480,7 @@
     tab: 'me',
     show: async function (p, root, alive) {
       root.innerHTML = LZ.hdr('알림 종류', { back: true }) + LZ.skeleton(4);
-      var d = await LZ.api('notiCfg', {}); if (!alive()) return; NC = d; var c = d.cfg, isCap = S.user.kind === 'admin' || (S.me.moims || []).some(function (x) { return x.role === 'cap' || x.role === 'mgr'; });
+      var d = await LZ.api('notiCfg', {}); if (!alive()) return; NC = d; NC_AT = Date.now(); var c = d.cfg, isCap = S.user.kind === 'admin' || (S.me.moims || []).some(function (x) { return x.role === 'cap' || x.role === 'mgr'; });
       var perm = ('Notification' in window) ? Notification.permission : 'none', canPush = 'serviceWorker' in navigator && 'PushManager' in window && !!d.vapid;
       root.innerHTML = LZ.hdr('알림 종류', { back: true }) + '<div class="wrap">' +
         '<div class="card"><h3>' + LZ.ic('bell') + ' 앱 푸시</h3><p class="muted" style="margin:0 0 6px">' + (canPush ? (perm === 'denied' ? '휴대폰 설정에서 이 앱의 알림이 꺼져 있어요. 설정 → 알림에서 켜 주세요.' : LZ.pwa && LZ.pwa.isIOS && !LZ.pwa.standalone() ? '아이폰은 "홈 화면에 추가"한 뒤에 알림을 받을 수 있어요.' : '앱을 닫아도 알림이 와요. 휴대폰 ' + d.pushN + '대에 켜져 있어요.') : '이 브라우저는 푸시를 지원하지 않거나 서버 준비가 안 됐어요.') + '</p><div class="tgl"><span>이 휴대폰에서 푸시 받기</span>' + LZ.sw(c.push && d.pushN, 'pushTgl', '', !canPush || perm === 'denied') + '</div></div>' +
@@ -481,7 +491,7 @@
     }
   };
   var NC = null;
-  async function setCfg(set) { try { var r = await LZ.api('notiCfg', { set: set }); NC = r; LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e), 4000); } }
+  async function setCfg(set) { try { var r = await LZ.api('notiCfg', { set: set }); NC = r; NC_AT = Date.now(); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e), 4000); } }
   LZ.act.kindTgl = function (el, k) { var o = {}; o[k] = NC.cfg.kinds[k] === 0 ? 1 : 0; setCfg({ kinds: o }); };
   LZ.act.quietTgl = function () { setCfg({ quiet: NC.cfg.quiet ? 0 : 1 }); };
   LZ.act.kakaoTgl = function () { setCfg({ kakao: NC.cfg.kakao ? 0 : 1 }); };
