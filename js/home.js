@@ -16,7 +16,7 @@
   LZ.clubCol = function (m) { var c = m && /^#[0-9A-Fa-f]{6}$/.test(String(m.color || '')) ? m.color : ''; return c ? ' style="--clc:' + c + '"' : ''; };
   function clubRow(m) {
     var sub = [], extra = '';
-    sub.push(LZ.seatTxt(m)); if (m.created) sub.push('함께한 지 ' + LZ.daysSince(m.created) + '일');
+    sub.push((m.captainNick ? '캡틴 ' + LZ.nim(m.captainNick) + ' · ' : '') + '회원 ' + Number(m.n !== undefined ? m.n : Math.max(0, (m.members || 0) - 1)).toLocaleString('ko-KR') + '명'); if (m.created) sub.push('함께한 지 ' + LZ.daysSince(m.created) + '일');
     if (m.reqs) sub.push('가입 신청 ' + m.reqs + '건');
     if (m.live) extra = '지금 기록 중 ' + m.live + '명'; else if (m.meet) extra = '모임 ' + m.meet; else if (m.news) extra = '소식 · ' + m.news; else if (m.chal) extra = '챌린지 ' + m.chal.name + ' ' + m.chal.mine + '/' + m.chal.goal;
     return '<button type="button" class="li clr"' + LZ.clubCol(m) + ' data-go="club" data-p=\'' + esc(JSON.stringify({ id: m.id })) + '\'><div class="t"><b>' + esc(m.name) + (m.role === 'cap' ? ' <span class="chip cap">캡틴</span>' : m.role === 'mgr' ? ' <span class="chip mgr">매니저</span>' : '') + (m.locked ? ' <span class="chip gray">' + LZ.ic('lock') + ' 잠김</span>' : m.meLock ? ' <span class="chip gray">' + LZ.ic('lock') + ' 보기만</span>' : '') + '</b><span class="su">' + esc(sub.join(' · ')) + '</span>' + (extra ? '<span class="su">' + esc(extra) + '</span>' : '') + '</div>' + LZ.ic('chev') + '</button>';
@@ -48,20 +48,42 @@
       var capN = moims.filter(function (x) { return x.role === 'cap'; }).length;
       var li = function (icon, t, s, attrs) { return '<button type="button" class="li cont" ' + attrs + '>' + LZ.ic(icon, 'gi') + '<div class="t"><b>' + t + '</b>' + (s ? '<span class="su">' + s + '</span>' : '') + '</div>' + LZ.ic('chev') + '</button>'; };
       root.innerHTML = LZ.hdr('홈') + '<div id="syncbar" class="sync wait" hidden></div><div class="wrap v8">' +
-        '<h1 class="vt hi hname">' + (adm ? '관리자님, 안녕하세요' : esc(LZ.nim(me.nick)) + ', 안녕하세요') + '</h1>' + homeAlerts(me, m) +
+        '<div class="hme"><button type="button" class="hav" data-go="me" aria-label="내 정보 · 프로필 사진">' + LZ.avatar(me, 'lg') + '</button><div class="t"><h1 class="vt hi hname">' + (adm ? '관리자님, 안녕하세요' : esc(LZ.nim(me.nick)) + ', 안녕하세요') + '</h1><span class="su">' + (adm ? '관리자' : esc(({ blue: '블루회원', red: '레드회원', gold: '골드회원', black: '블랙' })[me.tier] || '')) + (me.created ? ' · 함께한 지 ' + LZ.daysSince(me.created) + '일' : '') + '</span></div></div>' +
+        (adm ? '' : banner(me, m, book)) + homeAlerts(me, m) +
         (adm ? LZ.admNote() + '<button type="button" class="btn o" data-go="dash">' + LZ.ic('gear') + '관리 현황판</button>'
-          : '<div class="vhero"><button type="button" class="hero-t bookcard" data-act="openMyBook"><span class="t">내 수첩</span><span class="s">' + esc(book) + '</span></button>' +
-            (m.last ? '<button type="button" class="go" data-act="resume"><span>이어서 플레이 · ' + (m.last.hole + 1) + '홀<small>' + esc(m.last.name) + (m.last.store ? ' · ' + esc(m.last.store) : '') + '</small></span>' + LZ.ic('chev') + '</button>' : '') + '</div>') +
+          : '') +
         (m.round ? '<div class="sec">진행 중</div><div class="list">' + li('flag', '라운드 ' + esc(m.round.code), esc(m.round.fname), 'data-go="round" data-p=\'' + esc(JSON.stringify({ id: m.round.id })) + '\'') + '</div>' : '') +
         (adm ? '' :   // v7.1.1 §13 관리자 계정 홈에는 '내 클럽'·클럽 수를 보이지 않음
-        '<div class="sec">' + LZ.kw('내 클럽', '함께하는 클럽 ' + moims.length + '개 · 운영 ' + capN + '개' + (!me.pass ? '' : ' · 블루회원권 남음 ' + me.pass.blue.left + '장' + (me.pass.red.stored + me.pass.gold.stored ? ' · 보관 중인 회원권 ' + (me.pass.red.stored + me.pass.gold.stored) + '장' : ''))) + '</div>' +
+        '<div class="sec">' + LZ.kw('내 클럽 ' + moims.length, '함께하는 클럽 ' + moims.length + '개 · 운영 ' + capN + '개' + (!me.pass ? '' : ' · 블루회원권 남음 ' + me.pass.blue.left + '장' + (me.pass.red.stored + me.pass.gold.stored ? ' · 보관 중인 회원권 ' + (me.pass.red.stored + me.pass.gold.stored) + '장' : ''))) + '</div>' +
         '<div class="list clubs">' + (moims.length ? moims.map(clubRow).join('') : '<p class="muted" style="margin:0;padding:16px">아직 함께하는 클럽이 없어요. 아래에서 클럽을 찾거나 만들어 보세요.</p>') + '</div>' +
         '<div class="row2 mkrow"><button type="button" class="btn o" data-go="find">' + LZ.ic('search') + '클럽 찾기</button><button type="button" class="btn o" data-go="make">' + LZ.ic('plus') + '클럽 만들기</button></div>') + '</div>';
-      LZ.paintSync();
+      LZ.paintSync(); LZ.fillImgs && LZ.fillImgs(root); bannerRun();
       setTimeout(function () { if (!LZ.cacheGet('courses:' + S.br)) LZ.api('courses', {}).then(function (r) { LZ.cacheSet('courses:' + S.br, r); }).catch(function () {}); }, 600);   // 코스 목록 미리 받아 두기
-      if (LZ.firstGuide) { LZ.firstGuide = false; LZ.coach('home', [{ sel: '.bookcard', text: '<b>내 수첩</b> — 내 기록만 모아 봐요. 어느 클럽에서 적어도 기록은 하나예요.' }, { sel: moims.length ? '.clubs .li' : '[data-go="find"]', text: moims.length ? '<b>클럽</b> — 회원님들의 기록 평균과 모임·소식을 봐요.' : '<b>클럽 찾기</b> — 공개 클럽에 가입 신청하거나, 캡틴이 준 코드 6자리로 들어가요.' }, { sel: '[data-tab="courses"]', text: '<b>스크린</b> — 코스를 열고 홀마다 좌우·볼스피드를 적어요.', pos: 'above' }, { sel: '[data-tab="field"]', text: '<b>필드</b> — 점수판과 시상식. 2~5명이 쳐도 시상식이 열려요.', pos: 'above' }]); }
+      if (LZ.firstGuide) { LZ.firstGuide = false; LZ.coach('home', [{ sel: '.hbn', text: '<b>내 수첩</b> — 내 기록만 모아 봐요. 어느 클럽에서 적어도 기록은 하나예요.' }, { sel: moims.length ? '.clubs .li' : '[data-go="find"]', text: moims.length ? '<b>클럽</b> — 회원님들의 기록 평균과 모임·소식을 봐요.' : '<b>클럽 찾기</b> — 공개 클럽에 가입 신청하거나, 캡틴이 준 코드 6자리로 들어가요.' }, { sel: '[data-tab="courses"]', text: '<b>스크린</b> — 코스를 열고 홀마다 좌우·볼스피드를 적어요.', pos: 'above' }, { sel: '[data-tab="field"]', text: '<b>필드</b> — 점수판과 시상식. 2~5명이 쳐도 시상식이 열려요.', pos: 'above' }]); }
     }
   };
+  /* ───── v9 색이 흐르는 배너: 첫 장 사용법 · 5초마다 넘어가고 밀어서 넘겨요 ───── */
+  function banner(me, m, book) {
+    var P = LZ.pwa, sl = [];
+    sl.push({ c: 'b1', k: '사용법', t: '처음이세요? 3분이면 돼요', s: '코스 등록 · 플레이 · 기록 보기', a: 'data-go="guide"' });
+    sl.push(m.last ? { c: 'b2', k: '이어서', t: m.last.name, s: (m.last.hole > 8 ? (m.last.hole - 8) + '홀 (' + (m.last.hole + 1) + '홀)' : (m.last.hole + 1) + '홀') + '부터 이어서 플레이', a: 'data-act="resume"' } : { c: 'b2', k: '내 수첩', t: book, s: '코스를 열고 홀마다 적어요', a: 'data-act="openMyBook"' });
+    sl.push({ c: 'b3', k: '코스', t: '새 코스 등록 · 가져오기', s: '이름만 넣으면 18홀이 만들어져요', a: 'data-go="reg"' });
+    if (me.tier === 'blue') sl.push({ c: 'b4', k: '회원권', t: '골드회원권 알아보기', s: '클럽 만들기 · 더 많은 기능', a: 'data-go="meTier"' });
+    if (P && !P.standalone() && store.get('lz.installed') !== '1') sl.push({ c: 'b5', k: '앱처럼', t: '홈 화면에 추가', s: '아이콘으로 바로 열고 알림도 받아요', a: 'data-act="a2hs"' });
+    return '<div class="hbn" role="region" aria-roledescription="배너" aria-label="안내 배너"><div class="hbn-t">' + sl.map(function (x, i) { return '<button type="button" class="hbn-s ' + x.c + '" ' + x.a + ' aria-label="' + esc(x.k + ' · ' + x.t) + '"><span class="k">' + esc(x.k) + '</span><b class="v9one">' + esc(x.t) + '</b><span class="s v9one">' + esc(x.s) + '</span></button>'; }).join('') + '</div>' +
+      '<div class="hbn-d" aria-hidden="true">' + sl.map(function (x, i) { return '<i class="' + (i ? '' : 'on') + '"></i>'; }).join('') + '</div></div>';
+  }
+  var bnT = 0;
+  function bannerRun() {
+    clearInterval(bnT); var t = $('.hbn-t'); if (!t) return;
+    var n = t.children.length, dots = $$('.hbn-d i'), cur = 0;
+    var go = function (k) { cur = (k + n) % n; t.scrollTo({ left: cur * t.clientWidth, behavior: 'smooth' }); };
+    t.addEventListener('scroll', function () { var k = Math.round(t.scrollLeft / Math.max(1, t.clientWidth)); cur = k; dots.forEach(function (d, i) { d.classList.toggle('on', i === k); }); }, { passive: true });
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduce && n > 1) bnT = setInterval(function () { if (!document.body.contains(t)) { clearInterval(bnT); return; } if (!document.hidden) go(cur + 1); }, 5000);
+    t.addEventListener('pointerdown', function () { clearInterval(bnT); }, { passive: true });
+  }
+  LZ.act.a2hs = function () { if (LZ.pwa) LZ.pwa.guide(); };
   LZ.act.openMyBook = function () { LZ.go('courses', {}, { reset: true }); };
   LZ.act.openClubCourses = async function (el, id) { if (id && id !== '_me') store.set('lz.cmpBr', id); if (id !== S.br) { try { await LZ.api('useBranch', { br: id }); } catch (e) { LZ.toast(LZ.errText(e)); return; } } LZ.go('courses', {}, { reset: true }); };
   LZ.act.resume = async function () { var l = S.me.last; if (l.br !== S.br) { try { await LZ.api('useBranch', { br: l.br }); } catch (e) { /* 무시 */ } } LZ.go('play', { id: l.cid, hole: l.hole || 0, auto: 1 }); };   // v8 이어서 플레이: 그 홀로 바로
@@ -203,21 +225,21 @@
   }
   function wrapText(g, text, x, y, maxW, lh) { var words = text.split(' '), line = ''; words.forEach(function (w) { var t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line) { g.fillText(line, x, y); y += lh; line = w; } else line = t; }); if (line) { g.fillText(line, x, y); y += lh; } return y; }
   LZ.poster = async function (kind, o) {
-    o = o || {}; var W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H; var g = cv.getContext('2d'), F = 'Pretendard, "Noto Sans KR", sans-serif';
-    try { await document.fonts.load('800 60px Pretendard'); } catch (e) { /* 기본 글꼴 */ }
+    o = o || {}; var W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H; var g = cv.getContext('2d'), F = '"Noto Sans KR", sans-serif';
+    try { await document.fonts.load('700 60px "Noto Sans KR"'); } catch (e) { /* 기본 글꼴 */ }
     try { await LZ.need('qr'); } catch (e) { /* QR 없이 */ }
     var grad = g.createLinearGradient(0, 0, 0, H); grad.addColorStop(0, '#0B5D4B'); grad.addColorStop(1, '#063D31'); g.fillStyle = grad; g.fillRect(0, 0, W, H);
     g.fillStyle = 'rgba(255,255,255,.08)'; g.beginPath(); g.arc(W - 120, 140, 260, 0, 7); g.fill();
-    g.fillStyle = '#FBBF24'; g.font = '800 44px ' + F; g.fillText('⛳ 파크골프 공략수첩', 70, 120);
-    g.fillStyle = '#fff'; g.font = '800 76px ' + F; var y = wrapText(g, o.title, 70, 230, W - 140, 92);
+    g.fillStyle = '#FBBF24'; g.font = '700 44px ' + F; g.fillText('⛳ 파크골프 공략수첩', 70, 120);
+    g.fillStyle = '#fff'; g.font = '700 76px ' + F; var y = wrapText(g, o.title, 70, 230, W - 140, 92);
     g.font = '500 40px ' + F; g.fillStyle = 'rgba(255,255,255,.9)'; y += 10; y = wrapText(g, o.sub || '', 70, y, W - 140, 56);
     var bullets = o.bullets || []; g.font = '700 42px ' + F; y += 20;
     bullets.forEach(function (b) { g.fillStyle = '#FBBF24'; g.fillText('✓', 70, y); g.fillStyle = '#fff'; y = wrapText(g, b, 130, y, W - 200, 56) + 14; });
     var card = { x: 70, y: H - 460, w: W - 140, h: 380 }; g.fillStyle = '#fff'; g.beginPath(); g.roundRect ? g.roundRect(card.x, card.y, card.w, card.h, 32) : g.rect(card.x, card.y, card.w, card.h); g.fill();
     var q = qrCanvas(o.url, 260); if (q) g.drawImage(q, card.x + 40, card.y + 60, 260, 260);
-    g.fillStyle = '#0B5D4B'; g.font = '800 46px ' + F; wrapText(g, o.cta || '카메라로 QR을 찍으면 바로 열려요', card.x + 340, card.y + 110, card.w - 380, 58);
+    g.fillStyle = '#0B5D4B'; g.font = '700 46px ' + F; wrapText(g, o.cta || '카메라로 QR을 찍으면 바로 열려요', card.x + 340, card.y + 110, card.w - 380, 58);
     g.fillStyle = '#374151'; g.font = '500 32px ' + F; wrapText(g, o.note || '', card.x + 340, card.y + 230, card.w - 380, 44);
-    if (o.code) { g.fillStyle = '#DC2626'; g.font = '800 64px ' + F; g.fillText(o.code, card.x + 340, card.y + 330); }
+    if (o.code) { g.fillStyle = '#DC2626'; g.font = '700 64px ' + F; g.fillText(o.code, card.x + 340, card.y + 330); }
     g.fillStyle = 'rgba(255,255,255,.7)'; g.font = '500 28px ' + F; g.fillText(o.url, 70, H - 36);
     return new Promise(function (r) { cv.toBlob(r, 'image/png'); });
   };
@@ -399,9 +421,9 @@
   };
   var CD = null, AW_EMO = { trophy: '🏆', medal: '🥈', target: '🔥', note: '📝', clover: '🍀' };   // 카카오톡으로 보내는 글·그림에만 이모지
   LZ.act.cdShare = async function () {
-    var d = CD, cv = document.createElement('canvas'), W = 1080, rh = 110, H = 300 + d.awards.length * rh + 60; cv.width = W; cv.height = H; var g = cv.getContext('2d'), F = 'Pretendard, "Noto Sans KR", sans-serif';
-    g.fillStyle = '#F3F6F4'; g.fillRect(0, 0, W, H); g.fillStyle = '#0B5D4B'; g.fillRect(0, 0, W, 200); g.fillStyle = '#FBBF24'; g.font = '800 40px ' + F; g.fillText('⛳ ' + d.name, 50, 80); g.fillStyle = '#fff'; g.font = '800 60px ' + F; g.fillText('🏆 ' + d.ym + ' 시상식', 50, 160);
-    d.awards.forEach(function (a, i) { var y = 260 + i * rh; g.fillStyle = i % 2 ? '#fff' : '#E7F3EF'; g.fillRect(40, y - 50, W - 80, rh); g.font = '800 46px ' + F; g.fillStyle = '#172026'; g.fillText((AW_EMO[a.ic] || '') + ' ' + a.n, 60, y + 10); g.font = '700 38px ' + F; g.fillStyle = '#0B5D4B'; g.fillText(LZ.nim(a.who), 60, y + 50); g.font = '400 30px ' + F; g.fillStyle = '#6B7280'; g.fillText(a.v, 60 + g.measureText(LZ.nim(a.who)).width + 30, y + 50); });
+    var d = CD, cv = document.createElement('canvas'), W = 1080, rh = 110, H = 300 + d.awards.length * rh + 60; cv.width = W; cv.height = H; var g = cv.getContext('2d'), F = '"Noto Sans KR", sans-serif';
+    g.fillStyle = '#F3F6F4'; g.fillRect(0, 0, W, H); g.fillStyle = '#0B5D4B'; g.fillRect(0, 0, W, 200); g.fillStyle = '#FBBF24'; g.font = '700 40px ' + F; g.fillText('⛳ ' + d.name, 50, 80); g.fillStyle = '#fff'; g.font = '700 60px ' + F; g.fillText('🏆 ' + d.ym + ' 시상식', 50, 160);
+    d.awards.forEach(function (a, i) { var y = 260 + i * rh; g.fillStyle = i % 2 ? '#fff' : '#E7F3EF'; g.fillRect(40, y - 50, W - 80, rh); g.font = '700 46px ' + F; g.fillStyle = '#172026'; g.fillText((AW_EMO[a.ic] || '') + ' ' + a.n, 60, y + 10); g.font = '700 38px ' + F; g.fillStyle = '#0B5D4B'; g.fillText(LZ.nim(a.who), 60, y + 50); g.font = '400 30px ' + F; g.fillStyle = '#6B7280'; g.fillText(a.v, 60 + g.measureText(LZ.nim(a.who)).width + 30, y + 50); });
     g.fillStyle = '#9CA3AF'; g.font = '400 26px ' + F; g.fillText('파크골프 공략수첩 · ' + LZ.APP_URL, 50, H - 20);
     var blob = await new Promise(function (r) { cv.toBlob(r, 'image/png'); }), file = new File([blob], 'club-awards-' + d.ym + '.png', { type: 'image/png' });
     var text = '🏆 ' + d.name + ' ' + d.ym + ' 시상식\n' + d.awards.map(function (a) { return (AW_EMO[a.ic] || '') + ' ' + a.n + ': ' + LZ.nim(a.who) + ' (' + a.v + ')'; }).join('\n');
@@ -421,7 +443,7 @@
         D('회원권 · 등급 · 요금', '<div class="seatguide">' + LZ.cleanHtml((cfg.seat && cfg.seat.guide) || '') + '</div><p class="muted" style="margin:8px 0 0">등급은 가진 회원권으로 저절로 정해져요: 기간 남은 <b>골드회원권</b>이 있으면 골드회원, 아니고 <b>레드회원권</b>이 있으면 레드회원, 둘 다 없으면 블루회원 · <b>블랙</b>은 이용 정지. 회원권이 끝나기 ' + LZ.remindTxt(cfg.seat && cfg.seat.remind) + '에 주인과 캡틴에게 알려 드리고, 끝나면 바로 그 자리가 빠져요. 자리가 모자라면 늦게 들어온 분부터 보기만 해요(캡틴은 자리 밖, 매니저는 그대로). 적립 포인트는 ' + ((cfg.seat && cfg.seat.point_unit) || 10) + 'P 단위로 결제에 섞어 쓸 수 있어요.</p>') +
         D('비밀번호 · 카카오 확인', '<p style="margin:0">가입할 때 <b>카카오로 본인 확인</b>을 한 번 해요(카카오 계정 하나에 회원 한 분, 카카오에서는 회원번호만 받아요). 로그인은 닉네임과 비밀번호 4자리로 해요. 잊으면 ① 로그인 화면 "비밀번호를 잊었어요" → <b>카카오로 확인</b>하고 새 4자리 정하기 ② 관리자가 만들어 준 계정은 관리자에게 찾기 신청(임시 번호 ' + R.tmpHours + '시간). 캡틴은 비밀번호를 볼 수도 바꿀 수도 없어요.</p>') +
         D('적립 포인트 · 레벨', (function () { var r = cfg.pt; if (!r) return '<p style="margin:0">내 정보 → 적립 포인트에서 봐요.</p>'; return '<p style="margin:0 0 6px">홀 기록 새로 적기 +' + r.hole_new + 'P(홀마다) · 다듬기 +' + r.hole_fix + 'P · 새 코스 등록 +' + r.course_reg + 'P · 코스 정보 고치기 +' + r.course_fix + 'P · 내 기록을 가져감 +' + r.import + 'P × 레벨 배수 · 회원권 구매 ' + r.earn_pct + '%. 하루 최대 ' + r.day_cap + 'P(결제 적립 빼고), 1P = 1원, ' + r.unit + 'P 단위로 쓰고 ' + r.years + '년 뒤 사라져요.</p><p style="margin:0">레벨(레벨 점수 — 구매 적립은 빼고, 써도 그대로): ' + r.names.map(function (n, k) { return LZ.LVN[k][0] + ' ' + n + ' ' + Number(r.th[k]).toLocaleString('ko-KR') + ' (×' + r.mul[k] + ')'; }).join(' · ') + '</p>'; })()) +
-        D('볼스피드 기준', '<p style="margin:0 0 6px"><b>볼스피드</b>는 공이 출발하는 속도예요. <b>8~40</b>(40은 Full), 0.5씩 적어요. <b>센서 탄도</b>는 그 매장 센서 설정(더높게·높게·보통·낮게·더낮게)이고, 스크린은 굴러가는 마찰이 거의 없어 탄도가 높을수록 멀리 가요(캐리 = 날아간 거리, 런 = 떨어진 뒤 굴러간 거리).</p><p style="margin:0 0 6px">총 비거리 = (기준 거리 <b>' + LZ.fmtM(pw.d0) + 'm</b> + (볼스피드 − 모드 기준) × 1당 비거리) × (1 + 탄도 %) · 탄도 간격 <b>' + pw.gap + '%</b>(높게 +' + pw.gap + '% · 더높게 +' + LZ.r1(pw.gap * 2) + '%).</p><div class="tblwrap"><table class="tbl" style="font-size:var(--t0)"><tr><th>모드</th><th>모드<br>기준</th><th>1당<br>비거리</th><th>80m<br>높게</th><th>80m<br>보통</th><th>80m<br>낮게</th></tr>' + ['b', 'p', 'm'].map(hlRow).join('') + '</table></div><p class="muted" style="margin:6px 0 0">표시: <b>~17</b> = 17까지, <b>16~</b> = 16 넘게 17 전까지(아래 막대의 점이 정확한 자리). 기준과 1 이내면 초록 ●, 1 넘게 크면 ▲ · 작으면 ▼. 다른 모드·매장에서 칠 때는 <b>같은 거리</b>가 나오는 볼스피드로 바꿔 보여요. 그렇게 보면서 플레이 화면에서 고쳐 저장하면 그 코스의 <b>기록 기준</b>이 그 기준으로 바뀌고 다른 홀도 함께 바뀌어요. 관리자가 설정에서 바꾸면 여기도 같이 바뀌어요.</p>') +
+        D('볼스피드 기준', '<p style="margin:0 0 6px"><b>볼스피드</b>는 공이 출발하는 속도예요. <b>8~40</b>, 0.5씩 적어요. 8보다 약하면 <b>Min</b>, 40보다 세면 <b>Max</b>로 적어요. <b>센서 탄도</b>는 그 매장 센서 설정(더높게·높게·보통·낮게·더낮게)이고, 스크린은 굴러가는 마찰이 거의 없어 탄도가 높을수록 멀리 가요(캐리 = 날아간 거리, 런 = 떨어진 뒤 굴러간 거리).</p><p style="margin:0 0 6px">총 비거리 = (기준 거리 <b>' + LZ.fmtM(pw.d0) + 'm</b> + (볼스피드 − 모드 기준) × 1당 비거리) × (1 + 탄도 %) · 탄도 간격 <b>' + pw.gap + '%</b>(높게 +' + pw.gap + '% · 더높게 +' + LZ.r1(pw.gap * 2) + '%).</p><div class="tblwrap"><table class="tbl" style="font-size:var(--t0)"><tr><th>모드</th><th>모드<br>기준</th><th>1당<br>비거리</th><th>80m<br>높게</th><th>80m<br>보통</th><th>80m<br>낮게</th></tr>' + ['b', 'p', 'm'].map(hlRow).join('') + '</table></div><p class="muted" style="margin:6px 0 0">표시: <b>~17</b> = 17까지, <b>16~</b> = 16 넘게 17 전까지(아래 막대의 점이 정확한 자리). 기준과 1 이내면 초록 ●, 1 넘게 크면 ▲ · 작으면 ▼. 다른 모드·매장에서 칠 때는 <b>같은 거리</b>가 나오는 볼스피드로 바꿔 보여요. 그렇게 보면서 플레이 화면에서 고쳐 저장하면 그 코스의 <b>기록 기준</b>이 그 기준으로 바뀌고 다른 홀도 함께 바뀌어요. 관리자가 설정에서 바꾸면 여기도 같이 바뀌어요.</p>') +
         D('기록 규칙', '<ul style="margin:0;padding-left:18px"><li>위치 기준: <b>첫화면</b>(기본) · 홀컵 · 직접</li><li>좌우: <b>그대로</b> 또는 <span style="color:var(--red);font-weight:700">좌 1~10</span>·<span style="color:var(--blue);font-weight:700">우 1~10</span>칸, 볼스피드는 0.5씩. 단추를 꾹 누르면 빨리 움직여요</li><li>참고사항은 ' + R.noteMax + '자(사진은 없어요)</li><li>기록은 회원·코스마다 <b>하나</b>. 어느 클럽에서 적어도 같은 기록이고, 클럽을 나가도 그대로예요</li><li>회원님 기록은 같은 클럽 분 것만 보여요. 공개·비공개는 <b>코스마다</b> 자물쇠로 정해요(새 코스는 공개). <b>클럽 평균</b>은 이 코스를 공개한 회원님이 3명 이상일 때 보여요</li><li>코스 정보는 누구나 고치고 이력이 남아요</li></ul>') +
         D('클럽', '<ul style="margin:0;padding-left:18px"><li>가입: 초대 링크 · 클럽 코드 6자리 · 클럽 찾기 → 캡틴이 <b>승인</b>(또는 보류). ' + R.reqDays + '일 지나면 신청 정리</li><li>클럽을 만들 때 <b>회원권</b>을 넣어요(블루 1장까지 · 보관 중인 레드·골드 · 사서 넣기). 자리 = 회원권 장수 × 10, <b>캡틴은 자리에 안 들어가요</b></li><li>자리가 다 차면 승인이 안 돼요 → 캡틴·매니저가 <b>자리 늘리기</b>(레드·골드회원권 사기 또는 보관 회원권 넣기)</li><li>캡틴 바꾸기: 블루로 연 클럽은 받는 분의 블루회원권으로 바꿔 넣어요. 받는 분께 블루가 없으면 블루를 확보하거나 레드회원권을 사서 인수할 때 넘어가요. 전 캡틴은 매니저로 남아요</li><li>회원권을 넣은 분이 나갈 때 자리가 모자라면 레드는 캡틴에게 양도하고, 골드는 캡틴이 채우거나 레드를 사서 양도한 뒤 가지고 나가요</li><li>클럽을 닫으면 블루회원권은 캡틴에게, 레드·골드회원권은 각 주인의 보관함으로 돌아가요</li><li>회원 <b>내보내기</b>는 캡틴만. 내보내도 그분 기록은 그분 것</li><li>캡틴은 <b>매니저</b>를 회원권 1장의 자리 수만큼(' + (((cfg.seat && cfg.seat.seat_size) || 10)) + '명) 정할 수 있어요. 매니저는 가입 승인·소식·모임·챌린지·회원권 넣기 등 캡틴 일을 함께 하고 자리가 모자라도 잠기지 않아요. 회원 내보내기·매니저 정하기·캡틴 바꾸기·클럽 닫기는 캡틴만 해요</li><li>앱이 없는 분께는 <b>가입 안내 보내기</b>(카카오톡·문자)로 알려요</li></ul>') +
         D('필드 라운드 · 시상식 · 단체', '<div class="awlinks"><button type="button" class="sm2" data-go="awGuide">' + LZ.ic('book') + ' 시상식 안내</button><button type="button" class="sm2 o" data-act="awDemo">' + LZ.ic('trophy') + ' 미리보기</button></div><ul style="margin:0;padding-left:18px"><li><b>파크골프도, 일반골프도</b> 스코어를 기록해요: 파크골프(9홀 33 · 18홀 66)는 물론 일반골프(9홀 36 · 18홀 72)도. 개인·단체 모두 9·18·27·36홀</li><li>개별 라운드: 한 조 2~5명, 손님은 이름만. 끝내면 결과 화면에서 <b>시상식</b>을 열어 우승·준우승·장려·행운상(추첨) 등을 뽑고 결과 그림을 카카오톡으로 보내요</li><li>안 적은 홀은 파. ＋는 보기, −는 버디. 파를 고치면 ±는 그대로 두고 타수만 바뀌어요</li><li>끝낸 뒤 ' + (R.editHours || 2) + '시간까지 고칠 수 있고 고친 이력이 남아요. 주최자가 최종 확정하면 잠겨요</li><li>' + R.roundHours + '시간 지나면 저절로 끝나요</li><li><b>단체 라운드</b>: 누구나 주최. 조 1~' + (R.teamsMax || 50) + ' 사전 편성(자동 편성·대기 명단), 9/18/27/36홀(9홀 코스 1~4개), 구장 선택·새 등록, 조별 도는 순서 자동 배치</li><li>카카오톡 초대장(편성표 글+그림)을 받으면 앱에서 내 조로 바로 들어가요. 앱이 없던 분은 가입하면 손님 자리와 점수를 그대로 이어받아요</li><li>상황판 3탭(조별·개인·편성표), 집계 범위(코스·조), 시상식 1부 조별(행운상→다음에 잘 치자상→단합상→장려상→준우승→우승) · 2부 개인, 중복 수상 가능/불가, 결과 그림 공유, 도우미 2명</li></ul>') +

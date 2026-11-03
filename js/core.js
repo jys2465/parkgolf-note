@@ -66,7 +66,7 @@
   LZ.pw = function () { var p = S.pw; return p && p.p && p.gap !== undefined ? p : LZ.DEF_PW; };
   LZ.half = function (x) { return Math.round(Number(x) * 2) / 2; };
   LZ.r1 = function (x) { return Math.round(Number(x) * 10) / 10; };
-  LZ.clampP = function (x) { return Math.max(8, Math.min(40, x)); };
+  LZ.clampP = function (x) { return Math.max(7.5, Math.min(40.5, x)); };   // v9 7.5 = Min(8 미만) · 40.5 = Max(40 넘음)
   LZ.hlMul = function (h, pw) { pw = pw || LZ.pw(); return 1 + (LZ.HLV[h] || 0) * pw.gap / 100; };
   LZ.stepOf = function (g, h) { var pw = LZ.pw(); return pw[g].step * LZ.hlMul(h, pw); };
   LZ.distRaw = function (p, g, h, pw) { pw = pw || LZ.pw(); return (pw.d0 + (p - pw[g].base) * pw[g].step) * LZ.hlMul(h, pw); };
@@ -82,11 +82,12 @@
   LZ.ro = function (w) { var c = String(w).charCodeAt(String(w).length - 1) - 0xAC00; return c >= 0 && c <= 11171 && c % 28 && c % 28 !== 8 ? '으로' : '로'; };
   /** 기록 기준 글: "프로 · 더낮게" */
   LZ.modeTxt = function (m) { return LZ.MODE[m.g] + ' · ' + LZ.HL[m.h]; };
-  LZ.fmtP = function (n) { return n >= 40 ? 'Full' : String(LZ.r1(n)).replace(/\.0$/, ''); };
+  LZ.fmtP = function (n) { return n > 40 ? 'Max' : String(LZ.r1(n)).replace(/\.0$/, ''); };
   LZ.fmtM = function (m) { return String(LZ.r1(m)).replace(/\.0$/, ''); };
   /** 볼스피드 표시(#31): 정수면 "~17"(16━━●17, 17까지), 아니면 "16~"(16━●━17, 16 넘고 17 전, 점은 계산된 자리) */
   LZ.bsParts = function (v) {
-    v = LZ.r1(v); if (v >= 40) return { t: 'Full', lo: 39, hi: 40, pos: 100, int: true, v: 40 };
+    v = LZ.r1(v); if (v > 40) return { t: 'Max', lo: 40, hi: 'Max', pos: 100, int: true, v: v, max: 1 };
+    if (v < 8) return { t: 'Min', lo: 'Min', hi: 8, pos: 0, int: true, v: v, min: 1 };   // v9 8 미만 Min · 40 넘음 Max (저장은 숫자 그대로)
     var lo = Math.floor(v + 1e-9), int = Math.abs(v - lo) < 1e-9;
     return int ? { t: '~' + v, lo: v - 1, hi: v, pos: 100, int: true, v: v } : { t: lo + '~', lo: lo, hi: lo + 1, pos: Math.round((v - lo) * 100), int: false, v: v };
   };
@@ -114,6 +115,10 @@
     return out;
   };
   LZ.hn = function (n, cls) { return '<b class="hn' + (cls ? ' ' + cls : '') + '">' + n + '<small>홀</small></b>'; };
+  /** v9 코스 홀 이름: 후반은 1~9홀로 쓰고 괄호에 전체 번호 — 1홀 (10홀) */
+  LZ.hn9 = function (n, cls) { n = +n; return n > 9 && n <= 18 ? '<b class="hn' + (cls ? ' ' + cls : '') + '">' + (n - 9) + '<small>홀</small><small class="hn2">(' + n + '홀)</small></b>' : LZ.hn(n, cls); };
+  /** v9 파 표시: 파3 하늘 ● · 파4 초록 ■ · 파5 자홍 ▲ (색만으로 뜻을 전하지 않게 모양도 달라요) */
+  LZ.parMk = function (p, noTxt) { p = +p; var k = p === 3 ? ['p3', '●'] : p === 4 ? ['p4', '■'] : p >= 5 ? ['p5', '▲'] : ['p0', '']; return '<span class="parm ' + k[0] + '">' + (k[1] ? '<i aria-hidden="true">' + k[1] + '</i>' : '') + (noTxt ? '' : '파 ' + (p || '–')) + '</span>'; };
   /* 좌우: 0 = "그대로"(희미하게) · 왼쪽은 빨강 · 오른쪽은 파랑 */
   LZ.lrPlain = function (r) { var n = r.n | 0; return !n ? '그대로' : (r.d === 'L' ? '좌 ' : '우 ') + n; };
   LZ.lrTxt = function (r) { var n = r.n | 0; return '<span class="lrv ' + (!n ? 'c' : r.d === 'L' ? 'l' : 'r') + '">' + LZ.lrPlain(r) + '</span>'; };
@@ -252,7 +257,7 @@
   LZ.BAR = BAR;
   LZ.topBtns = function (o) {
     o = o || {}; var big = LZ.big.get(), name = LZ.cur().name, n = S.me && S.me.noti ? S.me.noti : 0;
-    return '<div class="tbr">' + (o.sound || '') + (o.noGa ? '' : '<button type="button" class="tb ga' + (big ? ' on' : '') + '" data-act="big" aria-pressed="' + (big ? 'true' : 'false') + '" aria-label="큰 글씨" title="큰 글씨">가<sup>+</sup></button>') +
+    return '<div class="tbr">' + (o.sound || '') + (o.noGa ? '' : '<button type="button" class="tb ga' + (big ? ' on' : '') + '" data-act="big" aria-pressed="' + (big ? 'true' : 'false') + '" aria-label="글씨 크게" title="글씨 크게"><span class="ga2" aria-hidden="true"><i>가</i>가</span></button>') +
       (S.user && name === 'home' && !o.noBell ? '<button type="button" class="tb bell" data-go="noti" aria-label="알림' + (n ? ' ' + n + '개' : '') + '" title="알림">' + LZ.ic('bell') + (n ? '<i>' + (n > 99 ? '99+' : n) + '</i>' : '') + '</button>' : '') +
       (o.btns || '') +
       (S.user && o.logout ? '<button type="button" class="tb" data-act="logout" aria-label="로그아웃" title="로그아웃">' + LZ.ic('logout') + '</button>' : '') + '</div>';

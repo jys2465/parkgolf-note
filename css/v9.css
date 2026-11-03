@@ -1,0 +1,169 @@
+/* 파크골프 공략수첩 v9.0.0 — 애플식 기준(app.css 다음에 불러요)
+ * 강조색 하나(청록 #0F766E) · 주황 #FB923C는 로고 · 배너에만 · 굵기 600/700 · 얇은 선 · 그림자 최소 */
+:root{
+  --v9-acc:#0F766E;--v9-acc-t:#E2F2EF;--v9-org:#FB923C;
+  --v9-bg:#F2F3F1;--v9-card:#FFFFFF;--v9-l1:#151816;--v9-l2:#5D6560;--v9-l3:#8B928E;--v9-sep:#DCDFDC;--v9-fill:#E8EBE8;--v9-fill2:#F4F5F3;
+  --v9-up:#C2481A;--v9-dn:#2B61BE;--v9-gold:#B5872B;
+  --v9-s1:#FBF0DC;--v9-s1l:#D4962A;--v9-s2:#DEF3EC;--v9-s2l:#2A9A78;--v9-s3:#EBE7FB;--v9-s3l:#7A67D6;
+  --v9-p3:#0284C7;--v9-p4:#15803D;--v9-p5:#BE185D;
+  --v9-bar:rgba(249,250,248,.86);
+}
+html[data-theme="dark"]{
+  --v9-acc:#35C2AE;--v9-acc-t:#0E2F2B;
+  --v9-bg:#000;--v9-card:#1B1C1B;--v9-l1:#F2F4F2;--v9-l2:#A6ACA8;--v9-l3:#7A807C;--v9-sep:#323532;--v9-fill:#2B2D2B;--v9-fill2:#242624;
+  --v9-up:#FF8A5B;--v9-dn:#7BA8FF;--v9-gold:#E1B75B;
+  --v9-s1:#3A2D16;--v9-s1l:#E3B45A;--v9-s2:#123129;--v9-s2l:#45C39A;--v9-s3:#28233F;--v9-s3l:#A596F2;
+  --v9-p3:#38BDF8;--v9-p4:#4ADE80;--v9-p5:#F472B6;
+  --v9-bar:rgba(22,23,22,.86);
+}
+body{font-family:'Noto Sans KR',-apple-system,'Apple SD Gothic Neo',sans-serif;-webkit-font-smoothing:antialiased}
+
+/* ── 위 막대: 밝은 반투명 막대 · 가운데 제목 · 청록 단추 ── */
+.top{background:var(--v9-bar)!important;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 .5px 0 var(--v9-sep)!important;color:var(--v9-l1)!important}
+.top h2{color:var(--v9-l1)!important;font-weight:600!important;text-align:center;letter-spacing:-.01em}
+.top .bk,.top .tb{color:var(--v9-acc)!important;background:transparent!important;border:0!important;box-shadow:none!important}
+.top .tb.ga.on{color:var(--v9-gold)!important}
+.top .tb svg,.top .bk svg{stroke:currentColor}
+
+/* 가 단추: 작은 가 + 큰 가 (켜지면 금색) */
+.ga2{display:inline-flex;align-items:baseline;font-weight:600;font-size:21px;line-height:1}.ga2 i{font-style:normal;font-size:12px;margin-right:1px}
+
+/* ── 아래 탭: 반투명 · 선택은 청록 ── */
+.tabs{background:var(--v9-bar)!important;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-top:.5px solid var(--v9-sep)!important}
+.tabs button{font-weight:500!important;color:var(--v9-l3)!important}
+.tabs button.on{color:var(--v9-acc)!important;font-weight:600!important}
+
+/* ── 단추: 그라데이션 · 큰 그림자 대신 평평한 청록 ── */
+.btn{background:var(--v9-acc)!important;box-shadow:none!important;border-radius:14px!important;font-weight:600!important;min-height:50px!important}
+html[data-theme="dark"] .btn{color:#04140C!important}
+
+/* ── 누르면 대답 ── */
+.v9p{transform:scale(.96);transition:transform .12s cubic-bezier(.3,.7,.4,1)!important}
+.li.v9p,.tabs button.v9p{transform:none;filter:brightness(.95)}
+#v9fx{position:fixed;inset:0;pointer-events:none;z-index:9999}
+.v9tap{position:fixed;overflow:hidden;pointer-events:none}
+.v9tap i{position:absolute;border-radius:50%;background:currentColor;opacity:.22;transform:scale(0);animation:v9rp .52s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes v9rp{to{transform:scale(1);opacity:0}}
+
+/* ── 한 줄 원칙: 한 줄 글자는 말줄임(…) 없이, 넘치면 v9.js 가 그 글자만 줄여요 ── */
+.v9n{white-space:nowrap!important;text-overflow:clip!important}
+
+/* ── 되돌리기 막대 ── */
+.v9undo{position:fixed;left:12px;right:12px;bottom:calc(92px + env(safe-area-inset-bottom,0px));max-width:456px;margin:0 auto;background:var(--v9-l1);color:var(--v9-card);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:12px;z-index:60;transform:translateY(20px);opacity:0;pointer-events:none;transition:all .25s}
+.v9undo.on{transform:none;opacity:1;pointer-events:auto}
+.v9undo span{flex:1;min-width:0}
+.v9undo button{border:0;background:none;color:var(--v9-acc-t);font:inherit;font-weight:600;cursor:pointer}
+
+@media (prefers-reduced-motion:reduce){.v9p,.v9tap i,.v9undo{transition:none!important;animation:none!important}}
+
+/* ════════ 2단계: 플레이 · 코스 · 등록 ════════ */
+/* 샷 색: 1st 모래 · 2nd 민트 · 3rd 라벤더 + 왼쪽 실선 */
+.shotr.s1,.crow2.sub.s1,.rsub.s1,.cutr.s1{background:var(--v9-s1)!important;box-shadow:inset 3px 0 0 var(--v9-s1l)}
+.shotr.s2,.crow2.sub.s2,.rsub.s2,.cutr.s2{background:var(--v9-s2)!important;box-shadow:inset 3px 0 0 var(--v9-s2l)}
+.shotr.s3,.crow2.sub.s3,.rsub.s3,.cutr.s3{background:var(--v9-s3)!important;box-shadow:inset 3px 0 0 var(--v9-s3l)}
+.shotr.s1[aria-pressed="true"]{box-shadow:inset 3px 0 0 var(--v9-s1l),inset 0 0 0 2px var(--v9-s1l)!important}
+.shotr.s2[aria-pressed="true"]{box-shadow:inset 3px 0 0 var(--v9-s2l),inset 0 0 0 2px var(--v9-s2l)!important}
+.shotr.s3[aria-pressed="true"]{box-shadow:inset 3px 0 0 var(--v9-s3l),inset 0 0 0 2px var(--v9-s3l)!important}
+.shots.n3{gap:6px}.shots.n3 .shotr{padding:7px 10px}
+.shb{font-weight:700}
+
+/* 파 표시 */
+.parm{display:inline-flex;align-items:center;gap:3px;white-space:nowrap;font-weight:600}
+.parm i{font-style:normal;font-size:.78em;line-height:1}
+.parm.p3 i{color:var(--v9-p3)}.parm.p4 i{color:var(--v9-p4)}.parm.p5 i{color:var(--v9-p5)}.parm.p0{color:var(--v9-l3)}
+
+/* 후반 홀: 1홀 (10홀) */
+.hn .hn2{margin-left:3px;font-size:.62em;font-weight:500;color:var(--v9-l3);font-style:normal}
+.hn.xl .hn2{font-size:.42em}
+
+/* 주의하기 · 조심하기 낱말 — 모두 보이고 바로 아래 기록이 붙어요 */
+.catags{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 2px}
+.cat{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:calc(13px*var(--k,1));font-weight:600;line-height:1.5;white-space:nowrap}
+.cat.u{background:color-mix(in srgb,var(--v9-up) 14%,transparent);color:var(--v9-up)}
+.cat.d{background:color-mix(in srgb,var(--v9-dn) 14%,transparent);color:var(--v9-dn)}
+.cat.z{background:color-mix(in srgb,#D97706 16%,transparent);color:#B45309}
+html[data-theme="dark"] .cat.z{color:#FBBF24}
+.hb .catags{padding:0 10px 2px}
+.v9play .catags{margin:2px 0 6px}
+.c-none{grid-column:1/-1;padding:6px 10px;color:var(--v9-l3);font-size:calc(14px*var(--k,1))}
+.dm.none{color:var(--v9-l3);font-weight:500}
+.edch{display:flex;gap:6px;flex-wrap:wrap}
+
+/* 플레이 */
+.nxp{font-size:calc(13px*var(--k,1));color:var(--v9-l2);margin:2px 0 4px;white-space:nowrap;overflow:hidden}
+button.hdist{border:0;background:none;font:inherit;color:inherit;padding:0;cursor:pointer}
+.hdempty{text-align:center;padding:28px 12px}.hdempty p{color:var(--v9-l2);line-height:1.6;margin:0 0 16px}
+.v9flash{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%) scale(1);background:var(--v9-acc);color:#fff;font-weight:700;padding:12px 22px;border-radius:16px;z-index:9998;pointer-events:none;transition:opacity .35s,transform .35s;font-size:18px;white-space:nowrap}
+.v9flash.off{opacity:0;transform:translate(-50%,-50%) scale(.94)}
+
+/* 파 · 거리 숫자판 */
+.hdpar{margin:4px 0 10px}
+.hdval{text-align:center;font-size:40px;font-weight:700;margin:6px 0 10px;font-variant-numeric:tabular-nums}.hdval small{font-size:18px;color:var(--v9-l3);margin-left:2px}
+.kpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.kpad button{min-height:52px;border:0;border-radius:14px;background:var(--v9-fill);color:var(--v9-l1);font:inherit;font-size:22px;font-weight:600;cursor:pointer}
+
+/* 끊어치기 · 주의하기 시트 */
+.cutrows{display:flex;flex-direction:column;gap:6px;margin:12px 0}
+.cutr{display:flex;align-items:center;justify-content:space-between;gap:8px;border-radius:12px;padding:8px 10px 8px 14px;min-height:52px}
+.cutr .stepper{display:flex;align-items:center;gap:6px}
+.cutr .cv{min-width:76px;min-height:44px;border:0;border-radius:10px;background:var(--v9-card);color:var(--v9-l1);font:inherit;font-weight:700;cursor:pointer}
+.cutr .r{color:var(--v9-l2);font-weight:600}
+.kw9{margin:10px 0}.kw9 .gh{font-weight:700;margin-bottom:6px}.kw9.u .gh{color:var(--v9-up)}.kw9.d .gh{color:var(--v9-dn)}.kw9.z .gh{color:#B45309}
+.kw9.dim{opacity:.5}
+.kws{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.kwb{min-height:40px;padding:0 12px;border-radius:99px;border:1px solid var(--v9-sep);background:var(--v9-card);color:var(--v9-l1);font:inherit;font-size:calc(14px*var(--k,1));cursor:pointer}
+.kw9.u .kwb.on{background:var(--v9-up);border-color:var(--v9-up);color:#fff}
+.kw9.d .kwb.on{background:var(--v9-dn);border-color:var(--v9-dn);color:#fff}
+.kw9.z .kwb.on{background:#D97706;border-color:#D97706;color:#fff}
+.kwt{max-width:180px}
+
+/* 새 코스 등록 */
+.reg9 .steps{display:flex;gap:8px;margin:4px 0 12px}
+.reg9 .steps i{font-style:normal;flex:1;text-align:center;padding:6px 0;border-radius:99px;background:var(--v9-fill);color:var(--v9-l3);font-weight:600;font-size:14px}
+.reg9 .steps i.on{background:var(--v9-acc);color:#fff}.reg9 .steps i.ok{background:var(--v9-acc-t);color:var(--v9-acc)}
+.rn .lb{display:block;margin:14px 2px 6px;font-weight:600}
+.rnprev{margin:14px 0;padding:14px;border-radius:14px;background:var(--v9-acc-t);display:flex;flex-direction:column;gap:2px}
+.rnprev span{font-size:13px;color:var(--v9-l2)}.rnprev b{font-size:20px;color:var(--v9-acc);overflow-wrap:anywhere}.rnprev em{font-style:normal;font-size:13px;color:var(--v9-up)}
+.cmb button{position:relative}.cmb button.tk{color:var(--v9-l3)}.cmb button small{display:block;font-size:10px;line-height:1;margin-top:1px}
+.rnsame .go{color:var(--v9-acc);font-weight:600;white-space:nowrap}
+/* 가져오기 */
+.cimp .li.imp{display:flex;align-items:center;gap:10px;text-align:left}
+.cimp .ck{width:22px;height:22px;border-radius:50%;border:2px solid var(--v9-sep);flex:none}
+.cimp .li.imp.on .ck{background:var(--v9-acc);border-color:var(--v9-acc);box-shadow:inset 0 0 0 3px var(--v9-card)}
+.v9foot{position:sticky;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--v9-bar);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+.cimpb{margin-top:12px;width:100%}
+
+/* ════════ 3단계: 홈 · 클럽 · 필드 · 설정 ════════ */
+.hme{display:flex;align-items:center;gap:12px;margin:6px 2px 12px}
+.hme .hav{border:0;background:none;padding:0;cursor:pointer;flex:none;border-radius:50%}
+.hme .av.lg{width:56px;height:56px;font-size:22px}
+.hme .t{min-width:0;display:flex;flex-direction:column;gap:2px}.hme .hname{margin:0!important}
+/* 색이 흐르는 배너 */
+.hbn{margin:0 0 14px}
+.hbn-t{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;border-radius:20px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.hbn-t::-webkit-scrollbar{display:none}
+.hbn-s{flex:0 0 100%;scroll-snap-align:start;min-height:128px;border:0;padding:18px 20px;text-align:left;color:#fff;display:flex;flex-direction:column;justify-content:flex-end;gap:4px;cursor:pointer;font:inherit;background-size:300% 300%;animation:v9flow 12s ease-in-out infinite}
+.hbn-s .k{font-size:13px;font-weight:600;opacity:.9;background:rgba(255,255,255,.22);align-self:flex-start;padding:2px 10px;border-radius:99px;margin-bottom:auto}
+.hbn-s b{font-size:calc(21px*var(--k,1));font-weight:700;line-height:1.3}
+.hbn-s .s{font-size:calc(14px*var(--k,1));opacity:.92}
+.hbn-s.b1{background-image:linear-gradient(120deg,#0F766E,#14B8A6,#0EA5E9,#0F766E)}
+.hbn-s.b2{background-image:linear-gradient(120deg,#FB923C,#F43F5E,#A855F7,#FB923C)}
+.hbn-s.b3{background-image:linear-gradient(120deg,#2563EB,#7C3AED,#DB2777,#2563EB)}
+.hbn-s.b4{background-image:linear-gradient(120deg,#B5872B,#E0A93B,#F97316,#B5872B)}
+.hbn-s.b5{background-image:linear-gradient(120deg,#059669,#65A30D,#0891B2,#059669)}
+@keyframes v9flow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.hbn-d{display:flex;justify-content:center;gap:6px;margin-top:8px}
+.hbn-d i{width:6px;height:6px;border-radius:99px;background:var(--v9-sep);transition:width .25s,background .25s}
+.hbn-d i.on{width:18px;background:var(--v9-acc)}
+@media (prefers-reduced-motion:reduce){.hbn-s{animation:none}}
+/* 필드 */
+.fgo2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.fgo2 .btn{margin:0}
+.tbl th .hn2{display:block;font-size:10px;font-weight:500;color:var(--v9-l3)}
+
+.tot9{align-items:center}.tot9 .r{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right}
+.tot9 .big{white-space:nowrap}.tot9 .big b{font-size:calc(22px*var(--k,1))}.tot9 small{color:var(--v9-l2);white-space:nowrap}
+.crow2 .hn .hn2{display:block;margin:1px 0 0;line-height:1;font-size:11px}
+.fgo2 .btn,.fgo2 .btn.fgo{min-width:0!important;width:auto!important;padding-left:8px!important;padding-right:8px!important;gap:6px}
+.rgrow .hn .hn2,.frow .hn .hn2{display:block;margin:1px 0 0;line-height:1;font-size:11px}
+/* 프로필 사진은 큰 제목 줄 오른쪽 · 캡틴은 회원 수에서 빼요 */
+.hme{flex-direction:row-reverse;justify-content:space-between}

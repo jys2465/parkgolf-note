@@ -64,8 +64,8 @@
       var tg = function (t, sub, sw) { return '<div class="tgl"><span>' + t + (sub ? '<span class="muted">' + sub + '</span>' : '') + '</span>' + sw + '</div>'; };
       var sg = function (t) { return '<div class="sgh">' + t + '</div>'; };
       root.innerHTML = LZ.hdr('설정', { back: true }) + '<div class="wrap v8 sett">' +
-        sg('화면') + '<div class="list">' + tg('어두운 화면', '', LZ.sw(LZ.theme.get(), 'theme')) + '</div>' +
-        sg('소리·진동') + '<div class="list">' + tg('단추 진동', '', LZ.sw(store.get('lz.buzz') !== '0', 'buzz')) +
+        sg('화면') + '<div class="list">' + tg('어두운 화면', '', LZ.sw(LZ.theme.get(), 'theme')) + tg('글씨 크게', '보통 · 크게 두 단계 · 위 막대 가 단추와 같아요', LZ.sw(LZ.big.get(), 'big')) + '</div>' +
+        sg('소리·진동') + '<div class="list">' + tg('단추 진동', '누르면 짧게 떨려요(아이폰은 눌림 움직임으로)', LZ.sw(store.get('lz.buzz') !== '0', 'buzz')) +
           grow('sound', '홀 안내 목소리', esc(v ? v.name : '휴대폰 기본') + ' · 켬·끔은 플레이 화면에서', 'data-act="voicePick"') + '</div>' +
         sg('알림') + '<div class="list" id="setNoti">' + setNotiRows(tg) + '</div>' +
         sg('계정') + '<div class="list">' +
