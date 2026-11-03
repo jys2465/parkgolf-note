@@ -49,14 +49,14 @@
       var li = function (icon, t, s, attrs) { return '<button type="button" class="li cont" ' + attrs + '>' + LZ.ic(icon, 'gi') + '<div class="t"><b>' + t + '</b>' + (s ? '<span class="su">' + s + '</span>' : '') + '</div>' + LZ.ic('chev') + '</button>'; };
       root.innerHTML = LZ.hdr('홈') + '<div id="syncbar" class="sync wait" hidden></div><div class="wrap v8">' +
         '<div class="hme"><button type="button" class="hav" data-go="me" aria-label="내 정보 · 프로필 사진">' + LZ.avatar(me, 'lg') + '</button><div class="t"><h1 class="vt hi hname">' + (adm ? '관리자님, 안녕하세요' : esc(LZ.nim(me.nick)) + ', 안녕하세요') + '</h1><span class="su">' + (adm ? '관리자' : esc(({ blue: '블루회원', red: '레드회원', gold: '골드회원', black: '블랙' })[me.tier] || '')) + (me.created ? ' · 함께한 지 ' + LZ.daysSince(me.created) + '일' : '') + '</span></div></div>' +
-        (adm ? '' : banner(me, m, book)) + homeAlerts(me, m) +
+        homeAlerts(me, m) + (adm ? '' : resumeCard(m) + banner(me, m, book) + a2hsRow()) +
         (adm ? LZ.admNote() + '<button type="button" class="btn o" data-go="dash">' + LZ.ic('gear') + '관리 현황판</button>'
           : '') +
         (m.round ? '<div class="sec">진행 중</div><div class="list">' + li('flag', '라운드 ' + esc(m.round.code), esc(m.round.fname), 'data-go="round" data-p=\'' + esc(JSON.stringify({ id: m.round.id })) + '\'') + '</div>' : '') +
         (adm ? '' :   // v7.1.1 §13 관리자 계정 홈에는 '내 클럽'·클럽 수를 보이지 않음
         '<div class="sec">' + LZ.kw('내 클럽 ' + moims.length, '함께하는 클럽 ' + moims.length + '개 · 운영 ' + capN + '개' + (!me.pass ? '' : ' · 블루회원권 남음 ' + me.pass.blue.left + '장' + (me.pass.red.stored + me.pass.gold.stored ? ' · 보관 중인 회원권 ' + (me.pass.red.stored + me.pass.gold.stored) + '장' : ''))) + '</div>' +
         '<div class="list clubs">' + (moims.length ? moims.map(clubRow).join('') : '<p class="muted" style="margin:0;padding:16px">아직 함께하는 클럽이 없어요. 아래에서 클럽을 찾거나 만들어 보세요.</p>') + '</div>' +
-        '<div class="row2 mkrow"><button type="button" class="btn o" data-go="find">' + LZ.ic('search') + '클럽 찾기</button><button type="button" class="btn o" data-go="make">' + LZ.ic('plus') + '클럽 만들기</button></div>') + '</div>';
+        '<div class="mk9"><button type="button" data-go="find">' + LZ.ic('search') + '클럽 찾기</button><button type="button" data-go="make">' + LZ.ic('plus') + '클럽 만들기</button></div>') + '</div>';
       LZ.paintSync(); LZ.fillImgs && LZ.fillImgs(root); bannerRun();
       setTimeout(function () { if (!LZ.cacheGet('courses:' + S.br)) LZ.api('courses', {}).then(function (r) { LZ.cacheSet('courses:' + S.br, r); }).catch(function () {}); }, 600);   // 코스 목록 미리 받아 두기
       if (LZ.firstGuide) { LZ.firstGuide = false; LZ.coach('home', [{ sel: '.hbn', text: '<b>내 수첩</b> — 내 기록만 모아 봐요. 어느 클럽에서 적어도 기록은 하나예요.' }, { sel: moims.length ? '.clubs .li' : '[data-go="find"]', text: moims.length ? '<b>클럽</b> — 회원님들의 기록 평균과 모임·소식을 봐요.' : '<b>클럽 찾기</b> — 공개 클럽에 가입 신청하거나, 캡틴이 준 코드 6자리로 들어가요.' }, { sel: '[data-tab="courses"]', text: '<b>스크린</b> — 코스를 열고 홀마다 좌우·볼스피드를 적어요.', pos: 'above' }, { sel: '[data-tab="field"]', text: '<b>필드</b> — 점수판과 시상식. 2~5명이 쳐도 시상식이 열려요.', pos: 'above' }]); }
@@ -66,13 +66,24 @@
   function banner(me, m, book) {
     var P = LZ.pwa, sl = [];
     sl.push({ c: 'b1', k: '사용법', t: '처음이세요? 3분이면 돼요', s: '코스 등록 · 플레이 · 기록 보기', a: 'data-go="guide"' });
-    sl.push(m.last ? { c: 'b2', k: '이어서', t: m.last.name, s: (m.last.hole > 8 ? (m.last.hole - 8) + '홀 (' + (m.last.hole + 1) + '홀)' : (m.last.hole + 1) + '홀') + '부터 이어서 플레이', a: 'data-act="resume"' } : { c: 'b2', k: '내 수첩', t: book, s: '코스를 열고 홀마다 적어요', a: 'data-act="openMyBook"' });
+    sl.push({ c: 'b2', k: '내 수첩', t: book, s: '코스를 열고 홀마다 적어요', a: 'data-act="openMyBook"' });
     sl.push({ c: 'b3', k: '코스', t: '새 코스 등록 · 가져오기', s: '이름만 넣으면 18홀이 만들어져요', a: 'data-go="reg"' });
     if (me.tier === 'blue') sl.push({ c: 'b4', k: '회원권', t: '골드회원권 알아보기', s: '클럽 만들기 · 더 많은 기능', a: 'data-go="meTier"' });
-    if (P && !P.standalone() && store.get('lz.installed') !== '1') sl.push({ c: 'b5', k: '앱처럼', t: '홈 화면에 추가', s: '아이콘으로 바로 열고 알림도 받아요', a: 'data-act="a2hs"' });
     return '<div class="hbn" role="region" aria-roledescription="배너" aria-label="안내 배너"><div class="hbn-t">' + sl.map(function (x, i) { return '<button type="button" class="hbn-s ' + x.c + '" ' + x.a + ' aria-label="' + esc(x.k + ' · ' + x.t) + '"><span class="k">' + esc(x.k) + '</span><b class="v9one">' + esc(x.t) + '</b><span class="s v9one">' + esc(x.s) + '</span></button>'; }).join('') + '</div>' +
       '<div class="hbn-d" aria-hidden="true">' + sl.map(function (x, i) { return '<i class="' + (i ? '' : 'on') + '"></i>'; }).join('') + '</div></div>';
   }
+  /** 이어서 플레이: 코스 이름 · 진행 막대 · “7홀 ›” */
+  function resumeCard(m) {
+    var l = m.last; if (!l) return '';
+    var n = l.n || 18, f = l.filled || 0, hn = l.hole > 8 ? (l.hole - 8) + '홀 (' + (l.hole + 1) + ')' : (l.hole + 1) + '홀';
+    return '<div class="rsm9"><span class="k">이어서 플레이</span><b class="v9one">' + esc(l.name) + '</b><div class="rw"><span class="bar"><i style="width:' + Math.round(f / n * 100) + '%"></i></span><span class="n">' + f + ' / ' + n + '홀</span><button type="button" class="go" data-act="resume" aria-label="' + esc(l.name) + ' ' + hn + '부터 이어서 플레이">' + hn + ' ›</button></div></div>';
+  }
+  /** 홈 화면에 추가 줄(× 로 닫으면 다시 안 보여요) */
+  function a2hsRow() {
+    var P = LZ.pwa; if (!P || P.standalone() || store.get('lz.installed') === '1' || store.get('lz.a2hsOff') === '1') return '';
+    return '<div class="a2h9"><span class="pl">' + LZ.ic('plus') + '</span><div class="t"><b>홈 화면에 추가</b><small>설치 없이 앱처럼 열려요</small></div><button type="button" class="how" data-act="a2hs">방법</button><button type="button" class="x" data-act="a2hsOff" aria-label="닫기">' + LZ.ic('x') + '</button></div>';
+  }
+  LZ.act.a2hsOff = function (el) { store.set('lz.a2hsOff', '1'); var r = el.closest('.a2h9'); if (r) r.remove(); };
   var bnT = 0;
   function bannerRun() {
     clearInterval(bnT); var t = $('.hbn-t'); if (!t) return;

@@ -23,7 +23,7 @@
         (back ? '<p class="lsub">다시 오셨네요</p><div class="lwho">' + av + '<b>' + esc(who.nick) + (who.nick === '관리자' ? '' : ' <span>회원님</span>') + '</b><input type="text" id="nick" class="nick-ghost" value="' + esc(last) + '" autocomplete="username" maxlength="8" tabindex="-1" aria-label="닉네임"></div>'
           : '<p class="lsub">홀마다 나만의 공략을 적어 두세요</p><label class="sr" for="nick">닉네임</label><input type="text" id="nick" class="lnick" value="' + esc(last) + '" placeholder="닉네임" autocomplete="username" maxlength="8" autocapitalize="off" spellcheck="false">') +
         padHtml(4) + '<p class="lhint" id="lhint">4자리를 누르면 바로 들어가요</p>' +
-        '<a href="#" class="lforgot" data-act="forgot">비밀번호를 잊었어요</a>' +
+        '<a href="#" class="lforgot" data-act="forgot">비밀번호 찾기</a>' +
         '<hr class="ldiv" aria-hidden="true">' +   /* v7.1.0 §15: "비밀번호를 잊었어요"와 다음 줄 사이 긴 구분선(처음 로그인 화면도 같은 자리) */
         (back ? '<a href="#" class="lother" data-act="otherUser">다른 사람으로 로그인</a>' : '') +
         (inv ? '<div class="ljoin" style="margin-top:4px"><div style="flex:1"><b>클럽 초대를 받으셨어요</b><div class="muted">로그인하거나 가입하면 그 클럽에 가입 신청이 돼요.</div></div></div>' : '') +

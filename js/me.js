@@ -35,16 +35,16 @@
       var u = S.user, m = S.me, ad = m.admin || {}, pi = m.points || {}, adm = u.kind === 'admin', nx = pi.next, so = pi.soon;
       var nf = function (n) { return Number(n || 0).toLocaleString('ko-KR'); };
       root.innerHTML = LZ.hdr('내 정보') + '<div class="wrap v8">' +
-        '<div class="prof"><button type="button" class="avbtn" data-act="avatarMenu" aria-label="프로필 사진 바꾸기">' + LZ.avatar(u, 'big') + '</button><div class="pt"><div class="nm">' + esc(adm ? '관리자' : u.nick) + '</div><div class="su tier">' + esc(tierShort(u)) + '</div></div></div>' +
-        (adm ? '<div class="list"><button type="button" class="li cont" data-go="dash">' + LZ.ic('gear', 'gi') + '<div class="t"><b>관리자</b><span class="su">결제 ' + (ad.pay || 0) + ' · 환불 ' + (ad.refund || 0) + ' · 비밀번호 ' + (ad.pw || 0) + ' · 문의 ' + (ad.qna || 0) + (ad.gold ? ' · 골드 만기 ' + ad.gold : '') + '</span></div>' + LZ.ic('chev') + '</button></div>'
+        '<div class="me9"><div class="prof"><button type="button" class="avbtn" data-act="avatarMenu" aria-label="프로필 사진 바꾸기">' + LZ.avatar(u, 'big') + '</button><div class="pt"><div class="nm">' + esc(adm ? '관리자' : u.nick) + '</div><div class="su tier">' + esc(tierShort(u)) + (pi.lvName && !adm ? ' · ' + esc(pi.lvName) : '') + '</div>' + (u.created ? '<div class="su">가입 ' + LZ.fmtDate(u.created) + '</div>' : '') + ((u.tier === 'red' || u.tier === 'gold') && u.end ? '<div class="su">' + (u.tier === 'red' ? '레드' : '골드') + ' ~' + LZ.fmtYmd(u.end) + '</div>' : '') + '</div></div>' +
+        (adm ? '</div><div class="list"><button type="button" class="li cont" data-go="dash">' + LZ.ic('gear', 'gi') + '<div class="t"><b>관리자</b><span class="su">결제 ' + (ad.pay || 0) + ' · 환불 ' + (ad.refund || 0) + ' · 비밀번호 ' + (ad.pw || 0) + ' · 문의 ' + (ad.qna || 0) + (ad.gold ? ' · 골드 만기 ' + ad.gold : '') + '</span></div>' + LZ.ic('chev') + '</button></div>'
           : '<button type="button" class="pts ptwo" data-go="mePoints"><span><em>적립 포인트</em><b>' + nf(pi.bal) + 'P</b><small>' + (so && so.amt && so.left <= 30 ? '곧 사라질 ' + nf(so.amt) + 'P' + (so.date ? ' · ' + LZ.fmtYmd(so.date) : '') : '회원권 살 때 써요') + '</small></span>' +
-            '<span><em>레벨 점수</em><b>' + nf(pi.lvp) + '점</b><small>' + esc(pi.lvName || '새싹') + ' · ' + (nx ? esc(nx.name) + '까지 ' + nf(nx.need) + '점' : '가장 높은 레벨') + '</small></span></button>' +
-            '<div class="kwrow">' + LZ.kw('P와 점은 달라요', '<b>적립 포인트(P)</b>는 회원권 살 때 쓰는 돈이에요. <b>레벨 점수(점)</b>는 레벨을 정해요(새싹 · 버디 · 이글 · 봉황 · 지존).') + '</div>') +
+            '<span><em>레벨 점수</em><b>' + nf(pi.lvp) + '점</b><small>' + (nx ? esc(nx.name) + '까지 ' + nf(nx.need) + '점' : '가장 높은 레벨') + '</small></span></button>' +
+            '</div><div class="kwrow">' + LZ.kw('P와 점은 달라요', '<b>적립 포인트(P)</b>는 회원권 살 때 쓰는 돈이에요. <b>레벨 점수(점)</b>는 레벨을 정해요(새싹 · 버디 · 이글 · 봉황 · 지존).') + '</div>') +
         '<div class="list">' +
         grow('seat', '내 회원권', esc(tierShort(u)) + (passShort(u) ? ' · ' + esc(passShort(u)) + '장' : '') + (m.pending ? ' · 결제 ' + esc(m.pending.stName) : ''), 'data-go="meTier"') +
         grow('star', '포인트 내역', nf(pi.bal) + 'P · ' + esc(pi.lvName || '새싹') + ' ' + nf(pi.lvp) + '점', 'data-go="mePoints"') +
-        (adm ? '' : grow('club', '친구 초대', '클럽 고르기 · 링크 보내기', 'data-act="inviteKakao"')) +
-        '</div><div class="list">' + grow('gear', '설정', '화면 · 소리 · 알림 · 계정 · 도움말', 'data-go="settings"') + '</div></div>';
+        '</div><div class="list">' + grow('gear', '설정', '화면 · 소리 · 알림 · 계정 · 도움말', 'data-go="settings"') + '</div>' +
+        (adm ? '' : '<button type="button" class="btn g inv9" data-act="inviteKakao">친구 초대</button><p class="fn9" style="text-align:center">초대 링크로 클럽에 바로 들어와요</p>') + '</div>';
     }
   };
   /** v8.1 설정 › 알림(설계안): 앱 푸시 · 카카오톡(캡틴·매니저) · 알림 종류 ▸ · 조용한 시간. 켬·끔은 알림 종류 화면과 같은 설정(ncfg)이에요 */
@@ -64,7 +64,7 @@
       var tg = function (t, sub, sw) { return '<div class="tgl"><span>' + t + (sub ? '<span class="muted">' + sub + '</span>' : '') + '</span>' + sw + '</div>'; };
       var sg = function (t) { return '<div class="sgh">' + t + '</div>'; };
       root.innerHTML = LZ.hdr('설정', { back: true }) + '<div class="wrap v8 sett">' +
-        sg('화면') + '<div class="list">' + tg('어두운 화면', '', LZ.sw(LZ.theme.get(), 'theme')) + tg('글씨 크게', '보통 · 크게 두 단계 · 위 막대 가 단추와 같아요', LZ.sw(LZ.big.get(), 'big')) + '</div>' +
+        sg('화면') + '<div class="list"><div class="tgl seg9w">' + LZ.seg([['auto', '기기 따라'], ['light', '밝게'], ['dark', '어둡게']], LZ.v9 ? LZ.v9.themeMode() : 'auto', 'themeSet', 's') + '</div>' + tg('글씨 크게', '보통 · 크게 두 단계 · 위 막대 가 단추와 같아요', LZ.sw(LZ.big.get(), 'big')) + '</div>' +
         sg('소리·진동') + '<div class="list">' + tg('단추 진동', '누르면 짧게 떨려요(아이폰은 눌림 움직임으로)', LZ.sw(store.get('lz.buzz') !== '0', 'buzz')) +
           grow('sound', '홀 안내 목소리', esc(v ? v.name : '휴대폰 기본') + ' · 켬·끔은 플레이 화면에서', 'data-act="voicePick"') + '</div>' +
         sg('알림') + '<div class="list" id="setNoti">' + setNotiRows(tg) + '</div>' +
@@ -475,7 +475,7 @@
 
 
   /* 알림 설정 */
-  var NK = { pay: '결제 신청', refund: '환불 신청', qna: '문의', pw: '비밀번호 찾기 신청', mreq: '클럽 가입 신청', club: '클럽 소식', course: '코스 정보 변경', round: '라운드', join: '새 회원', fb: '회원 의견', payok: '결제 승인', digest: '주간 점검·월간 요약' };
+  var NK = { seat: '회원권 기간', gold: '골드회원권 연장', point: '적립 포인트', acct: '계정 안내', pay: '결제 신청', refund: '환불 신청', qna: '문의', pw: '비밀번호 찾기 신청', mreq: '클럽 가입 신청', club: '클럽 소식', course: '코스 정보 변경', round: '라운드', join: '새 회원', fb: '회원 의견', payok: '결제 승인', digest: '주간 점검·월간 요약' };
   LZ.screens.notiCfg = {
     tab: 'me',
     show: async function (p, root, alive) {

@@ -262,11 +262,15 @@
       (o.btns || '') +
       (S.user && o.logout ? '<button type="button" class="tb" data-act="logout" aria-label="로그아웃" title="로그아웃">' + LZ.ic('logout') + '</button>' : '') + '</div>';
   };
+  LZ.titleOf = {}; LZ.ROOT9 = ['home', 'courses', 'field', 'me'];
   LZ.hdr = function (title, o) {
     o = o || {};
     var name = LZ.cur().name, bar = o.bar || BAR[name] || title, head = !o.nosub && String(title) !== String(bar);
-    return '<div class="top">' + (o.back ? '<button type="button" class="bk" data-act="back" aria-label="' + esc(o.backLabel || '뒤로') + '">' + LZ.ic('back') + '</button>' : '') + '<h2>' + esc(bar) + '</h2>' + LZ.topBtns(o) +
-      '</div>' + (head || o.right ? '<div class="subh">' + (head ? '<h1 class="vt">' + esc(title) + '</h1>' : '') + (o.right ? '<div class="acts">' + o.right + '</div>' : '') + '</div>' : '');
+    LZ.titleOf[name] = String(bar);
+    var prev = LZ.stack && LZ.stack.length > 1 ? LZ.stack[LZ.stack.length - 2] : null, bl = o.back ? (o.backText || (prev && prev.name !== name && LZ.titleOf[prev.name]) || '') : ''; if (bl.length > 7) bl = '';
+    var root = !o.back && LZ.ROOT9.indexOf(name) >= 0;   // v9 아래 탭 첫 화면: 위 막대는 비우고 본문에 큰 제목
+    return '<div class="top' + (root ? ' root9' : '') + '">' + (o.back ? '<button type="button" class="bk' + (bl ? ' bk9' : '') + '" data-act="back" aria-label="' + esc(o.backLabel || (bl ? bl + '(으)로 돌아가기' : '뒤로')) + '">' + LZ.ic('back') + (bl ? '<span class="bkt">' + esc(bl) + '</span>' : '') + '</button>' : '') + '<h2>' + (root ? '' : esc(bar)) + '</h2>' + LZ.topBtns(o) +
+      '</div>' + (root ? '<h1 class="lt9">' + esc(bar) + '</h1>' : '') + (head || o.right ? '<div class="subh">' + (head ? '<h1 class="vt">' + esc(title) + '</h1>' : '') + (o.right ? '<div class="acts">' + o.right + '</div>' : '') + '</div>' : '');
   };
   /** v8 ⓘ / ▾ 낱말: 누르면 바로 아래 열리고, 다시 누르면 닫혀요 */
   var kwSeq = 0;

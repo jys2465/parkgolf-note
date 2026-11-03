@@ -34,7 +34,7 @@
 
   /* ───── 2. 한 줄 맞춤: 한 줄로 써야 하는 글자가 넘치면 그 글자만 조금(최소 72%) 줄여요 ───── */
   var ONE = [
-    '.top h2', '.tb', '.tabs button span', '.tabs button', '.btn', '.btn2', '.chip', '.seg button', '.pill', '.v9one', '.ccard .ct b', '.cimp .li b', '.rnsame .li b', '.nxp'
+    '.top h2', '.tb', '.tabs button span', '.tabs button', '.btn', '.btn2', '.chip', '.seg button', '.pill', '.v9one', '.ccard .ct b', '.ct9', '.cimp .li b', '.rnsame .li b', '.nxp'
   ].join(',');
   V9.fit = function (root) {
     root = root || document;
@@ -78,6 +78,17 @@
   /* ───── 5. 볼스피드 보이는 값: 8 미만 Min · 40 초과 Max (저장은 숫자 그대로) ───── */
   V9.SP_MIN = 8; V9.SP_MAX = 40;
   LZ.spShow = function (v) { if (v === null || v === undefined || v === '') return '–'; v = Number(v); if (v < V9.SP_MIN) return 'Min'; if (v > V9.SP_MAX) return 'Max'; return String(v); };
+
+  /* ───── 7. 화면 밝기: 기기 따라(기본) · 밝게 · 어둡게 — 앱을 열 때마다 다시 맞춰요 ───── */
+  V9.themeMode = function () { var m = store.get('lz.themeMode'); if (m === 'light' || m === 'dark' || m === 'auto') return m; var old = store.get('lz.theme'); return old === 'dark' || old === 'light' ? old : 'auto'; };
+  V9.themeApply = function () {
+    var m = V9.themeMode(), dark = m === 'dark' || (m === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    var t = document.querySelector('meta[name="theme-color"]'); if (t) t.content = dark ? '#121917' : '#F2F3F1';
+  };
+  LZ.act.themeSet = function (el, v) { store.set('lz.themeMode', v); V9.themeApply(); if (LZ.redraw) LZ.redraw(); };
+  V9.themeApply();
+  try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () { if (V9.themeMode() === 'auto') V9.themeApply(); }); } catch (x) { /* 오래된 브라우저 */ }
 
   /* ───── 6. 후반 홀 이름: “1홀 (10홀)” ───── */
   LZ.holeName = function (n) { n = Number(n); return n > 9 ? (n - 9) + '홀 (' + n + '홀)' : n + '홀'; };
