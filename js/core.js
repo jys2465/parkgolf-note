@@ -487,7 +487,7 @@
   /* 깊은 링크: #club:id · #course:id · #round:id · #event:code · #inv=코드 · #pwreq 등 */
   LZ.goTo = function (to) {
     to = String(to || ''); var m = /^([a-z]+)(?::(.*))?$/.exec(to); if (!m) return;
-    var map = { home: ['home'], me: ['me'], pay: [LZ.S.user && LZ.S.user.kind === 'admin' ? 'pays' : 'meTier'], join: ['join'], courses: ['courses'], club: ['club', { id: m[2] }], reqs: ['club', { id: m[2], reqs: 1 }], keep: ['clubKeep', { id: m[2] }], course: ['holes', { id: m[2] }], round: ['round', { id: m[2] }], event: ['event', { code: m[2] }], find: ['find'], qna: ['qnaList'], notices: ['notices'], dash: ['dash'], members: ['members'], pwreq: ['pwreqs'], refund: ['refunds'], fb: ['feedbacks'], meTier: ['meTier'], goldList: ['goldList'], points: ['mePoints'] };
+    var map = { myclubs: ['myclubs'], home: ['home'], me: ['me'], pay: [LZ.S.user && LZ.S.user.kind === 'admin' ? 'pays' : 'meTier'], join: ['join'], courses: ['courses'], club: ['club', { id: m[2] }], reqs: ['club', { id: m[2], reqs: 1 }], keep: ['clubKeep', { id: m[2] }], course: ['holes', { id: m[2] }], round: ['round', { id: m[2] }], event: ['event', { code: m[2] }], find: ['find'], qna: ['qnaList'], notices: ['notices'], dash: ['dash'], members: ['members'], pwreq: ['pwreqs'], refund: ['refunds'], fb: ['feedbacks'], meTier: ['meTier'], goldList: ['goldList'], points: ['mePoints'] };
     var x = map[m[1]]; if (x) LZ.go(x[0], x[1] || {});
   };
   /* 단추 공통 처리: data-go / data-tab / data-act */

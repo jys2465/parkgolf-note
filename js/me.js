@@ -364,7 +364,7 @@
         else if (buy && body.give) html += '<div class="card"><span class="su">나가며 캡틴에게 양도</span><div><b class="big1">' + esc(q ? q.label : '') + '</b></div><div class="su" style="margin-top:6px">레드회원권은 캡틴 것이 되어 클럽에 남아요.' + (body.leave ? ' 관리자가 확인하면 <b>골드회원권을 가지고 클럽에서 나가져요</b>.' : '') + '</div></div>';
         else if (buy) {
           var dest = d.clubs.filter(function (c) { return !c.locked || c.none; });
-          html += '<div class="card"><label class="lb" for="payClub" style="margin-top:0">넣을 곳</label><select id="payClub" class="in"><option value="">보관(나중에 클럽에 넣기)</option>' + dest.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === body.mid ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select>' +
+          html += '<div class="card"><label class="lb" for="payClub" style="margin-top:0">넣을 곳</label><select id="payClub" class="in"><option value="">보관 · 나중에 넣기</option>' + dest.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === body.mid ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select>' +
             (body.mid && q ? '<div class="su" style="margin-top:6px">회원 ' + q.n + '명(캡틴 빼고) · 지금 ' + q.before + '자리 · 한 클럽 ' + sc.seat_max + '자리까지</div>' : '<div class="su" style="margin-top:6px">보관한 회원권은 클럽을 만들 때 넣거나, 내가 캡틴·매니저인 클럽에 나중에 넣어요.</div>') + '</div>';
         } else if (plan === 'renew' && q) {
           html += '<div class="card"><span class="su">연장할 회원권</span><div><b class="big1">' + esc(q.label) + '</b></div><div class="su" style="margin-top:6px">지금 ' + LZ.fmtYmd(q.before) + '까지 → <b class="acc1">' + LZ.fmtYmd(q.end) + '까지</b> (끝나는 날부터)</div>' +

@@ -54,9 +54,9 @@
           : '') +
         (m.round ? '<div class="sec">진행 중</div><div class="list">' + li('flag', '라운드 ' + esc(m.round.code), esc(m.round.fname), 'data-go="round" data-p=\'' + esc(JSON.stringify({ id: m.round.id })) + '\'') + '</div>' : '') +
         (adm ? '' :   // v7.1.1 §13 관리자 계정 홈에는 '내 클럽'·클럽 수를 보이지 않음
-        '<div class="sec">' + LZ.kw('내 클럽 ' + moims.length, '함께하는 클럽 ' + moims.length + '개 · 운영 ' + capN + '개' + (!me.pass ? '' : ' · 블루회원권 남음 ' + me.pass.blue.left + '장' + (me.pass.red.stored + me.pass.gold.stored ? ' · 보관 중인 회원권 ' + (me.pass.red.stored + me.pass.gold.stored) + '장' : ''))) + '</div>' +
-        '<div class="list clubs">' + (moims.length ? moims.map(clubRow).join('') : '<p class="muted" style="margin:0;padding:16px">아직 함께하는 클럽이 없어요. 아래에서 클럽을 찾거나 만들어 보세요.</p>') + '</div>' +
-        '<div class="mk9"><button type="button" data-go="find">' + LZ.ic('search') + '클럽 찾기</button><button type="button" data-go="make">' + LZ.ic('plus') + '클럽 만들기</button></div>') + '</div>';
+        '<div class="hdrr9"><span>내 클럽</span><button type="button" data-go="myclubs">' + (moims.length ? '모두 보기 ' + moims.length : '찾기 · 만들기') + LZ.ic('chev') + '</button></div>' +
+        (moims.length ? '<div class="list clubs clubs9">' + moims.slice(0, 2).map(clubRow).join('') + '</div>' + (moims.length > 2 ? '<button type="button" class="lnk more9" data-go="myclubs">' + (moims.length - 2) + '개 더 보기</button>' : '')
+          : '<div class="list clubs clubs9"><p class="muted" style="margin:0;padding:16px">아직 함께하는 클럽이 없어요.</p></div><div class="mk9"><button type="button" data-go="find">' + LZ.ic('search') + '클럽 찾기</button><button type="button" data-go="make">' + LZ.ic('plus') + '클럽 만들기</button></div>')) + '</div>';
       LZ.paintSync(); LZ.fillImgs && LZ.fillImgs(root); bannerRun();
       setTimeout(function () { if (!LZ.cacheGet('courses:' + S.br)) LZ.api('courses', {}).then(function (r) { LZ.cacheSet('courses:' + S.br, r); }).catch(function () {}); }, 600);   // 코스 목록 미리 받아 두기
       if (LZ.firstGuide) { LZ.firstGuide = false; LZ.coach('home', [{ sel: '.hbn', text: '<b>내 수첩</b> — 내 기록만 모아 봐요. 어느 클럽에서 적어도 기록은 하나예요.' }, { sel: moims.length ? '.clubs .li' : '[data-go="find"]', text: moims.length ? '<b>클럽</b> — 회원님들의 기록 평균과 모임·소식을 봐요.' : '<b>클럽 찾기</b> — 공개 클럽에 가입 신청하거나, 캡틴이 준 코드 6자리로 들어가요.' }, { sel: '[data-tab="courses"]', text: '<b>스크린</b> — 코스를 열고 홀마다 좌우·볼스피드를 적어요.', pos: 'above' }, { sel: '[data-tab="field"]', text: '<b>필드</b> — 점수판과 시상식. 2~5명이 쳐도 시상식이 열려요.', pos: 'above' }]); }
@@ -99,6 +99,19 @@
   LZ.act.openClubCourses = async function (el, id) { if (id && id !== '_me') store.set('lz.cmpBr', id); if (id !== S.br) { try { await LZ.api('useBranch', { br: id }); } catch (e) { LZ.toast(LZ.errText(e)); return; } } LZ.go('courses', {}, { reset: true }); };
   LZ.act.resume = async function () { var l = S.me.last; if (l.br !== S.br) { try { await LZ.api('useBranch', { br: l.br }); } catch (e) { /* 무시 */ } } LZ.go('play', { id: l.cid, hole: l.hole || 0, auto: 1 }); };   // v8 이어서 플레이: 그 홀로 바로
   LZ.act.homeReqs = function () { var m = (S.me.moims || []).filter(function (x) { return (x.role === 'cap' || x.role === 'mgr') && x.reqs; })[0] || (S.me.moims || []).filter(function (x) { return x.role === 'cap' || x.role === 'mgr'; })[0]; if (m) LZ.go('club', { id: m.id, reqs: 1 }); else LZ.go('home'); };
+
+  /* ───── v9 내 클럽(따로 목록): 내 클럽 전부 · 8px 색 띠 · 클럽 찾기 · 만들기 ───── */
+  LZ.screens.myclubs = {
+    tab: 'home',
+    show: async function (p, root, alive) {
+      if (!S.me) { root.innerHTML = LZ.hdr('내 클럽', { back: true }) + LZ.skeleton(4); await LZ.refreshMe(); if (!alive()) return; }
+      var me = S.user, moims = S.me.moims || [], capN = moims.filter(function (x) { return x.role === 'cap'; }).length, sc = S.me.seat || {};
+      root.innerHTML = LZ.hdr('내 클럽', { back: true }) + '<div class="wrap">' +
+        '<h1 class="ct9">내 클럽 ' + moims.length + '개</h1><p class="cap9">운영 ' + capN + '개 · 만들기는 ' + (sc.free_clubs || 2) + '개까지 무료' + (me.pass ? ' · 블루회원권 남음 ' + me.pass.blue.left + '장' : '') + '</p>' +
+        (moims.length ? '<div class="list clubs clubs9">' + moims.map(clubRow).join('') + '</div>' : '<div class="list"><p class="muted" style="margin:0;padding:16px">아직 함께하는 클럽이 없어요. 아래에서 찾거나 만들어 보세요.</p></div>') +
+        '<div class="mk9"><button type="button" data-go="find">' + LZ.ic('search') + '클럽 찾기</button><button type="button" data-go="make">' + LZ.ic('plus') + '클럽 만들기</button></div></div>';
+    }
+  };
 
   /* ───── 클럽 ───── */
   var CL = { d: null };

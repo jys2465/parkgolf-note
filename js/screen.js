@@ -73,7 +73,7 @@
   function cRow(c) {
     var st = cStat(c), sub = c.n + '홀 · ' + (st === 'done' ? '기록 완료' : st === 'ing' ? c.mine + '홀 기록' : '미기록') + (c.filledH !== undefined && c.filledH < 18 && c.n === 18 ? ' · 파·거리 ' + c.filledH + '/18' : '');
     return '<div class="crow9" data-nm="' + esc(String(c.name).toLowerCase().replace(/\s+/g, '')) + '">' + ring(c) +
-      '<button type="button" class="l" data-act="openC" data-v="' + esc(c.id) + '"><b class="v9one">' + esc(c.name) + '</b><small>' + sub + '</small></button>' +
+      '<button type="button" class="l" data-act="openC" data-v="' + esc(c.id) + '"><b class="v9one">' + esc(c.name) + '</b><small>' + sub + '</small><small class="meta9"><span class="st9" aria-label="난이도 ' + c.stars + '">' + LZ.stars(c.stars) + '</span> · 등록 ' + esc(c.reg || '–') + ' · ' + LZ.fmtDate(c.created) + '</small></button>' +
       '<button type="button" class="lk' + (c.pub ? '' : ' off') + '" data-act="cPub" data-v="' + esc(c.id) + '" aria-label="' + (c.pub ? '공개 중 · 누르면 비공개' : '비공개 · 누르면 공개') + '">' + LZ.ic(c.pub ? 'unlock' : 'lock') + '</button></div>';
   }
   /* 정렬 창: 보기(전체 · 완료 · 기록 중 · 안 함) + 정렬 하나로 */

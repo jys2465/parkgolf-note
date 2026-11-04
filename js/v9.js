@@ -11,11 +11,19 @@
   var TAP = 'button,a[href],[data-act],[data-go],.li,.chip,.seg>*,[role="button"]';
   var pressed = null, fxLayer = null;
   function layer() { if (!fxLayer || !fxLayer.isConnected) { fxLayer = document.createElement('div'); fxLayer.id = 'v9fx'; fxLayer.setAttribute('aria-hidden', 'true'); document.body.appendChild(fxLayer); } return fxLayer; }
-  function light(el) { var bg = getComputedStyle(el).backgroundColor, m = bg.match(/\d+(\.\d+)?/g); if (!m || (m[3] !== undefined && +m[3] < 0.3)) return false; var l = (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]); return l < 140; }
+  /** 물결 색: 단추 자신이나(투명하면) 감싼 바탕이 어두우면 흰 물결, 밝으면 청록 물결 */
+  function light(el) {
+    for (var x = el; x && x.nodeType === 1; x = x.parentElement) {
+      var m = getComputedStyle(x).backgroundColor.match(/\d+(\.\d+)?/g); if (!m) continue;
+      if (m[3] !== undefined && +m[3] < 0.3) { if (getComputedStyle(x).backgroundImage !== 'none') return true; continue; }
+      return (0.299 * m[0] + 0.587 * m[1] + 0.114 * m[2]) < 140;
+    }
+    return document.documentElement.dataset.theme === 'dark';
+  }
   function ripple(el, e) {
     var r = el.getBoundingClientRect(); if (!r.width || !r.height) return;
     var fx = document.createElement('div'); fx.className = 'v9tap';
-    fx.style.cssText = 'left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;height:' + r.height + 'px;border-radius:' + getComputedStyle(el).borderRadius + ';color:' + (light(el) ? '#fff' : 'var(--ink,#111)');
+    fx.style.cssText = 'left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;height:' + r.height + 'px;border-radius:' + getComputedStyle(el).borderRadius + ';color:' + (light(el) ? '#fff' : 'var(--v9-acc,#0F766E)');
     var d = Math.max(r.width, r.height) * 2.2, c = document.createElement('i');
     c.style.cssText = 'width:' + d + 'px;height:' + d + 'px;left:' + ((e.clientX || r.left + r.width / 2) - r.left - d / 2) + 'px;top:' + ((e.clientY || r.top + r.height / 2) - r.top - d / 2) + 'px';
     fx.appendChild(c); layer().appendChild(fx); setTimeout(function () { fx.remove(); }, 560);
@@ -28,6 +36,7 @@
     var el = e.target.closest(TAP); if (!el || el.disabled || el.getAttribute('aria-disabled') === 'true') return;
     if (el.closest('input,textarea,select')) return;
     pressed = el; el.classList.add('v9p'); ripple(el, e); V9.buzz();
+    if (el.closest('.pad')) setTimeout(function () { var on = document.querySelectorAll('#dots i.on'), d = on[on.length - 1]; if (d) { d.classList.remove('pop9'); void d.offsetWidth; d.classList.add('pop9'); } }, 30);   // 숫자판: 채운 점이 톡
   }, { passive: true });
   function release() { if (!pressed) return; var p = pressed; pressed = null; setTimeout(function () { p.classList.remove('v9p'); }, 90); }
   ['pointerup', 'pointercancel', 'pointerleave', 'dragstart'].forEach(function (t) { document.addEventListener(t, release, { passive: true }); });
