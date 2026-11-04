@@ -316,3 +316,8 @@ html[data-theme="dark"] .btn.org{color:#04140C!important}
 /* 아주 작은 화면 + 큰 글씨: 두 단추 줄은 넘치면 다음 줄로 · 고르기 칸은 말줄임 없이 조금 작게 */
 .row2{flex-wrap:wrap}.row2>.btn{min-width:0!important;flex:1 1 140px}
 @media (max-width:340px){body.big select{font-size:15px!important;text-overflow:clip}}
+
+/* 9.0.4: 휴대폰 기본 터치 강조(회색 네모) 끄기 · 넓은 줄은 물결 없이 살짝 어둡게 */
+*{-webkit-tap-highlight-color:transparent}
+.v9p:not(.btn):not(button.tb){transform:none!important;filter:brightness(.96)}
+.btn.v9p,.pad button.v9p,.kpad button.v9p,.chip.v9p,.stp.v9p,.ljbtn.v9p{transform:scale(.96)!important}

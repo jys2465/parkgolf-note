@@ -32,14 +32,30 @@
     if (store.get('lz.buzz') === '0') return;
     try { if (navigator.vibrate) navigator.vibrate(8); } catch (x) { /* 아이폰 사파리는 떨림을 막아 둠 → 눌림 움직임으로 대신 */ }
   };
+  var start = null, holdT = 0;
+  /** 물결을 그릴 단추: 단추 모양(작은 것 · .btn · 숫자판 · 칩 · 위 막대 단추)만. 넓은 줄 · 카드는 물결 없이 눌림만 */
+  function rippleOk(el) {
+    if (el.matches('.btn,.pad button,.kpad button,.chip,.tb,.bk,.stp,.seg button,.pill9,.kwb,.ljbtn,.go,.how,.cv')) return true;
+    var r = el.getBoundingClientRect(); return r.width <= 200 && r.height <= 64;
+  }
+  function press(st) {
+    if (st.done) return; st.done = true; pressed = st.el; st.el.classList.add('v9p');
+    if (rippleOk(st.el)) ripple(st.el, st); V9.buzz();
+    if (st.el.closest('.pad')) setTimeout(function () { var on = document.querySelectorAll('#dots i.on'), d = on[on.length - 1]; if (d) { d.classList.remove('pop9'); void d.offsetWidth; d.classList.add('pop9'); } }, 30);   // 숫자판: 채운 점이 톡
+  }
+  function cancel() { clearTimeout(holdT); start = null; release(); }
   document.addEventListener('pointerdown', function (e) {
     var el = e.target.closest(TAP); if (!el || el.disabled || el.getAttribute('aria-disabled') === 'true') return;
     if (el.closest('input,textarea,select')) return;
-    pressed = el; el.classList.add('v9p'); ripple(el, e); V9.buzz();
-    if (el.closest('.pad')) setTimeout(function () { var on = document.querySelectorAll('#dots i.on'), d = on[on.length - 1]; if (d) { d.classList.remove('pop9'); void d.offsetWidth; d.classList.add('pop9'); } }, 30);   // 숫자판: 채운 점이 톡
+    clearTimeout(holdT); start = { el: el, x: e.clientX, y: e.clientY, clientX: e.clientX, clientY: e.clientY, done: false };
+    if (e.pointerType === 'mouse') { press(start); return; }
+    var st = start; holdT = setTimeout(function () { if (start === st) press(st); }, 110);   // 손가락은 잠깐 기다려요(밀어서 스크롤하면 물결 없음)
   }, { passive: true });
+  document.addEventListener('pointermove', function (e) { if (start && !start.done && (Math.abs(e.clientX - start.x) > 8 || Math.abs(e.clientY - start.y) > 8)) cancel(); }, { passive: true });
+  document.addEventListener('pointerup', function () { if (!start) return release(); var st = start; start = null; clearTimeout(holdT); if (!st.done) press(st); release(); }, { passive: true });
+  ['pointercancel', 'dragstart'].forEach(function (t) { document.addEventListener(t, cancel, { passive: true }); });
+  window.addEventListener('scroll', function () { if (start && !start.done) cancel(); }, { passive: true, capture: true });
   function release() { if (!pressed) return; var p = pressed; pressed = null; setTimeout(function () { p.classList.remove('v9p'); }, 90); }
-  ['pointerup', 'pointercancel', 'pointerleave', 'dragstart'].forEach(function (t) { document.addEventListener(t, release, { passive: true }); });
 
   /* ───── 2. 한 줄 맞춤: 한 줄로 써야 하는 글자가 넘치면 그 글자만 조금(최소 72%) 줄여요 ───── */
   var ONE = [
