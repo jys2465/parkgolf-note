@@ -321,3 +321,15 @@ html[data-theme="dark"] .btn.org{color:#04140C!important}
 *{-webkit-tap-highlight-color:transparent}
 .v9p:not(.btn):not(button.tb){transform:none!important;filter:brightness(.96)}
 .btn.v9p,.pad button.v9p,.kpad button.v9p,.chip.v9p,.stp.v9p,.ljbtn.v9p{transform:scale(.96)!important}
+
+/* 9.0.6: 내 클럽 하나하나 따로 카드 · 내 수첩 보기 칸 · 홈 친구 초대 */
+.clubs9{background:transparent!important;border-radius:0!important;overflow:visible!important;display:flex;flex-direction:column;gap:8px}
+.clubs9 .li.clr{background:var(--v9-card)!important;border-radius:14px!important;overflow:hidden;box-shadow:inset 8px 0 0 var(--clc,var(--v9-acc))!important;min-height:64px}
+.clubs9 .li.clr:last-child{box-shadow:inset 8px 0 0 var(--clc,var(--v9-acc))!important}
+.flt9{display:flex;gap:6px;margin:0 0 10px;overflow-x:auto;scrollbar-width:none}.flt9::-webkit-scrollbar{display:none}
+.flt9 button{flex:0 0 auto;border:0;background:var(--v9-card);color:var(--v9-l2);font:inherit;font-size:calc(14px*var(--k,1));border-radius:99px;padding:0 12px;min-height:36px;cursor:pointer;white-space:nowrap}
+.flt9 button b{font-weight:600;color:var(--v9-l1)}
+.flt9 button.on{background:var(--v9-acc);color:#fff}.flt9 button.on b{color:#fff}
+.cpage9 .seg.sgw{margin:4px 0 4px}
+.card.invite{margin-top:16px!important;border-radius:16px!important}
+.crow9 .meta9{white-space:normal!important;overflow:visible!important;line-height:1.45}

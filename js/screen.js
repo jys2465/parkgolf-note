@@ -54,7 +54,8 @@
         /* v9 설계안: 큰 제목 · 코스 찾기 칸 · [＋ 새 코스 등록] [정렬] · 한 묶음 목록(진행 고리 · 이름 · 상태 · 자물쇠) */
         root.innerHTML = LZ.hdr('내 수첩', { btns: '<button type="button" class="tb" data-go="cImport" aria-label="코스 가져오기" title="코스 가져오기">' + LZ.ic('book') + '</button>' }) + '<div id="syncbar" class="sync wait" hidden></div><div class="wrap clist v9list">' + (LZ.admNote ? LZ.admNote('홀 기록(내 수첩)·클럽 가입·라운드 기록') : '') +
           '<label class="srch9">' + LZ.ic('search') + '<input type="search" id="cq" value="' + esc(q) + '" placeholder="코스 찾기" aria-label="코스 찾기"></label>' +
-          '<div class="lbar">' + (r.canReg ? '<button type="button" class="btn g" data-go="reg">' + LZ.ic('plus') + '새 코스 등록</button>' : '') + '<button type="button" class="pill9" data-act="cSort" aria-label="정렬 · 지금 ' + sortName + (flt !== 'all' ? ' · ' + fName : '') + '"><span>' + (flt !== 'all' ? fName + '만' : '정렬') + '</span>' + LZ.ic('down') + '</button></div>' +
+          '<div class="flt9" role="tablist">' + FLT.map(function (x) { var cn = x[0] === 'all' ? all.length : all.filter(function (c) { return cStat(c) === x[0]; }).length; return '<button type="button" role="tab" aria-selected="' + (flt === x[0]) + '" class="' + (flt === x[0] ? 'on' : '') + '" data-act="cFltSet" data-v="' + x[0] + '">' + x[1] + ' <b>' + cn + '</b></button>'; }).join('') + '</div>' +
+          '<div class="lbar">' + (r.canReg ? '<button type="button" class="btn g" data-go="reg">' + LZ.ic('plus') + '새 코스 등록</button>' : '') + '<button type="button" class="pill9" data-act="cSort" aria-label="정렬 · 지금 ' + sortName + '"><span>정렬</span>' + LZ.ic('down') + '</button></div>' +
           (list.length ? '<div class="grp9">' + list.map(cRow).join('') + '</div>' : '<div class="empty">' + (all.length ? '고른 조건에 맞는 코스가 없어요.' : '아직 내 수첩에 코스가 없어요. 새로 등록하거나 다른 회원님이 등록한 코스를 가져와 보세요.') + '</div>') +
           '<p class="fn9">' + sortName + (flt !== 'all' ? ' · ' + fName + '만' : '') + ' · 자물쇠를 누르면 공개/비공개가 바뀌어요</p>' +
           '<button type="button" class="lnk cimpl" data-go="cImport">다른 회원이 등록한 코스 가져오기</button></div>';
@@ -73,13 +74,13 @@
   function cRow(c) {
     var st = cStat(c), sub = c.n + '홀 · ' + (st === 'done' ? '기록 완료' : st === 'ing' ? c.mine + '홀 기록' : '미기록') + (c.filledH !== undefined && c.filledH < 18 && c.n === 18 ? ' · 파·거리 ' + c.filledH + '/18' : '');
     return '<div class="crow9" data-nm="' + esc(String(c.name).toLowerCase().replace(/\s+/g, '')) + '">' + ring(c) +
-      '<button type="button" class="l" data-act="openC" data-v="' + esc(c.id) + '"><b class="v9one">' + esc(c.name) + '</b><small>' + sub + '</small><small class="meta9"><span class="st9" aria-label="난이도 ' + c.stars + '">' + LZ.stars(c.stars) + '</span> · 등록 ' + esc(c.reg || '–') + ' · ' + LZ.fmtDate(c.created) + '</small></button>' +
+      '<button type="button" class="l" data-act="openC" data-v="' + esc(c.id) + '"><b class="v9one">' + esc(c.name) + '</b><small>' + sub + '</small><small class="meta9"><span class="st9" aria-label="난이도 ' + c.stars + '">' + LZ.stars(c.stars) + '</span>' + (c.mode ? ' · ' + LZ.MODE[c.mode.g] + ' · ' + LZ.HL[c.mode.h] : '') + ' · 등록 ' + esc(c.reg || '–') + ' · ' + LZ.fmtDate(c.created) + '</small></button>' +
       '<button type="button" class="lk' + (c.pub ? '' : ' off') + '" data-act="cPub" data-v="' + esc(c.id) + '" aria-label="' + (c.pub ? '공개 중 · 누르면 비공개' : '비공개 · 누르면 공개') + '">' + LZ.ic(c.pub ? 'unlock' : 'lock') + '</button></div>';
   }
   /* 정렬 창: 보기(전체 · 완료 · 기록 중 · 안 함) + 정렬 하나로 */
   LZ.act.cSort = function () {
     var cur = store.get('lz.csort') || 'new', flt = store.get('lz.cflt') || 'all';
-    LZ.sheet('<h2>정렬 · 보기</h2><div class="seg s" role="group" aria-label="보기">' + FLT.map(function (x) { return '<button type="button" class="' + (flt === x[0] ? 'on' : '') + '" data-act="cFltSet" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div><div style="height:10px"></div>' +
+    LZ.sheet('<h2>정렬</h2>' +
       SORTS.map(function (x) { return '<button type="button" class="opt ' + (cur === x[0] ? 'on' : '') + '" data-act="cSortSet" data-v="' + x[0] + '"><b>' + x[1] + '</b>' + (cur === x[0] ? '<span>' + LZ.ic('check') + ' 지금</span>' : '') + '</button>'; }).join(''));
   };
   LZ.act.cFltSet = function (el, v) { store.set('lz.cflt', v); LZ.closeSheet(); LZ.redraw(); };
@@ -217,12 +218,14 @@
     var diff = v.g !== bm.g || v.h !== bm.h, filled = d.mine.slice(0, n).filter(function (r) { return r.r; }).length, ed = EDIT === c.id;
     var cmpName = mode === 'avg' ? '클럽 평균' : mode === 'mem' ? (d.pick ? d.pick.nick : '클럽 회원') : '끔';
     var empt = 0; if (mode === 'mem' && d.pick) d.pick.recs.forEach(function (r, i) { if (i < n && r.r && !d.mine[i].r) empt++; });
-    var A = '', B = ''; for (var i = 0; i < Math.min(9, n); i++) A += holeRow(d, i, v, mode); for (var j = 9; j < n; j++) B += holeRow(d, j, v, mode);
+    var half = n === 18 ? (store.get('lz.half2.' + c.id) || 'a') : 'a', A = '', B = '';
+    if (half !== 'b') for (var i = 0; i < Math.min(9, n); i++) A += holeRow(d, i, v, mode);
+    if (half !== 'f') for (var j = 9; j < n; j++) B += holeRow(d, j, v, mode);
     var more = '<button type="button" class="tb" data-act="cMore" aria-label="더보기" title="더보기">' + LZ.ic('more') + '</button>';
     var colh = '<div class="colh9"><span>홀</span><span>방향 · 좌우</span><span>볼스피드</span></div>';
     return LZ.hdr('코스', { back: true, btns: more }) + '<div class="wrap cpage cpage9">' +
       '<h1 class="ct9">' + esc(c.name) + '</h1>' +
-      '<div class="cap9">' + n + '홀 · ' + LZ.stars(c.stars) + ' · ' + (filled >= n ? '기록 완료' : filled + '홀 기록') + ' · <button type="button" class="pubc9" data-act="hPubSheet">' + LZ.ic(d.pub ? 'unlock' : 'lock') + (d.pub ? '공개' : '비공개') + '</button></div>' +
+      '<div class="cap9">' + n + '홀 · ' + (function () { var hs = c.holes.slice(0, n), ps = hs.reduce(function (a, h) { return a + (+h[0] || 0); }, 0), ms = LZ.r1(hs.reduce(function (a, h) { return a + (+h[1] || 0); }, 0)); return (ps ? '파 ' + ps + ' · ' : '') + (ms ? ms.toLocaleString() + 'm · ' : ''); })() + LZ.stars(c.stars) + ' · ' + (filled >= n ? '기록 완료' : filled + '홀 기록') + ' · <button type="button" class="pubc9" data-act="hPubSheet">' + LZ.ic(d.pub ? 'unlock' : 'lock') + (d.pub ? '공개' : '비공개') + '</button></div>' +
       '<div class="cbtn9"><button type="button" class="btn" data-act="hPlay" data-v="' + start + '">' + (start > 0 ? '이어서 · ' + (start > 8 ? (start - 8) + '홀 (' + (start + 1) + ')' : (start + 1) + '홀') : '플레이 시작') + '</button>' + (n === 18 ? '<button type="button" class="btn g" data-act="hPlay" data-v="9">후반부터</button>' : '') + '</div>' +
       (c.stage === 'front' && (c.mineReg || S.user.kind === 'admin') ? '<button type="button" class="btn g" data-go="reg" data-p=\'' + esc(JSON.stringify({ id: c.id, half: 1, name: c.name })) + '\'>후반 9홀 등록 마치기 ›</button>' : '') +
       '<div class="pills9"><button type="button" class="pill9" data-act="hHl">' + (diff ? '<span class="dot" aria-label="기록 기준과 다름"></span>' : '') + '<span>' + LZ.MODE[v.g] + ' · ' + LZ.HL[v.h] + '</span>' + LZ.ic('down') + '</button>' +
@@ -230,7 +233,8 @@
       (diff ? '<p class="fn9">기록은 ' + LZ.modeTxt(bm) + '로 적었어요 · 지금은 ' + LZ.modeTxt(v) + '로 바꿔 보여요</p>' : '') +
       (empt ? '<div class="imp9"><div><small>클럽 회원 기록 가져오기</small><b>' + LZ.nimE(d.pick.nick) + ' · 빈 홀 ' + empt + '개</b></div><button type="button" class="btn" data-act="importAll">가져오기</button></div>' : '') +
       (ed ? '<div class="edbar"><div><b>끊어치기 · 주의 고치는 중</b><span>홀마다 [끊어치기 ▾] · [주의 ▾] · 코스에 하나 · 포인트 없음</span></div><button type="button" class="btn" data-act="cEdit" data-v="0">완료</button></div>' : '') +
-      colh + '<div class="hdr9">전반 · 1–9홀</div><div class="grp9 holes9">' + A + '</div>' +
+      (n === 18 ? '<div class="seg sgw" role="group" aria-label="홀 범위">' + [['f', '전반'], ['b', '후반'], ['a', '전체']].map(function (x) { return '<button type="button" class="' + (half === x[0] ? 'on' : '') + '" data-act="hHalf" data-v="' + x[0] + '" aria-pressed="' + (half === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' : '') +
+      colh + (A ? '<div class="hdr9">전반 · 1–9홀</div><div class="grp9 holes9">' + A + '</div>' : '') +
       (B ? '<div class="hdr9">후반 · 1–9홀 (10–18홀)</div><div class="grp9 holes9">' + B + '</div>' : '') +
       (mode !== 'off' ? '<p class="fn9">' + esc(cmpName) + ' 기록도 ' + LZ.modeTxt(v) + LZ.ro(LZ.HL[v.h]) + ' 바꿔 보여요. 기록 칸 아래 글을 누르면 그 홀에 가져와요.' + (mode === 'avg' ? ' 평균은 공개한 회원 3명부터 보여요.' : '') + '</p>' : '') +
       '<p class="fn9">↑ 강하게 · ↓ 약하게 · ⚠ 조심하기 · 끊어치는 홀은 1st · 2nd · 3rd 색 줄 · 홀을 누르면 그 홀부터 플레이</p>' +
@@ -558,7 +562,7 @@
   function hdPaint() {
     var c = CUR.d.course, i = HD.i, nm = i > 8 ? (i - 8) + '홀 (' + (i + 1) + '홀)' : (i + 1) + '홀', keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'del'];
     var html = '<div id="hdsheet"><h2>' + nm + ' 파 · 거리</h2><p class="muted" style="margin-top:0">스크린에 나온 대로 넣어요. 처음 넣으면 포인트, 틀린 값을 바로잡아도 포인트가 있어요(같은 코스 하루 한 번 · 되돌려지면 회수).</p>' +
-      '<div class="seg s hdpar" role="group" aria-label="파">' + [3, 4, 5, 6].map(function (p) { return '<button type="button" class="' + (HD.par === p ? 'on' : '') + '" data-act="hdPar" data-v="' + p + '">' + LZ.parMk(p) + '</button>'; }).join('') + '</div>' +
+      '<div class="seg s hdpar" role="group" aria-label="파">' + (HD.par === 6 ? [3, 4, 5, 6] : [3, 4, 5]).map(function (p) { return '<button type="button" class="' + (HD.par === p ? 'on' : '') + '" data-act="hdPar" data-v="' + p + '">' + LZ.parMk(p) + '</button>'; }).join('') + '</div>' +
       '<div class="hdval" aria-live="polite"><b>' + (HD.m || '0') + '</b><small>m</small></div>' +
       '<div class="kpad">' + keys.map(function (k) { return '<button type="button" data-act="hdKey" data-v="' + k + '" aria-label="' + (k === 'del' ? '지우기' : k === '.' ? '소수점' : k) + '">' + (k === 'del' ? '⌫' : k) + '</button>'; }).join('') + '</div>' +
       '<button type="button" class="btn" data-act="hdSave"' + (parseFloat(HD.m) > 0 ? '' : ' disabled') + '>저장</button></div>';
@@ -650,7 +654,7 @@
   LZ.act.plLaySheet = function () { if (ED.empty) return; cutSheet(ED.i, true); };
 
   /* ═════════ 주의하기(↑ 강하게 · ↓ 약하게 — 한쪽만) · ⚠ 조심하기(어느 쪽과도 함께) ═════════ */
-  var UPK = ['오르막', '오르막 언덕', '언덕 넘기', '러프', '헤비러프', '벙커', '맞바람', '젖은 잔디', '둔덕'];
+  var UPK = ['오르막', '오르막 언덕', '언덕 넘기', '망치기', '러프', '헤비러프', '벙커', '맞바람', '젖은 잔디', '둔덕'];
   var DNK = ['내리막', '내리막 언덕', '튀어서 점프', '뒷바람', '빠른 그린', '마른 잔디', '굴러 내려감'];
   var CZK = ['우측 OB', '좌측 OB', '우측 흘러내림', '좌측 흘러내림', '홀컵 뒤 OB', '벙커 앞', '물(해저드)', '나무', '벽 튕김'];
   LZ.CA_WORDS = { u: UPK, d: DNK, z: CZK };
@@ -980,13 +984,10 @@
     var nm = rnName(), step = RN.step, same = RN.same || [];
     var body;
     if (step === 1) {
-      body = '<div class="rn"><label class="lb" for="rnBase">구장 이름</label><input type="text" id="rnBase" class="reginp" maxlength="20" value="' + esc(RN.base) + '" placeholder="예: 목행충주호" autocomplete="off">' +
-        '<div class="list1 tgl"><span><b>“파크골프장” 붙이기</b></span>' + LZ.sw(RN.pk, 'rnPk') + '</div>' +
-        '<label class="lb">조합</label><div class="seg s cmb" role="group" aria-label="코스 조합">' + COMBO.concat(['own']).map(function (k) { var tk = RN.taken.indexOf(k) >= 0; return '<button type="button" class="' + (RN.cb === k ? 'on' : '') + (tk ? ' tk' : '') + '" data-act="rnCb" data-v="' + k + '"' + (tk ? ' aria-label="' + k + ' · 이미 있어요"' : '') + '>' + (k === 'own' ? '직접' : k) + (tk ? '<small>있음</small>' : '') + '</button>'; }).join('') + '</div>' +
-        (RN.cb === 'own' ? '<input type="text" id="rnOwn" class="reginp" maxlength="6" value="' + esc(RN.own) + '" placeholder="예: 가나" aria-label="조합 직접 적기">' : '') +
-        '<div class="rnprev" aria-live="polite"><span>등록할 이름</span><b>' + (nm ? esc(nm) : '—') + '</b>' + (RN.dupId ? '<em>이미 있어요 · 아래에서 가져오기</em>' : nm ? '<i class="ok">✓ 새 코스예요' + (RN.taken.length && RN.cb !== 'own' ? ' · ' + RN.taken.join(' · ') + '는 이미 있어서 ' + RN.cb + '로 골랐어요' : '') + '</i>' : '') + '</div>' +
-        (same.length ? '<div class="kwrow"><b class="sm">이미 있는 코스 · 가져오기</b></div><div class="list rnsame">' + same.map(function (c) { return '<button type="button" class="li" data-act="rnTake" data-v="' + esc(c.id) + '"><span class="t"><b>' + esc(c.name) + '</b><span>' + LZ.stars(c.stars) + '</span></span><span class="go">가져오기</span></button>'; }).join('') + '</div>' : '') +
-        '<button type="button" class="btn" data-act="rnNext"' + (nm && !RN.dupId ? '' : ' disabled') + '>다음 ›</button>' +
+      body = '<div class="rn"><label class="lb" for="rnBase">구장 이름</label><input type="text" id="rnBase" class="reginp" maxlength="20" value="' + esc(RN.base) + '" placeholder="예: 목행충주호" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done">' +
+        '<div id="rnDyn1">' + rnDyn1() + '</div>' +
+        '<input type="text" id="rnOwn" class="reginp" maxlength="6" value="' + esc(RN.own) + '" placeholder="예: 가나" aria-label="조합 직접 적기" autocomplete="off"' + (RN.cb === 'own' ? '' : ' hidden') + '>' +
+        '<div id="rnDyn2">' + rnDyn2() + '</div>' +
         '<button type="button" class="lnk" data-go="cImport">다른 회원이 등록한 코스에서 고르기</button></div>';
     } else {
       body = '<div class="rn"><div class="rnprev"><span>코스 이름</span><b>' + esc(nm) + '</b></div>' +
@@ -998,16 +999,36 @@
         '<div class="row2"><button type="button" class="btn g" data-act="rnBack">‹ 이름</button><button type="button" class="btn" data-act="rnSave">등록</button></div></div>';
     }
     root.innerHTML = LZ.hdr('새 코스 등록', { back: true }) + '<div class="wrap reg9"><div class="steps" aria-label="2단계 중 ' + step + '단계"><i class="' + (step === 1 ? 'on' : 'ok') + '">1 이름</i><i class="' + (step === 2 ? 'on' : '') + '">2 기준</i></div>' + body + '</div>';
-    var b = $('#rnBase'); if (b) b.addEventListener('input', function () { RN.base = b.value; rnLook(); });
-    var ow = $('#rnOwn'); if (ow) ow.addEventListener('input', function () { RN.own = ow.value; rnDup(); var p = $('.rnprev b'); if (p) p.textContent = rnName() || '—'; });
+    var b = $('#rnBase'); if (b) { b.addEventListener('input', function () { RN.base = b.value; rnLook(); }); b.addEventListener('compositionend', function () { RN.base = b.value; rnLook(); }); b.addEventListener('keydown', function (e) { if (e.key === 'Enter') b.blur(); }); }
+    var ow = $('#rnOwn'); if (ow) ow.addEventListener('input', function () { RN.own = ow.value; rnDup(); rnUpd(2); });
     LZ.guard = { dirty: function () { return !!RN.base && !RN.saved; }, ask: async function () { return LZ.confirm('나갈까요?', '적던 내용이 사라져요.', '나가기', 'r'); } };
+  }
+  /** 이름 칸 아래(파크골프장 붙이기 · 조합)만 */
+  function rnDyn1() {
+    return '<div class="list1 tgl"><span><b>“파크골프장” 붙이기</b></span>' + LZ.sw(RN.pk, 'rnPk') + '</div>' +
+      '<label class="lb">조합</label><div class="seg s cmb" role="group" aria-label="코스 조합">' + COMBO.concat(['own']).map(function (k) { var tk = RN.taken.indexOf(k) >= 0; return '<button type="button" class="' + (RN.cb === k ? 'on' : '') + (tk ? ' tk' : '') + '" data-act="rnCb" data-v="' + k + '"' + (tk ? ' aria-label="' + k + ' · 이미 있어요"' : '') + '>' + (k === 'own' ? '직접' : k) + (tk ? '<small>있음</small>' : '') + '</button>'; }).join('') + '</div>';
+  }
+  /** 등록할 이름 · 이미 있는 코스 · 다음 단추 */
+  function rnDyn2() {
+    var nm = rnName(), same = RN.same || [];
+    return '<div class="rnprev" aria-live="polite"><span>등록할 이름</span><b>' + (nm ? esc(nm) : '—') + '</b>' + (RN.dupId ? '<em>이미 있어요 · 아래에서 가져오기</em>' : nm ? '<i class="ok">✓ 새 코스예요' + (RN.taken.length && RN.cb !== 'own' ? ' · ' + RN.taken.join(' · ') + '는 이미 있어서 ' + RN.cb + '로 골랐어요' : '') + '</i>' : '') + '</div>' +
+      (same.length ? '<div class="kwrow"><b class="sm">이미 있는 코스 · 가져오기</b></div><div class="list rnsame">' + same.map(function (c) { return '<button type="button" class="li" data-act="rnTake" data-v="' + esc(c.id) + '"><span class="t"><b>' + esc(c.name) + '</b><span>' + LZ.stars(c.stars) + '</span></span><span class="go">가져오기</span></button>'; }).join('') + '</div>' : '') +
+      '<button type="button" class="btn" data-act="rnNext"' + (nm && !RN.dupId ? '' : ' disabled') + '>다음 ›</button>';
+  }
+  /** 이름 칸은 그대로 두고 아래만 고쳐 그려요(글자판 · 한글 조합이 끊기지 않게) */
+  function rnUpd(which) {
+    if (RN.step !== 1) return rnRe();
+    var d1 = $('#rnDyn1'), d2 = $('#rnDyn2'), ow = $('#rnOwn');
+    if (d1 && which !== 2) d1.innerHTML = rnDyn1();
+    if (d2) d2.innerHTML = rnDyn2();
+    if (ow) ow.hidden = RN.cb !== 'own';
   }
   /** 바탕 이름이 바뀌면 잠깐 뒤에 서버에 물어서 AB · CD … 중 빈 첫 조합을 골라 둬요 */
   function rnLook() {
-    clearTimeout(rnT); var p = $('.rnprev b'); if (p) p.textContent = rnName() || '—';
+    clearTimeout(rnT); rnDup(); rnUpd(2);
     rnT = setTimeout(async function () {
-      var base = rnBase(); if (base.length < 2) { RN.taken = []; RN.same = []; RN.dupId = ''; rnRe(); return; }
-      try { var r = await LZ.api('nameNext', { base: base }); if (base !== rnBase()) return; RN.taken = r.taken || []; RN.same = r.same || []; if (RN.cb !== 'own' && (RN.auto || RN.taken.indexOf(RN.cb) >= 0)) { RN.cb = r.next || 'own'; RN.auto = true; } rnDup(); rnRe(); } catch (e) { /* 신호 없음: 그대로 */ }
+      var base = rnBase(); if (base.length < 2) { RN.taken = []; RN.same = []; RN.dupId = ''; rnUpd(); return; }
+      try { var r = await LZ.api('nameNext', { base: base }); if (base !== rnBase()) return; RN.taken = r.taken || []; RN.same = r.same || []; if (RN.cb !== 'own' && (RN.auto || RN.taken.indexOf(RN.cb) >= 0)) { RN.cb = r.next || 'own'; RN.auto = true; } rnDup(); rnUpd(); } catch (e) { /* 신호 없음: 그대로 */ }
     }, 350);
   }
   function rnDup() { var key = rnName().toLowerCase(), hit = (RN.same || []).filter(function (c) { return c.name.toLowerCase() === key; })[0]; RN.dupId = hit ? hit.id : ''; }
@@ -1021,8 +1042,8 @@
       if (RN.step === 1) setTimeout(function () { var b = $('#rnBase'); if (b && !RN.base) b.focus(); }, 80);
     }
   };
-  LZ.act.rnPk = function () { RN.pk = !RN.pk; rnLook(); rnRe(); };
-  LZ.act.rnCb = function (el, v) { if (RN.taken.indexOf(v) >= 0) { LZ.toast(rnBase() + v + ' 코스가 이미 있어요 · 아래에서 가져올 수 있어요', 3500); } RN.cb = v; RN.auto = false; rnDup(); rnRe(); if (v === 'own') setTimeout(function () { var o = $('#rnOwn'); if (o) o.focus(); }, 50); };
+  LZ.act.rnPk = function () { RN.pk = !RN.pk; rnLook(); rnUpd(); };
+  LZ.act.rnCb = function (el, v) { if (RN.taken.indexOf(v) >= 0) { LZ.toast(rnBase() + v + ' 코스가 이미 있어요 · 아래에서 가져올 수 있어요', 3500); } RN.cb = v; RN.auto = false; rnDup(); rnUpd(); if (v === 'own') setTimeout(function () { var o = $('#rnOwn'); if (o) o.focus(); }, 50); };
   LZ.act.rnNext = function () { var nm = rnName(); if (!nm || nm.length < 2) { LZ.toast('구장 이름을 넣어 주세요'); return; } if (RN.dupId) return LZ.act.rnTake(null, RN.dupId); RN.step = 2; rnPaint(); window.scrollTo(0, 0); };
   LZ.act.rnBack = function () { RN.step = 1; rnPaint(); };
   LZ.act.rnStar = function (el, v) { RN.stars = +v; rnRe(); };
