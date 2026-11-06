@@ -297,6 +297,7 @@
     var payload = {}; for (var k in (body || {})) payload[k] = body[k];
     payload.a = a; if (S.br && payload.br === undefined) payload.br = S.br;
     if (S.token && !o.noAuth) payload.t = S.token;
+    if (S.asAdm && !o.noAdm && payload.as === undefined) payload.as = 'adm';   // v9.1.1 관리 모드: 관리자로 처리(회원에게는 "관리자")
     var ctl = window.AbortController ? new AbortController() : null, timer = ctl ? setTimeout(function () { ctl.abort(); }, o.timeout || 40000) : null;
     return fetch(LZ.API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload), signal: ctl ? ctl.signal : undefined })
       .then(function (r) { if (timer) clearTimeout(timer); return r.text(); }, function () { if (timer) clearTimeout(timer); throw new ApiError('net', '인터넷에 연결되어 있는지 확인해 주세요.'); })
@@ -368,7 +369,7 @@
   LZ.kickNote = function () { LZ.closeSheet && LZ.closeSheet(); return LZ.dialog({ title: '다른 기기에서 로그인해서 로그아웃됐어요', html: '<p class="kicknote">' + LZ.ic('lock') + '<span>같은 닉네임으로 다른 휴대폰(또는 컴퓨터)에서 로그인해서 이 기기는 로그아웃됐어요. 회원님은 한 번에 한 기기에서만 쓸 수 있어요.</span></p><p class="muted">이 기기에서 계속 쓰시려면 다시 로그인해 주세요. 본인이 로그인한 게 아니라면 비밀번호를 바꿔 주세요.</p>' }); };
   LZ.clearSession = function () { LZ.cacheDrop(); store.del('lz.k.me'); S.user = null; S.token = ''; S.me = null; store.del('lz.t'); LZ.rt && LZ.rt.stop(); LZ.nrt && LZ.nrt.stop(); document.body.classList.remove('kb'); };
   LZ.setSession = function (r) { S.token = r.token; S.user = r.user; store.set('lz.t', r.token); if (r.pw) S.pw = r.pw; };
-  function applyMe(r) { S.me = r; S.user = r.user; S.br = r.br; S.store = r.store; S.pw = r.pw; S.unit = r.user.unit || 'p'; if (r.appVer && LZ.pwa && LZ.pwa.verCheck) LZ.pwa.verCheck(r.appVer); if (r.rt) NR.start(r.rt); LZ.rememberMe(r.user); }
+  function applyMe(r) { S.me = r; S.user = r.user; S.br = r.br; S.store = r.store; S.pw = r.pw; S.unit = r.user.unit || 'p'; if (r.appVer && LZ.pwa && LZ.pwa.verCheck) LZ.pwa.verCheck(r.appVer); if (S.asAdm) return; if (r.rt) NR.start(r.rt); LZ.rememberMe(r.user); }
   /* 이 휴대폰으로 들어왔던 분: 다음 로그인 화면에 프로필 사진·닉네임을 미리 보여 줘요(사진은 작게 줄여 이 휴대폰에만) */
   LZ.rememberMe = function (u) {
     if (!u || !u.nick) return; var old = store.json('lz.who') || {}, nk = u.kind === 'admin' ? '관리자' : u.nick;   // v7.1.0 §13 관리자 계정은 늘 '관리자'로 로그인(주 관리자·대리 모두, 6자리)
@@ -377,7 +378,25 @@
     if (o.img && !o.av && /^[\w-]{4,80}$/.test(o.img)) LZ.api('imgGet', { id: o.img }).then(function (r) { if (r && r.data && r.data.length < 60000) { o.av = r.data; store.setJSON('lz.who', o); } }).catch(function () {});
     else if (o.img && /^(data:image|assets\/)/.test(o.img)) { o.av = o.img; store.setJSON('lz.who', o); }
   };
-  LZ.refreshMe = async function () { var r = await LZ.api('me', {}); applyMe(r); try { store.setJSON('lz.k.me', { t: Date.now(), d: r }); } catch (e) { /* 무시 */ } return r; };
+  LZ.refreshMe = async function () { var r = await LZ.api('me', {}); applyMe(r); if (!S.asAdm) { try { store.setJSON('lz.k.me', { t: Date.now(), d: r }); } catch (e) { /* 무시 */ } } return r; };
+  /* ───── v9.1.1 관리자 겸 회원: 내 계정 그대로 관리 화면에 들어가요(다시 로그인 없음). 관리 화면에서 한 일은 회원님께 "관리자"로 보여요 ───── */
+  function admBar(on) {
+    var b = document.getElementById('admBar');
+    if (on && !b) { b = document.createElement('div'); b.id = 'admBar'; b.setAttribute('role', 'status'); b.innerHTML = '<span>' + LZ.ic('shield') + '<b>관리 중</b> · 회원님께는 “관리자”로 보여요</span><button type="button" data-act="admExit">끝내기</button>'; document.body.appendChild(b); }
+    if (!on && b) b.parentNode.removeChild(b);
+    document.body.classList.toggle('admmode', !!on);
+  }
+  LZ.admEnter = async function (to) {
+    if (!S.asAdm) {
+      if (!(S.me && S.me.own)) { LZ.toast('관리자 권한이 없어요'); return; }
+      S.asAdm = true; LZ.busy(true, '관리 화면 여는 중…');
+      try { await LZ.refreshMe(); } catch (e) { S.asAdm = false; LZ.busy(false); LZ.toast(LZ.errText(e), 4500); try { await LZ.refreshMe(); } catch (e2) { /* 무시 */ } return; }
+      LZ.busy(false); admBar(true);
+    }
+    await LZ.go('dash', {}, { reset: true });
+    if (to && to !== 'dash') LZ.goTo(to);
+  };
+  LZ.admExit = async function () { S.asAdm = false; admBar(false); LZ.cacheDrop && LZ.cacheDrop(); try { await LZ.refreshMe(); } catch (e) { /* 무시 */ } LZ.go('home', {}, { reset: true }); };
 
   /* ───── 마지막 응답 저장: 화면을 열 때 먼저 보여 주고 뒤에서 새로 받음 ───── */
   LZ.cacheGet = function (k) { try { var x = store.json('lz.k.' + (S.user ? S.user.uid : '') + '.' + k); return x && Date.now() - x.t < 7 * 86400000 ? x.d : null; } catch (e) { return null; } };
@@ -386,7 +405,7 @@
   /* ───── 오프라인 큐: 신호가 약할 때 저장을 모아 두었다가 보냄 ───── */
   var Q = LZ.queue = {
     list: function () { return store.json('lz.q') || []; },
-    push: function (a, body) { var l = Q.list(); l.push({ a: a, body: body, at: Date.now() }); store.setJSON('lz.q', l.slice(-300)); LZ.paintSync(); },
+    push: function (a, body) { var l = Q.list(); if (S.asAdm) body = Object.assign({ as: 'adm' }, body); l.push({ a: a, body: body, at: Date.now() }); store.setJSON('lz.q', l.slice(-300)); LZ.paintSync(); },
     size: function () { return Q.list().length; },
     flushing: false,
     flush: async function () {
@@ -395,7 +414,7 @@
       try {
         while (l.length) {
           var it = l[0];
-          try { await post(it.a, it.body, { timeout: 15000 }); }
+          try { await post(it.a, it.body, { timeout: 15000, noAdm: true }); }
           catch (e) { if (e.code === 'net' || e.code === 'server' || e.code === 'busy') break; }   // 안 되면 다음에, 규칙 오류면 버림
           l.shift(); store.setJSON('lz.q', l);
         }
@@ -413,7 +432,7 @@
   var MODS = { admin: 'js/admin.js', event: 'js/event.js', help: 'js/help.js', qr: 'vendor/qrcode.js' }, modP = {}, modDone = {};
   function lazyMap(o) { var m = {}; Object.keys(o).forEach(function (k) { o[k].split(' ').forEach(function (n) { m[n] = k; }); }); return m; }
   var LAZY_SCR = LZ.lazyScr = lazyMap({ admin: 'adminCfg adminGroup adminPacks adminSeats dash faqAdmin firstAdmin goldCand goldList log members moimAll pays promo ptGive ptOwe pwreqs refunds', event: 'awards ceremony evEnter evInvite evMake event events tv' });
-  var LAZY_ACT = LZ.lazyAct = lazyMap({ admin: 'cfgJoin cfgPt cfgPw cfgQna cfgSave cfgSeat cfgSeatTxt depNew depOff faqDel faqEdit faqMove faqReset faqSave fsReset fsSave goldGive goldOk logoReset mGrant mGrantGo mMore mNew mNewGo mNewKind mOp mOpen mPurge mPurgeOk mbGo mgD mgKind mgN moimDrop paClear paGo paOwe paPick paQuick paReset paSign payNo payOk pkD pkDel pkExt pkGrant pkK pkMoveA pkMoveGo pkN pkRevoke promoCopy promoJoin promoReset promoShare promoSms pwNo pwOk refNo refOk testPurge', event: 'awMove awNodup awPart awPick awScopeLap awScopeTeams awShare awTeamSave awTeamSel awTnodup awToggle ceremonyEnd evDel evEnd evEnterCode evEnterGo evHelperSave evHelperSel evHelpers evInviteKakao evInviteSms evLock evMore evPickTeam evTab evTeamEdit evTm fullscreen luckAdd mkAdd mkAuto mkAutoOrder mkClubAdd mkClubPick mkClubSel mkCreate mkFromClub mkHoles mkLap mkLapNew mkLapPick mkLapSave mkMove mkNext mkOrd mkOut mkSel mkTeams teAdd teMove teOut teSave teSel twLuckAdd twMove' });
+  var LAZY_ACT = LZ.lazyAct = lazyMap({ admin: 'ownNew ownOff cfgJoin cfgPt cfgPw cfgQna cfgSave cfgSeat cfgSeatTxt depNew depOff faqDel faqEdit faqMove faqReset faqSave fsReset fsSave goldGive goldOk logoReset mGrant mGrantGo mMore mNew mNewGo mNewKind mOp mOpen mPurge mPurgeOk mbGo mgD mgKind mgN moimDrop paClear paGo paOwe paPick paQuick paReset paSign payNo payOk pkD pkDel pkExt pkGrant pkK pkMoveA pkMoveGo pkN pkRevoke promoCopy promoJoin promoReset promoShare promoSms pwNo pwOk refNo refOk testPurge', event: 'awMove awNodup awPart awPick awScopeLap awScopeTeams awShare awTeamSave awTeamSel awTnodup awToggle ceremonyEnd evDel evEnd evEnterCode evEnterGo evHelperSave evHelperSel evHelpers evInviteKakao evInviteSms evLock evMore evPickTeam evTab evTeamEdit evTm fullscreen luckAdd mkAdd mkAuto mkAutoOrder mkClubAdd mkClubPick mkClubSel mkCreate mkFromClub mkHoles mkLap mkLapNew mkLapPick mkLapSave mkMove mkNext mkOrd mkOut mkSel mkTeams teAdd teMove teOut teSave teSel twLuckAdd twMove' });
   /** 모듈 하나를 불러옴 → Promise. 두 번 불러도 한 번만 받아요. 실패하면 다음에 다시 시도 */
   LZ.need = function (name) {
     if (modP[name]) return modP[name];
@@ -487,11 +506,14 @@
   /* 깊은 링크: #club:id · #course:id · #round:id · #event:code · #inv=코드 · #pwreq 등 */
   LZ.goTo = function (to) {
     to = String(to || ''); var m = /^([a-z]+)(?::(.*))?$/.exec(to); if (!m) return;
+    if (m[1] === 'adm') { if (S.asAdm) return LZ.goTo(m[2] || 'dash'); return LZ.admEnter(m[2] || ''); }   // v9.1.1 관리자 알림 → 관리 화면
     var map = { myclubs: ['myclubs'], home: ['home'], me: ['me'], pay: [LZ.S.user && LZ.S.user.kind === 'admin' ? 'pays' : 'meTier'], join: ['join'], courses: ['courses'], club: ['club', { id: m[2] }], reqs: ['club', { id: m[2], reqs: 1 }], keep: ['clubKeep', { id: m[2] }], course: ['holes', { id: m[2] }], round: ['round', { id: m[2] }], event: ['event', { code: m[2] }], find: ['find'], qna: ['qnaList'], notices: ['notices'], dash: ['dash'], members: ['members'], pwreq: ['pwreqs'], refund: ['refunds'], fb: ['feedbacks'], meTier: ['meTier'], goldList: ['goldList'], points: ['mePoints'] };
     var x = map[m[1]]; if (x) LZ.go(x[0], x[1] || {});
   };
   /* 단추 공통 처리: data-go / data-tab / data-act */
   LZ.act = {};
+  LZ.act.admEnter = function () { LZ.admEnter(); };   // v9.1.1 관리자 겸 회원
+  LZ.act.admExit = function () { LZ.admExit(); };
   document.addEventListener('click', function (e) {
     var g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); LZ.go(g.dataset.go, g.dataset.p ? JSON.parse(g.dataset.p) : {}); return; }
     var t = e.target.closest('[data-tab]'); if (t) { e.preventDefault(); if (LZ.cur().name !== t.dataset.tab) LZ.go(t.dataset.tab, {}, { reset: true }); return; }

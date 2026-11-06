@@ -40,6 +40,7 @@
           : '<button type="button" class="pts ptwo" data-go="mePoints"><span><em>적립 포인트</em><b>' + nf(pi.bal) + 'P</b><small>' + (so && so.amt && so.left <= 30 ? '곧 사라질 ' + nf(so.amt) + 'P' + (so.date ? ' · ' + LZ.fmtYmd(so.date) : '') : '회원권 살 때 써요') + '</small></span>' +
             '<span><em>레벨 점수</em><b>' + nf(pi.lvp) + '점</b><small>' + (nx ? esc(nx.name) + '까지 ' + nf(nx.need) + '점' : '가장 높은 레벨') + '</small></span></button>' +
             '</div><div class="kwrow">' + LZ.kw('P와 점은 달라요', '<b>적립 포인트(P)</b>는 회원권 살 때 쓰는 돈이에요. <b>레벨 점수(점)</b>는 레벨을 정해요(새싹 · 버디 · 이글 · 봉황 · 지존).') + '</div>') +
+        (!adm && m.own ? '<div class="list adm9l"><button type="button" class="li cont" data-act="admEnter">' + LZ.ic('shield', 'gi') + '<div class="t"><b>관리</b><span class="su">' + (function (o) { var n = (o.pay || 0) + (o.refund || 0) + (o.qna || 0) + (o.pw || 0) + (o.gold || 0); return n ? '처리할 일 ' + n + '건 · ' : ''; })(m.own) + '결제 ' + (m.own.pay || 0) + ' · 환불 ' + (m.own.refund || 0) + ' · 문의 ' + (m.own.qna || 0) + ' · 비밀번호 ' + (m.own.pw || 0) + '</span></div>' + LZ.ic('chev') + '</button></div>' : '') +
         '<div class="list">' +
         grow('seat', '내 회원권', esc(tierShort(u)) + (passShort(u) ? ' · ' + esc(passShort(u)) + '장' : '') + (m.pending ? ' · 결제 ' + esc(m.pending.stName) : ''), 'data-go="meTier"') +
         grow('star', '포인트 내역', nf(pi.bal) + 'P · ' + esc(pi.lvName || '새싹') + ' ' + nf(pi.lvp) + '점', 'data-go="mePoints"') +
@@ -103,7 +104,7 @@
     };
     var bu = mine.filter(function (x) { return x.kind === 'blue' && x.mid; }).map(function (x) { return x.club; }), r = grp('red'), g = grp('gold');
     var row = function (cls, name, n, sub) { return '<div class="psr"><span class="pdot ' + cls + '" aria-hidden="true"></span><b>' + name + ' ' + n + '장</b><span class="su">' + sub + '</span></div>'; };
-    return row('blue', '블루', ps.blue.total, (bu.length ? esc(bu.join(' · ')) + ' · ' : '') + '남음 ' + ps.blue.left) +
+    return row('blue', '블루', ps.blue.total, (bu.length ? esc(bu.join(' · ')) + ' · ' : '') + (ps.blue.unl ? '클럽 개설 제한 없음' : '남음 ' + ps.blue.left)) +
       row('red', '레드', r.n, r.n ? esc(r.txt) + ', ' + LZ.fmtYmd(r.end) + '까지' : '없어요') +
       row('gold', '골드', g.n, g.n ? esc(g.txt) + ', ' + LZ.fmtYmd(g.end) + '까지 · 남은 ' + g.left + '일' : '없어요');
   }
@@ -115,7 +116,7 @@
       var u = d.user, sc = d.seat, pend = d.pending, rf = d.refund || {}, staffed = d.clubs || [], mine = d.mine || [];
       var list = mine.filter(function (x) { return x.kind !== 'blue'; }).sort(function (a, b) { return (b.live - a.live) || ((a.end || '') < (b.end || '') ? -1 : 1); });
       var blues = mine.filter(function (x) { return x.kind === 'blue'; }), bl = (u.pass && u.pass.blue) || { left: 0 };
-      for (var bi = 0; bi < (bl.left || 0); bi++) blues.push({ kind: 'blue', mid: '', id: '' });   // 아직 안 넣은 블루
+      for (var bi = 0; bi < (bl.unl ? 0 : bl.left || 0); bi++) blues.push({ kind: 'blue', mid: '', id: '' });   // 아직 안 넣은 블루
       TIER = { list: list.concat(blues), staffed: staffed, sc: sc, mine: mine };
       root.innerHTML = LZ.hdr('내 회원권', { back: true }) + '<div class="wrap v8 tierv8">' +
         '<div class="card"><h3>' + LZ.ic('seat') + ' 내 등급</h3>' + LZ.tierLines(u) + '<p class="muted" style="margin:6px 0 0">' + esc(LZ.tierDesc(u, sc)) + '</p>' +
@@ -127,7 +128,7 @@
           xs.forEach(function (o) { var nm = o.x.mid ? o.x.club : k === 'blue' ? '남음' : '보관'; by[nm] = (by[nm] || 0) + 1; if (o.x.end && o.x.live) ends.push(o.x.end); });
           ends.sort();
           var su = xs.length ? Object.keys(by).map(function (n) { return esc(n) + ' ' + by[n]; }).join(' · ') + (ends.length ? ' · ~' + LZ.fmtYmd(ends[0]) : '') + (k !== 'blue' && xs.some(function (o) { return !o.x.live; }) ? ' · 끝난 것 있음' : '')
-            : k === 'blue' ? '클럽을 만들 때 무료로 받아요' : k === 'red' ? won(sc.seat_price) + '/장 · ' + (sc.seat_days % 365 === 0 ? sc.seat_days / 365 + '년' : sc.seat_days + '일') : '구매 ' + won(sc.gold_price) + ' · ' + sc.gold_years + '년';
+            : k === 'blue' ? (bl.unl ? '관리자 · 클럽 개설 제한 없음' : '클럽을 만들 때 무료로 받아요') : k === 'red' ? won(sc.seat_price) + '/장 · ' + (sc.seat_days % 365 === 0 ? sc.seat_days / 365 + '년' : sc.seat_days + '일') : '구매 ' + won(sc.gold_price) + ' · ' + sc.gold_years + '년';
           return '<div class="li pk9r"' + (xs.length ? ' data-act="passKind" data-v="' + k + '" role="button" tabindex="0"' : '') + '><span class="pdot ' + k + '" aria-hidden="true"></span><div class="t"><b>' + PKN[k] + ' ' + xs.length + '장</b><span class="su">' + su + '</span></div>' +
             (xs.length ? '<button type="button" class="ib9" data-act="passKind" data-v="' + k + '" aria-label="' + PKN[k] + ' 메뉴">' + LZ.ic('more') + '</button>' : '') + '</div>';
         }).join('') + '</div>' +

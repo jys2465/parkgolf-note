@@ -49,6 +49,7 @@
       var li = function (icon, t, s, attrs) { return '<button type="button" class="li cont" ' + attrs + '>' + LZ.ic(icon, 'gi') + '<div class="t"><b>' + t + '</b>' + (s ? '<span class="su">' + s + '</span>' : '') + '</div>' + LZ.ic('chev') + '</button>'; };
       root.innerHTML = LZ.hdr('홈') + '<div id="syncbar" class="sync wait" hidden></div><div class="wrap v8">' +
         '<div class="hme"><button type="button" class="hav" data-go="me" aria-label="내 정보 · 프로필 사진">' + LZ.avatar(me, 'lg') + '</button><div class="t"><h1 class="vt hi hname">' + (adm ? '관리자님, 안녕하세요' : esc(LZ.nim(me.nick)) + ', 안녕하세요') + '</h1><span class="su">' + (adm ? '관리자' : esc(({ blue: '블루회원', red: '레드회원', gold: '골드회원', black: '블랙' })[me.tier] || '')) + (me.created ? ' · 함께한 지 ' + LZ.daysSince(me.created) + '일' : '') + '</span></div></div>' +
+        (!adm && m.own ? (function (o) { var n = (o.pay || 0) + (o.refund || 0) + (o.qna || 0) + (o.pw || 0) + (o.gold || 0); return n ? '<button type="button" class="admtodo9" data-act="admEnter">' + LZ.ic('shield') + '<span><b>관리 · 처리할 일 ' + n + '건</b><small>' + [['결제', o.pay], ['환불', o.refund], ['문의', o.qna], ['비밀번호', o.pw], ['골드 만기', o.gold]].filter(function (x) { return x[1]; }).map(function (x) { return x[0] + ' ' + x[1]; }).join(' · ') + '</small></span>' + LZ.ic('chev') + '</button>' : ''; })(m.own) : '') +
         homeAlerts(me, m) + (adm ? '' : resumeCard(m) + banner(me, m, book) + a2hsRow()) +
         (adm ? LZ.admNote() + '<button type="button" class="btn o" data-go="dash">' + LZ.ic('gear') + '관리 현황판</button>'
           : '') +
@@ -107,7 +108,7 @@
       if (!S.me) { root.innerHTML = LZ.hdr('내 클럽', { back: true }) + LZ.skeleton(4); await LZ.refreshMe(); if (!alive()) return; }
       var me = S.user, moims = S.me.moims || [], capN = moims.filter(function (x) { return x.role === 'cap'; }).length, sc = S.me.seat || {};
       root.innerHTML = LZ.hdr('내 클럽', { back: true }) + '<div class="wrap">' +
-        '<h1 class="ct9">내 클럽 ' + moims.length + '개</h1><p class="cap9">운영 ' + capN + '개 · 만들기는 ' + (sc.free_clubs || 2) + '개까지 무료' + (me.pass ? ' · 블루회원권 남음 ' + me.pass.blue.left + '장' : '') + '</p>' +
+        '<h1 class="ct9">내 클럽 ' + moims.length + '개</h1><p class="cap9">운영 ' + capN + '개 · 만들기는 ' + (sc.free_clubs || 2) + '개까지 무료' + (me.pass ? (me.pass.blue.unl ? ' · 클럽 개설 제한 없음' : ' · 블루회원권 남음 ' + me.pass.blue.left + '장') : '') + '</p>' +
         (moims.length ? '<div class="list clubs clubs9">' + moims.map(clubRow).join('') + '</div>' : '<div class="list"><p class="muted" style="margin:0;padding:16px">아직 함께하는 클럽이 없어요. 아래에서 찾거나 만들어 보세요.</p></div>') +
         '<div class="mk9"><button type="button" data-go="find">' + LZ.ic('search') + '클럽 찾기</button><button type="button" data-go="make">' + LZ.ic('plus') + '클럽 만들기</button></div></div>';
     }

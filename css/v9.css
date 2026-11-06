@@ -428,3 +428,14 @@ input:focus,textarea:focus,select:focus{box-shadow:none!important;border-color:v
 /* 9.1.0 #14 글씨 크게: --t0~--t7을 body에서 다시 계산(:root에서 한 번 정해지면 body.big의 --fs가 안 먹었어요) */
 body{--t0:calc(var(--fs) - 3px);--t1:calc(var(--fs) - 1px);--t2:var(--fs);--t3:calc(var(--fs) + 3px);--t4:calc(var(--fs) + 7px);--t5:calc(var(--fs) + 12px);--t6:calc(var(--fs) + 16px);--t7:calc(var(--fs) + 24px)}
 .dkv{margin-top:14px!important}
+
+/* 9.1.1 관리자 겸 회원 */
+#admBar{position:fixed;left:0;right:0;margin:0 auto;max-width:480px;bottom:calc(60px + env(safe-area-inset-bottom));z-index:7;display:flex;align-items:center;gap:8px;padding:8px 10px 8px 14px;background:#1d2a27;color:#fff;font-size:calc(13px*var(--k,1))}
+#admBar span{flex:1;min-width:0;display:flex;align-items:center;gap:6px}#admBar svg{width:16px;height:16px;flex:0 0 auto;color:#7fd6c2}#admBar b{font-weight:700}
+#admBar button{border:0;border-radius:99px;background:#fff;color:#1d2a27;font:inherit;font-weight:700;padding:0 14px;min-height:34px;cursor:pointer}
+body.admmode .wrap{padding-bottom:150px}
+.admtodo9{display:flex;align-items:center;gap:12px;width:100%;border:0;border-radius:14px;background:#1d2a27;color:#fff;font:inherit;text-align:left;padding:12px 14px;margin:0 0 12px;cursor:pointer}
+.admtodo9>svg:first-child{width:22px;height:22px;color:#7fd6c2;flex:0 0 auto}.admtodo9>svg:last-child{width:16px;height:16px;opacity:.7}
+.admtodo9 span{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.admtodo9 b{font-size:calc(16px*var(--k,1))}.admtodo9 small{font-size:calc(13px*var(--k,1));opacity:.8}
+.adm9l{margin-bottom:12px}
+.depdt{margin-top:14px;border-top:1px solid var(--v9-sep,rgba(60,60,67,.12));padding-top:10px}.depdt>summary{cursor:pointer;color:var(--v9-l2);font-size:calc(14px*var(--k,1));padding:6px 0}

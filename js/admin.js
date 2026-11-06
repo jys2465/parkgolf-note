@@ -358,8 +358,8 @@
   /* v7.1.0 §13 관리자 계정 · 관리자 대리 — 회원에게 보이는 이름은 늘 이 이름. 대리 지명·거두기는 주 관리자만(그때마다 주 관리자 비밀번호) */
   function acctCard(d) {
     var a = d.adm || { main: 1 }, c = d.cfg;
-    return '<div class="card acct" id="acctCard"><h3>' + LZ.ic('shield') + ' 관리자 계정 · 관리자 대리</h3>' +
-      '<p class="muted" style="margin:0 0 8px">지금 들어온 분: <b>' + (a.dep ? '관리자 대리 (' + esc(a.depNick) + ')' : '주 관리자') + '</b> · 한 분당 기기 ' + 2 + '대까지(3번째로 들어오면 그분의 가장 오래된 로그인이 끊겨요)</p>' +
+    return '<div class="card acct" id="acctCard"><h3>' + LZ.ic('shield') + ' 관리자 계정</h3>' +
+      '<p class="muted" style="margin:0 0 8px">지금 들어온 분: <b>' + (a.dep ? '관리자 대리 (' + esc(a.depNick) + ')' : a.own ? '관리자 겸 회원 (' + esc(a.ownNick) + ')' : '주 관리자') + '</b> · 한 분당 기기 ' + 2 + '대까지(3번째로 들어오면 그분의 가장 오래된 로그인이 끊겨요)</p>' +
       '<label class="lb" for="c_adm_name" style="margin-top:0">회원에게 보이는 관리자 이름</label><input type="text" id="c_adm_name" maxlength="8" value="' + esc(c.adm_name || '관리자') + '">' +
       '<p class="hint">알림·문의 답변·공지·회원권 지급·코스 등록자 등 관리자 계정이 한 일은 회원에게 모두 이 이름으로 보여요' + (d.acctNick && d.acctNick !== (c.adm_name || '관리자') ? ' (계정 닉네임 ' + esc(d.acctNick) + '은 회원에게 보이지 않아요)' : '') + '. 누가 했는지는 관리자 기록에만 남아요.</p>' +
       '<button type="button" class="btn g sm" data-act="cfgSave" data-v="adm_name">이름 저장</button>' +
@@ -369,14 +369,31 @@
     var el = $('#depBox'); if (!el) return; var d;
     try { d = await LZ.api('depGet', {}); } catch (e) { el.innerHTML = '<p class="err">' + esc(LZ.errText(e)) + '</p>'; return; }
     if (!$('#depBox')) return; DP = d;
-    var x = d.dep;
-    el.innerHTML = '<h4>' + LZ.ic('user') + ' 관리자 대리</h4>' +
+    var x = d.dep, o = d.own;
+    el.innerHTML = '<h4>' + LZ.ic('shield') + ' 관리자 겸 회원 계정</h4>' +
+      (o ? '<div class="depnow"><b>' + esc(o.nick) + '</b><span class="muted">' + (o.at ? LZ.fmtDate(o.at) + '부터' : '') + (o.ok ? ' · 이 회원 계정으로 로그인하면 내 정보 › <b>관리</b>로 바로 들어와요' : ' · <span class="err">지금 쓸 수 없는 계정이에요</span>') + '</span></div>'
+        : '<p class="muted" style="margin:0 0 6px">내 회원 계정 하나를 정하면, 그 계정으로 로그인한 채로 관리 화면에 들어가고 관리자 알림도 받아요(“관리자” 계정으로 바꿔 들어오지 않아도 돼요). 관리 화면에서 한 일은 회원님께 모두 “관리자”로 보여요.</p>') +
+      (d.main ? '<div class="row">' + (o ? '<button type="button" class="btn o sm" data-act="ownNew">다른 계정으로</button><button type="button" class="btn g sm" data-act="ownOff">끊기</button>' : '<button type="button" class="btn sm" data-act="ownNew">' + LZ.ic('plus') + '내 회원 계정 정하기</button>') + '</div>' : '') +
+      '<details class="depdt"' + (x ? ' open' : '') + '><summary>관리자 대리 (다른 분에게 맡길 때)</summary>' +
+      '<h4>' + LZ.ic('user') + ' 관리자 대리</h4>' +
       (x ? '<div class="depnow"><b>' + esc(x.nick) + '</b><span class="muted">' + (x.at ? LZ.fmtDate(x.at) + '부터' : '') + ' · 지금 로그인 ' + (x.sess || 0) + '대' + (x.ok ? '' : ' · <span class="err">지금 쓸 수 없는 계정(블랙·탈퇴)</span>') + '</span></div>'
         : '<p class="muted" style="margin:0 0 6px">사장님 대신 관리자 일을 할 분 1명을 정해요. 그분은 로그인 화면에서 닉네임 <b>관리자</b> + 대리 비밀번호 6자리로 같은 관리자 계정에 들어와요. 회원에게는 똑같이 "' + esc(d.name) + '"로 보여요.</p>') +
       (d.main ? '<div class="row">' + (x ? '<button type="button" class="btn o sm" data-act="depNew" data-v="pin">비밀번호 새로</button><button type="button" class="btn o sm" data-act="depNew">다른 분으로</button><button type="button" class="btn red sm" data-act="depOff">거두기</button>' : '<button type="button" class="btn sm" data-act="depNew">' + LZ.ic('plus') + '관리자 대리 정하기</button>') + '</div>'
-        : '<p class="hint">관리자 대리로 들어오셨어요. 대리 지명·거두기와 주 관리자 비밀번호는 주 관리자만 바꿀 수 있어요. 내 정보 → 비밀번호 바꾸기는 대리 비밀번호를 바꿔요.</p>');
+        : '<p class="hint">관리자 대리로 들어오셨어요. 대리 지명·거두기와 주 관리자 비밀번호는 주 관리자만 바꿀 수 있어요. 내 정보 → 비밀번호 바꾸기는 대리 비밀번호를 바꿔요.</p>') + '</details>';
   }
   var DP = null;
+  /** v9.1.1 관리자 겸 회원 계정 정하기 · 끊기 */
+  LZ.act.ownNew = async function () {
+    var r = await LZ.dialog({ title: '관리자 겸 회원 계정', html: '<p class="muted">관리자 일을 함께 할 <b>내 회원 계정</b>의 닉네임을 적어 주세요. 그 계정으로 로그인한 채로 관리 화면에 들어가고, 관리자 알림도 그 계정으로 와요.</p><label class="lb" for="owNick">회원 닉네임</label><input type="text" id="owNick" class="in" maxlength="8" autocomplete="off">', cancel: null, focus: '#owNick',
+      buttons: [{ label: '다음', kind: 'y', value: 'ok' }, { label: '취소', kind: 'g', value: null }] });
+    if (r !== 'ok') return; var nick = (LZ.dlgVals.owNick || '').trim(); if (!nick) { LZ.toast('닉네임을 적어 주세요'); return; }
+    var sure = await mainPin(LZ.nim(esc(nick)) + ' 계정을 관리자 겸 회원으로 정할까요?', '회원님께는 계속 “관리자”로만 보여요.'); if (sure === null) return;
+    try { await LZ.api('ownSet', { nick: nick, sure: sure }); LZ.toast(LZ.nim(nick) + ' 계정으로 관리할 수 있어요. 그 계정으로 로그인해 내 정보 › 관리를 눌러 보세요', 5000); depPaint(); } catch (e) { LZ.toast(LZ.errText(e), 5000); }
+  };
+  LZ.act.ownOff = async function () {
+    var sure = await mainPin('관리자 겸 회원을 끊을까요?', '그 회원 계정은 그대로이고, 관리 화면에 들어오는 길과 관리자 알림만 없어져요.'); if (sure === null) return;
+    try { await LZ.api('ownOff', { sure: sure }); LZ.toast('끊었어요'); if (LZ.S.asAdm) { LZ.admExit(); return; } depPaint(); } catch (e) { LZ.toast(LZ.errText(e), 5000); }
+  };
   /** 대리 정하기: 회원 닉네임 → 대리 비밀번호 6자리 두 번 → 주 관리자 비밀번호 확인 */
   LZ.act.depNew = async function (el, v) {
     var same = v === 'pin' && DP && DP.dep, cur = same ? DP.dep.nick : '';
