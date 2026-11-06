@@ -40,7 +40,7 @@
   }
   function press(st) {
     if (st.done) return; st.done = true; pressed = st.el; st.el.classList.add('v9p');
-    if (rippleOk(st.el)) ripple(st.el, st); V9.buzz();
+    V9.buzz();   // v9.1 물결 그림은 없앴어요(휴대폰이 바쁘면 단추 모양 자국이 2초쯤 남았어요) · 단추 자체 눌림만
     if (st.el.closest('.pad')) setTimeout(function () { var on = document.querySelectorAll('#dots i.on'), d = on[on.length - 1]; if (d) { d.classList.remove('pop9'); void d.offsetWidth; d.classList.add('pop9'); } }, 30);   // 숫자판: 채운 점이 톡
   }
   function cancel() { clearTimeout(holdT); start = null; release(); }
@@ -55,7 +55,7 @@
   document.addEventListener('pointerup', function () { if (!start) return release(); var st = start; start = null; clearTimeout(holdT); if (!st.done) press(st); release(); }, { passive: true });
   ['pointercancel', 'dragstart'].forEach(function (t) { document.addEventListener(t, cancel, { passive: true }); });
   window.addEventListener('scroll', function () { if (start && !start.done) cancel(); }, { passive: true, capture: true });
-  function release() { if (!pressed) return; var p = pressed; pressed = null; setTimeout(function () { p.classList.remove('v9p'); }, 90); }
+  function release() { if (!pressed) return; var p = pressed; pressed = null; p.classList.remove('v9p'); }
 
   /* ───── 2. 한 줄 맞춤: 한 줄로 써야 하는 글자가 넘치면 그 글자만 조금(최소 72%) 줄여요 ───── */
   var ONE = [
@@ -114,6 +114,17 @@
   LZ.act.themeSet = function (el, v) { store.set('lz.themeMode', v); V9.themeApply(); if (LZ.redraw) LZ.redraw(); };
   V9.themeApply();
   try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () { if (V9.themeMode() === 'auto') V9.themeApply(); }); } catch (x) { /* 오래된 브라우저 */ }
+
+  /* ───── 8. 글자판이 올라와 화면이 밀려도 위 막대는 보이는 맨 위에(아이폰) ───── */
+  try {
+    var vv = window.visualViewport;
+    if (vv) { var vvFix = function () { var off = Math.max(0, vv.offsetTop || 0); document.documentElement.style.setProperty('--vvTop', off + 'px'); }; vv.addEventListener('resize', vvFix); vv.addEventListener('scroll', vvFix); }
+  } catch (x) { /* 오래된 브라우저 */ }
+  /* ───── 9. 글자 칸: 휴대폰 자동 완성(연락처 · 주소) 줄이 뜨지 않게 ───── */
+  document.addEventListener('focusin', function (e) {
+    var t = e.target; if (!t || t.tagName !== 'INPUT' || /^(password|number|tel|email|checkbox|radio|range|date|time)$/.test(t.type)) return;
+    if (!t.dataset.v9ac) { t.dataset.v9ac = '1'; t.setAttribute('autocomplete', t.id === 'nick' ? 'username' : 'off'); t.setAttribute('autocorrect', 'off'); t.setAttribute('autocapitalize', 'off'); t.setAttribute('spellcheck', 'false'); if (!t.name || /name|이름/i.test(t.name)) t.setAttribute('name', 'f' + Math.random().toString(36).slice(2, 7)); }
+  }, true);
 
   /* ───── 6. 후반 홀 이름: “1홀 (10홀)” ───── */
   LZ.holeName = function (n) { n = Number(n); return n > 9 ? (n - 9) + '홀 (' + n + '홀)' : n + '홀'; };

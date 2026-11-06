@@ -118,7 +118,7 @@
   /** v9 코스 홀 이름: 후반은 1~9홀로 쓰고 괄호에 전체 번호 — 1홀 (10홀) */
   LZ.hn9 = function (n, cls) { n = +n; return n > 9 && n <= 18 ? '<b class="hn' + (cls ? ' ' + cls : '') + '">' + (n - 9) + '<small>홀</small><small class="hn2">(' + n + '홀)</small></b>' : LZ.hn(n, cls); };
   /** v9 파 표시: 파3 하늘 ● · 파4 초록 ■ · 파5 자홍 ▲ (색만으로 뜻을 전하지 않게 모양도 달라요) */
-  LZ.parMk = function (p, noTxt) { p = +p; var k = p === 3 ? ['p3', '●'] : p === 4 ? ['p4', '■'] : p >= 5 ? ['p5', '▲'] : ['p0', '']; return '<span class="parm ' + k[0] + '">' + (k[1] ? '<i aria-hidden="true">' + k[1] + '</i>' : '') + (noTxt ? '' : '파 ' + (p || '–')) + '</span>'; };
+  LZ.parMk = function (p) { p = +p; var k = p === 3 ? 'p3' : p === 4 ? 'p4' : p >= 5 ? 'p5' : 'p0'; return '<span class="parm ' + k + '">파 ' + (p || '–') + '</span>'; };   // v9.1 도형 없이 색만(파3 하늘 · 파4 초록 · 파5 자홍)
   /* 좌우: 0 = "그대로"(희미하게) · 왼쪽은 빨강 · 오른쪽은 파랑 */
   LZ.lrPlain = function (r) { var n = r.n | 0; return !n ? '그대로' : (r.d === 'L' ? '좌 ' : '우 ') + n; };
   LZ.lrTxt = function (r) { var n = r.n | 0; return '<span class="lrv ' + (!n ? 'c' : r.d === 'L' ? 'l' : 'r') + '">' + LZ.lrPlain(r) + '</span>'; };
@@ -267,7 +267,7 @@
     o = o || {};
     var name = LZ.cur().name, bar = o.bar || BAR[name] || title, head = !o.nosub && String(title) !== String(bar);
     LZ.titleOf[name] = String(bar);
-    var prev = LZ.stack && LZ.stack.length > 1 ? LZ.stack[LZ.stack.length - 2] : null, bl = o.back ? (o.backText || (prev && prev.name !== name && LZ.titleOf[prev.name]) || '') : ''; if (bl.length > 7) bl = '';
+    var prev = LZ.stack && LZ.stack.length > 1 ? LZ.stack[LZ.stack.length - 2] : null, bl = o.back ? (o.backText || (prev && prev.name !== name && LZ.titleOf[prev.name]) || '') : ''; if (bl.length > (document.body.classList.contains('big') ? 6 : 7)) bl = '';
     var root = !o.back && LZ.ROOT9.indexOf(name) >= 0;   // v9 아래 탭 첫 화면: 위 막대는 비우고 본문에 큰 제목
     return '<div class="top' + (root ? ' root9' : '') + '">' + (o.back ? '<button type="button" class="bk' + (bl ? ' bk9' : '') + '" data-act="back" aria-label="' + esc(o.backLabel || (bl ? bl + '(으)로 돌아가기' : '뒤로')) + '">' + LZ.ic('back') + (bl ? '<span class="bkt">' + esc(bl) + '</span>' : '') + '</button>' : '') + '<h2>' + (root ? '' : esc(bar)) + '</h2>' + LZ.topBtns(o) +
       '</div>' + (root ? '<h1 class="lt9">' + esc(bar) + '</h1>' : '') + (head || o.right ? '<div class="subh">' + (head ? '<h1 class="vt">' + esc(title) + '</h1>' : '') + (o.right ? '<div class="acts">' + o.right + '</div>' : '') + '</div>' : '');

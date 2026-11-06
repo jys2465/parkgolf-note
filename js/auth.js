@@ -126,18 +126,37 @@
       root.innerHTML = LZ.hdr('가입하기', { back: true, noBell: 1 }) + '<div class="wrap">' +
         (cfg && cfg.inv ? '<div class="box"><b>' + esc(cfg.inv.name) + '</b> 클럽 초대 · 캡틴 ' + LZ.nimE(cfg.inv.captainNick) + ' · 회원 ' + cfg.inv.members + '명<br><span class="muted">가입하면 이 클럽에 ' + (cfg.inv.auto ? '바로 들어가요' : '가입 신청이 돼요') + '</span></div>' : '') +
         (refNick ? '<div class="box"><b>' + esc(refNick) + '</b>님의 초대로 오셨어요' + (!(cfg && cfg.inv) && store.get('lz.noclub') !== '1' ? '<br><span class="muted">가입하면 ' + LZ.nimE(refNick) + ' 클럽에 가입 신청이 들어가요</span>' : '') + '</div>' : '') +
-        (kon ? '<div class="card kstep' + (JK.kt ? ' done' : '') + '"><h3><span class="stepn">1</span> 카카오로 본인 확인</h3>' +
-          (JK.kt ? '<p class="kok">' + LZ.ic('check') + ' 카카오 확인을 마쳤어요' + (JK.adm ? ' <span class="chip">관리자 카카오</span>' : '') + '</p>' : (kerr ? '<p class="err" id="kerr">' + esc(kerr) + '</p>' : '<p class="muted" style="margin:0 0 8px">가입은 한 분당 하나예요. 카카오 화면에 다녀오면 이 화면으로 돌아와요.</p>') + KBTN('joinKakao') + KNOTE) + '</div>' : '') +
-        '<div class="card' + (done ? '' : ' dim') + '" id="jform">' + (kon ? '<h3><span class="stepn">2</span> 닉네임·비밀번호</h3>' : '') + '<label class="lb" style="margin-top:0" for="jnick">닉네임</label><input type="text" id="jnick" placeholder="한글·영문·숫자 2~8자" maxlength="8" value="' + esc(JK.nick) + '"><p class="hint" id="jhint">스크린 파크골프 기계에 적는 닉네임과 같게 하면 좋아요.</p>' +
-        '<label class="lb">비밀번호 숫자 4자리</label>' + padHtml(4) +
-        '<label class="lb agl"><input type="checkbox" id="agree"><span class="muted">가입은 무료이고 한 분당 하나예요. 닉네임·기록은 클럽 회원님께 보일 수 있어요. 비밀번호는 암호화해서 저장돼요.</span></label>' +
-        '<button type="button" class="btn org" data-act="joinOk">가입하기</button>' + (kon ? '<p class="hint">비밀번호를 잊으면 <b>카카오로 확인</b>하고 새로 정해요.</p>' : '') + '</div>' +
+        '<div class="jsteps9" id="jbar"></div>' +
+        (kon ? '<div class="jst9" data-s="1"><div class="t19">카카오로 본인 확인</div><p class="cap19">카카오 계정 하나로 한 분만 가입해요</p><div class="card kstep' + (JK.kt ? ' done' : '') + '">' +
+          (JK.kt ? '<p class="kok">' + LZ.ic('check') + ' 카카오 확인을 마쳤어요' + (JK.adm ? ' <span class="chip">관리자 카카오</span>' : '') + '</p>' : (kerr ? '<p class="err" id="kerr">' + esc(kerr) + '</p>' : '<p class="muted" style="margin:0 0 8px">카카오 화면에 다녀오면 이 화면으로 돌아와요. 이름 · 전화번호는 저장하지 않아요.</p>') + KBTN('joinKakao') + KNOTE) + '</div></div>' : '') +
+        '<div class="jst9" data-s="2" hidden><div class="t19">닉네임</div><p class="cap19">다른 회원님께 보이는 이름이에요 · 스크린 기계에 적는 닉네임과 같으면 좋아요</p><input type="text" id="jnick" class="reginp" placeholder="한글 · 영문 · 숫자 2~8자" maxlength="8" value="' + esc(JK.nick) + '" enterkeyhint="next"><p class="hint" id="jhint">7일에 한 번 바꿀 수 있어요</p>' +
+          '<button type="button" class="btn" data-act="joinNext">다음 ›</button></div>' +
+        '<div class="jst9" data-s="3" hidden><div class="t19">비밀번호 4자리</div><p class="cap19">로그인할 때마다 써요' + (kon ? ' · 잊으면 카카오로 확인하고 새로 정해요' : '') + '</p>' + padHtml(4) +
+          '<label class="lb agl"><input type="checkbox" id="agree"><span class="muted">가입은 무료이고 한 분당 하나예요. 닉네임 · 기록은 클럽 회원님께 보일 수 있어요. 비밀번호는 암호화해서 저장돼요.</span></label>' +
+          '<button type="button" class="btn org" data-act="joinOk">가입 완료</button><button type="button" class="lnk" data-act="joinPrev">‹ 닉네임 고치기</button></div>' +
         '<p class="hint">가입은 무료예요. 기록·라운드·시상식·클럽 가입이 바로 돼요. 필드에서는 파크골프·일반골프 스코어도 기록해요.</p></div>';
       pin = '';
+      JK.kon = kon; joinStep(kon && !JK.kt ? 1 : (JK.st === 3 ? 3 : 2));
       var n = $('#jnick'), chk = null;
+      n.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); LZ.act.joinNext(); } });
       n.addEventListener('input', function () { JK.nick = LZ.stripNick(n.value); clearTimeout(chk); chk = setTimeout(async function () { var v = LZ.stripNick(n.value); if (v.length < 2) return; try { var r = await LZ.api('joinCheck', { nick: v }, { noAuth: true, retry: 0 }); $('#jhint').innerHTML = r.res ? '<span class="err">' + esc(r.res.msg) + '</span>' : '<span class="okt">쓸 수 있는 닉네임이에요 ✓</span>'; } catch (e) { /* 무시 */ } }, 500); });
     }
   };
+  /** 가입 단계 보여 주기(다시 그리지 않고 숨김만 바꿔요 · 비밀번호 점 그대로) */
+  function joinStep(st) {
+    JK.st = st; var N = JK.kon ? 3 : 2, k = JK.kon ? st : st - 1;
+    $$('.jst9').forEach(function (x) { x.hidden = +x.dataset.s !== st; });
+    var b = $('#jbar'); if (b) b.innerHTML = '<div class="bar" role="progressbar" aria-valuemin="1" aria-valuemax="' + N + '" aria-valuenow="' + k + '" aria-label="가입 ' + N + '단계 중 ' + k + '단계"><i style="width:' + Math.round(k / N * 100) + '%"></i></div><span>' + k + ' / ' + N + '</span>';
+    if (st === 2) setTimeout(function () { var n = $('#jnick'); if (n && !n.value) n.focus(); }, 60);
+    window.scrollTo(0, 0);
+  }
+  LZ.act.joinNext = async function () {
+    var nick = LZ.stripNick($('#jnick').value);
+    if (nick.length < 2) { LZ.toast('닉네임을 2~8자로 적어 주세요'); return; }
+    try { var r = await LZ.api('joinCheck', { nick: nick }, { noAuth: true, retry: 0 }); if (r.res) { $('#jhint').innerHTML = '<span class="err">' + esc(r.res.msg) + '</span>'; LZ.toast(r.res.msg, 4000); return; } } catch (e) { /* 신호 없음: 가입할 때 다시 확인 */ }
+    JK.nick = nick; var a = document.activeElement; if (a && a.blur) a.blur(); joinStep(3);
+  };
+  LZ.act.joinPrev = function () { joinStep(2); };
   LZ.act.joinKakao = async function () {
     var n = $('#jnick'); if (n) store.setJSON('lz.jdraft', { nick: LZ.stripNick(n.value), at: Date.now() });
     LZ.busy(true, '카카오로 가는 중…');
@@ -146,7 +165,7 @@
   LZ.act.joinOk = async function () {
     var nick = LZ.stripNick($('#jnick').value);
     if ($('.kstep') && !JK.kt) { LZ.toast('먼저 카카오로 본인 확인을 해 주세요', 4000); return; }
-    if (!nick) { LZ.toast('닉네임을 적어 주세요'); return; }
+    if (!nick) { LZ.toast('닉네임을 적어 주세요'); joinStep(2); return; }
     if (pin.length < 4) { LZ.toast('비밀번호 4자리를 눌러 주세요'); return; }
     if (!$('#agree').checked) { LZ.toast('안내를 읽고 체크해 주세요'); return; }
     LZ.busy(true, '가입하는 중…');

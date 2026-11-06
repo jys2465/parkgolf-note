@@ -122,15 +122,17 @@
           (u.wasRed && u.tier === 'blue' ? '<p class="muted" style="margin:6px 0 0">레드·골드회원권 기간이 끝나 블루회원이에요. 회원권을 다시 사면 바로 바뀌어요.</p>' : '') + LZ.ptTwo(d.points) + '</div>' +
         (pend ? '<div class="card pendc"><h3>' + LZ.ic('bell') + ' 결제 ' + esc(pend.stName) + '</h3><p style="margin:0"><b>' + esc(pend.planName) + '</b></p><p class="muted" style="margin:4px 0 0">보낼 금액 ' + won(pend.cash) + (pend.pts ? ' · 포인트 ' + pt(pend.pts) : '') + (pend.depLabel ? ' · 보낸 분 ' + esc(pend.depLabel) : '') + '<br>관리자가 입금을 확인하면 회원권이 생기고 알림이 와요.</p><button type="button" class="btn g sm" data-act="payCancel">요청 취소</button></div>' : '') +
         (rf.req ? '<div class="card pendc"><h3>' + LZ.ic('back') + ' 환불 ' + esc(rf.req.stName) + '</h3><p style="margin:0">' + esc(rf.req.planName) + ' · ' + won(rf.req.amount) + '</p><button type="button" class="btn g sm" data-go="refund">환불 보기</button></div>' : '') +
-        '<div class="card"><h3>' + LZ.ic('club') + ' 내 회원권 <span class="muted small">1장 = ' + sc.seat_size + '자리</span></h3><div class="psum">' + passRows(u, mine) + '</div>' +
-          '<div class="row"><button type="button" class="btn sm" data-go="pay" data-p=\'' + esc(JSON.stringify({ plan: 'red' })) + '\'>' + LZ.ic('plus') + '레드회원권 사기</button><button type="button" class="btn o sm" data-go="pay" data-p=\'' + esc(JSON.stringify({ plan: 'gold' })) + '\'>' + LZ.ic('star') + '골드회원권 사기</button></div>' +
-          '<p class="hint" style="margin:6px 2px 0">레드 ' + won(sc.seat_price) + '/장 · ' + (sc.seat_days % 365 === 0 ? sc.seat_days / 365 + '년' : sc.seat_days + '일') + ' · 골드 ' + won(sc.gold_price) + '/장 · ' + sc.gold_years + '년. 산 회원권은 보관했다가 클럽을 만들 때나 내가 캡틴·매니저인 클럽에 넣어요.</p></div>' +
-        '<div class="sec">' + LZ.kw('가진 회원권 ' + (list.length + blues.length) + '장', '회원권을 누르면 그 회원권으로 할 수 있는 일이 나와요. <b>블루</b>는 넣은 클럽 보기만 · <b>레드</b>는 연장 · 회원권 옮기기 · 클럽에 넣기 · 환불(같이 산 회원권 함께) · <b>골드</b>는 연장(관리자 지급은 관리자가) · 회원권 옮기기(주인만) · 클럽에 넣기, 양도는 없어요.') + '</div>' +
-        '<div class="list passes">' + list.concat(blues).map(function (x, k) {
-          var blue = x.kind === 'blue', chip = !blue && !x.live ? ' <span class="pill">끝남</span>' : !blue && x.left !== null && x.left <= 30 ? ' <span class="pill">곧 끝나요</span>' : '';
-          var su = blue ? (x.mid ? esc(x.club) + '에 넣음' : '남음 · 아직 안 넣음') : (x.mid ? esc(x.club) + ' · ' : '보관 중인 회원권 · ') + '<span class="nw">' + (x.seats || sc.seat_size) + '자리 (회원권 1장)</span> · <span class="nw">~' + LZ.fmtYmd(x.end) + '</span>' + (x.inUse ? ' · 자리를 쓰는 중' : '');
-          return '<button type="button" class="li pkrow" data-act="passSheet" data-v="' + k + '"><span class="pdot ' + x.kind + '" aria-hidden="true"></span><div class="t"><b>' + (PKN[x.kind] || '회원권') + chip + '</b><span class="su">' + su + '</span></div>' + LZ.ic('chev') + '</button>';
+        '<div class="hdr9">내 회원권 <span>1장 = ' + sc.seat_size + '자리</span></div><div class="grp9 pk9">' + ['blue', 'red', 'gold'].map(function (k) {
+          var xs = TIER.list.map(function (x, ix) { return { x: x, ix: ix }; }).filter(function (o) { return o.x.kind === k; }), by = {}, ends = [];
+          xs.forEach(function (o) { var nm = o.x.mid ? o.x.club : k === 'blue' ? '남음' : '보관'; by[nm] = (by[nm] || 0) + 1; if (o.x.end && o.x.live) ends.push(o.x.end); });
+          ends.sort();
+          var su = xs.length ? Object.keys(by).map(function (n) { return esc(n) + ' ' + by[n]; }).join(' · ') + (ends.length ? ' · ~' + LZ.fmtYmd(ends[0]) : '') + (k !== 'blue' && xs.some(function (o) { return !o.x.live; }) ? ' · 끝난 것 있음' : '')
+            : k === 'blue' ? '클럽을 만들 때 무료로 받아요' : k === 'red' ? won(sc.seat_price) + '/장 · ' + (sc.seat_days % 365 === 0 ? sc.seat_days / 365 + '년' : sc.seat_days + '일') : '구매 ' + won(sc.gold_price) + ' · ' + sc.gold_years + '년';
+          return '<div class="li pk9r"' + (xs.length ? ' data-act="passKind" data-v="' + k + '" role="button" tabindex="0"' : '') + '><span class="pdot ' + k + '" aria-hidden="true"></span><div class="t"><b>' + PKN[k] + ' ' + xs.length + '장</b><span class="su">' + su + '</span></div>' +
+            (xs.length ? '<button type="button" class="ib9" data-act="passKind" data-v="' + k + '" aria-label="' + PKN[k] + ' 메뉴">' + LZ.ic('more') + '</button>' : '') + '</div>';
         }).join('') + '</div>' +
+        '<p class="fn9">⋯를 누르면 그 회원권으로 할 수 있는 일(연장 · 옮기기 · 클럽에 넣기 · 환불)이 나와요. 산 회원권은 보관했다가 클럽을 만들 때나 내가 캡틴 · 매니저인 클럽에 넣어요.</p>' +
+        '<button type="button" class="btn buy9" data-act="buySheet">' + LZ.ic('plus') + '회원권 사기</button>' +
         (rf.can || rf.recent ? '<button type="button" class="btn g sm" data-go="refund">' + LZ.ic('back') + '환불' + (rf.recent ? ' · ' + esc(rf.recent.stName) : '') + '</button>' : '') +
         '<details class="card acc"><summary><h3>' + LZ.ic('help') + ' 회원권 안내</h3></summary><div class="accb seatguide">' + LZ.cleanHtml(sc.guide) + '</div></details></div>';
     }
@@ -139,6 +141,22 @@
   LZ.seatTxt = function (m) { var n = Number(m.n !== undefined ? m.n : (m.members || 0)).toLocaleString('ko-KR'); return m.staffClub ? '회원 ' + (m.members || 0) + '명 · 자리 제한 없음' : '회원 ' + n + '명 / ' + Number(m.seats || m.cap || 0).toLocaleString('ko-KR') + '자리' + (m.passes !== undefined ? ' (회원권 ' + m.passes + '장)' : ''); };
   /* v8 회원권마다 메뉴: 블루 — 넣은 클럽 보기만 / 레드 — 연장 · 회원권 옮기기 · 클럽에 넣기 · 환불(같이 산 n장 함께) / 골드 — 연장(관리자 지급은 관리자) · 회원권 옮기기(주인만) · 클럽에 넣기 · 양도 없음 */
   var TIER = null;
+  /** 한 종류(블루 · 레드 · 골드) 회원권 목록 → 누르면 그 회원권 메뉴 */
+  LZ.act.passKind = function (el, k) {
+    var sc = TIER.sc;
+    LZ.sheet('<h2><span class="pdot ' + k + '" aria-hidden="true"></span> ' + PKN[k] + '</h2><div class="list">' + TIER.list.map(function (x, ix) {
+      if (x.kind !== k) return '';
+      var blue = k === 'blue', chip = !blue && !x.live ? ' <span class="pill">끝남</span>' : !blue && x.left !== null && x.left <= 30 ? ' <span class="pill">곧 끝나요</span>' : '';
+      var su = blue ? (x.mid ? esc(x.club) + '에 넣음' : '남음 · 아직 안 넣음') : (x.mid ? esc(x.club) + ' · ' : '보관 중 · ') + (x.seats || sc.seat_size) + '자리 · ~' + LZ.fmtYmd(x.end) + (x.inUse ? ' · 자리를 쓰는 중' : '');
+      return '<button type="button" class="li pkrow" data-act="passSheet" data-v="' + ix + '"><div class="t"><b>' + PKN[k] + chip + '</b><span class="su">' + su + '</span></div>' + LZ.ic('chev') + '</button>';
+    }).join('') + '</div>');
+  };
+  LZ.act.buySheet = function () {
+    var sc = TIER.sc;
+    LZ.sheet('<h2>회원권 사기</h2><p class="muted">1장 = ' + sc.seat_size + '자리 · 산 회원권은 보관했다가 클럽에 넣어요. 카카오페이 · 계좌로 보내고 신청하면 관리자가 입금을 확인해요.</p>' +
+      '<button type="button" class="opt buyo9" data-go="pay" data-p=\'' + esc(JSON.stringify({ plan: 'red' })) + '\'><b><span class="pdot red" aria-hidden="true"></span> 레드회원권</b><span>' + won(sc.seat_price) + '/장 · ' + (sc.seat_days % 365 === 0 ? sc.seat_days / 365 + '년' : sc.seat_days + '일') + ' · 연장 · 옮기기 · 환불</span></button>' +
+      '<button type="button" class="opt buyo9" data-go="pay" data-p=\'' + esc(JSON.stringify({ plan: 'gold' })) + '\'><b><span class="pdot gold" aria-hidden="true"></span> 골드회원권</b><span>' + won(sc.gold_price) + '/장 · ' + sc.gold_years + '년 · 양도 없음</span></button>');
+  };
   LZ.act.passSheet = function (el, v) {
     var x = TIER && TIER.list[+v]; if (!x) return;
     var o = function (t, su, attr, off) { return '<button type="button" class="opt' + (off ? ' off' : '') + '" ' + (off ? 'disabled ' : '') + attr + '><b>' + t + '</b>' + (su ? '<span>' + su + '</span>' : '') + '</button>'; }, h = '';
@@ -344,7 +362,7 @@
       if (buy && !body.take) body.n = Number(p.n) || 1;
       var d = await LZ.api('payInfo', body); if (!alive()) return; PAY.d = d; PAY.p = body;
       var sc = d.seat, q = d.quote, pend = d.pending, gold = plan === 'gold' || (q && q.kind === 'gold'), nm = gold ? '골드회원권' : '레드회원권';
-      var title = plan === 'renew' ? '회원권 연장' : body.take ? '캡틴 인수' : body.give ? '양도하고 나가기' : nm + ' 사기', html = '';
+      var title = plan === 'renew' ? '회원권 연장' : body.take ? '캡틴 인수' : body.give ? '양도하고 탈퇴하기' : nm + ' 사기', html = '';
       if (pend) html = '<div class="card pendc"><h3>' + LZ.ic('bell') + ' 결제 ' + esc(pend.stName) + '</h3><p style="margin:0"><b>' + esc(pend.planName) + '</b> · 보낼 금액 ' + won(pend.cash) + (pend.pts ? ' · 포인트 ' + pt(pend.pts) : '') + '</p><p class="muted">' + (pend.method === 'bank' ? '계좌이체' : '카카오페이') + ' · 보낸 분 <b>' + esc(pend.depLabel || pend.depositor) + '</b><br>관리자가 확인하면 바로 회원권이 생기고 알림이 와요. 보통 하루 안에 확인해요.</p><button type="button" class="btn g sm" data-act="payCancel">요청 취소</button><p class="hint">새로 결제하려면 이 요청을 먼저 취소해 주세요.</p></div>';
       else {
         /* 넣을 곳 */

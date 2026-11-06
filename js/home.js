@@ -138,17 +138,22 @@
         (m.meLock ? '<div class="box warn" style="margin-top:8px">' + LZ.ic('lock') + ' 자리가 모자라 지금은 <b>보기만</b> 할 수 있어요. 캡틴이 회원권을 넣으면 바로 풀려요. 내 수첩에는 그대로 적을 수 있어요.</div>' : '') +
         hand +
         (!d.me ? '<div class="card"><p style="margin:0 0 6px">이 클럽의 회원님이 아니에요.</p><button type="button" class="btn" data-act="applyClub" data-v="' + esc(m.id) + '">가입 신청</button></div>' : '') +
+        (d.me ? '<div class="cact9"><button type="button" class="cab9" data-act="openClubCourses" data-v="' + esc(m.id) + '">' + LZ.ic('screen') + '<b>스크린 공략하기</b><small>회원님 기록 평균</small></button>' +
+          '<button type="button" class="cab9" data-go="notices" data-p=\'' + esc(JSON.stringify({ mid: m.id })) + '\'>' + LZ.ic('note') + '<b>클럽 소식</b><small>' + ((d.news || []).length ? '새 소식 ' + d.news.length + '개' : m.meet ? '모임 · ' + esc(m.meet) : '공지 · 모임 · 챌린지') + '</small>' + ((d.news || []).length ? '<span class="cnt">' + d.news.length + '</span>' : '') + '</button></div>' : '') +
         (staff ? '<div class="list cstaff">' + li('trophy', '캡틴 대시보드', '이달 활동 · 안 오신 분 · 이달의 시상식', 'data-go="capDash" data-p=\'' + esc(JSON.stringify({ id: m.id })) + '\'') +
           li('user', '가입 신청', nReq ? (m.staffClub ? '승인 / 보류' : (s.n || 0) >= (s.eff || 0) ? '자리가 다 찼어요 · 회원권을 넣어 ' + (s.size || 10) + '자리를 늘려 주세요' : '승인 / 보류 · 빈자리 ' + ((s.eff || 0) - (s.n || 0)) + '자리') : '새 신청이 없어요', 'data-act="clubReqs"', nReq ? '<span class="cnt" aria-label="가입 신청 ' + nReq + '건">' + nReq + '</span>' : '') +
           (cap && (s.need || s.locked) ? li('lock', '남길 회원 고르기', '자리가 모자라면 고른 분이 먼저 남아요(매니저는 늘 남음)', 'data-go="clubKeep" data-p=\'' + esc(JSON.stringify({ id: m.id })) + '\'') : '') + '</div>' : '') +
-        (d.me ? '<div class="list cmine">' + li('screen', '스크린 공략 열기', '이 클럽 회원님들의 기록 평균', 'data-act="openClubCourses" data-v="' + esc(m.id) + '"') + li('note', '소식' + ((d.news || []).length ? ' ' + d.news.length : ''), info.length ? info.join(' · ') : '공지 · 모임 · 챌린지', 'data-go="notices" data-p=\'' + esc(JSON.stringify({ mid: m.id })) + '\'') + '</div>' : '') +
         (d.me ? '<div class="sec">' + LZ.kw('회원 ' + mem.length, '레벨 점수 높은 순이에요(캡틴·매니저 먼저). “잠길 회원”은 회원권이 끝나면 자리가 모자라 잠기는 분, “보기만”은 지금 잠긴 분이에요.') + '</div><div class="list cmem">' + mem.map(function (x) {
           var nx = LZ.lvNext(x.pts);
           return '<div class="li mrow">' + LZ.avatar(x) + '<div class="t"><b>' + LZ.nm(x.nick) + (x.cap ? ' <span class="pill cap">캡틴</span>' : x.mgr ? ' <span class="pill mgr">매니저</span>' : '') + (x.live ? ' <span class="pill">기록 중</span>' : '') + (x.lock ? ' <span class="pill">보기만</span>' : x.keep && staff ? ' <span class="pill">남길 회원</span>' : '') + (x.test && S.user.kind === 'admin' ? ' <span class="pill">' + LZ.ic('flask') + '테스트</span>' : '') + '</b><span class="su">' + LZ.lvPts(x.pts) + (nx ? ' · ' + nx : '') + ' · 기록 ' + x.holes + '홀</span></div></div>';
         }).join('') + '</div>' : '') +
         (d.me && d.seat ? LZ.seatCard(m, d, staff) : '') +
-        (d.me ? '<div class="sec">회원님 초대</div><div class="list cinv"><div class="li ccode"><div class="t"><span class="su">클럽 코드</span><b class="code6">' + esc(m.code.slice(0, 3) + ' ' + m.code.slice(3)) + '</b></div></div>' + li('kakao', '클럽 가입 초대하기', '카카오톡 · 문자 · QR', 'data-act="clubInvite"') + '</div>' : '') +
-        (d.me && d.me !== 'cap' ? '<button type="button" class="lnk" data-act="clubLeave">클럽 나가기</button>' : '') + '</div>';
+        (d.me ? '<div class="cinv9"><span class="lb9">클럽 코드</span><button type="button" class="code9" data-act="copy" data-v="' + esc(m.code) + '" aria-label="클럽 코드 ' + esc(m.code) + ' 복사">' + esc(m.code.slice(0, 3) + ' ' + m.code.slice(3)) + '</button><small class="cp9">눌러서 복사</small>' +
+          '<button type="button" class="btn kakao" data-act="clubKakao">' + LZ.ic('kakao') + '카카오톡으로 초대하기</button>' +
+          '<div class="row2"><button type="button" class="btn g" data-act="clubQr">QR 보기</button><button type="button" class="btn g" data-act="clubInvite">문자 · 글 복사</button></div>' +
+          '<p class="hint">초대 링크를 누르면 가입하고 바로 클럽 가입 신청이 돼요</p></div>' : '') +
+        (d.me ? '<button type="button" class="btn g cexit9" data-act="clubExit">클럽 나가기</button>' : '') +
+        (d.me && d.me !== 'cap' ? '<button type="button" class="lnk cquit9" data-act="clubLeave">클럽 탈퇴하기</button>' : '') + '</div>';
       if (p.reqs && staff) LZ.act.clubReqs();
       else if (p.manage && staff) { p.manage = 0; LZ.act.capToggle(); }   // 한 번만(다시 그릴 때 메뉴가 다른 창을 덮지 않게)
     }
@@ -210,7 +215,7 @@
       '<button type="button" class="btn o" data-go="pay" data-p=\'' + esc(JSON.stringify({ plan: 'red', take: CL.d.moim.id })) + '\'>대신 레드회원권 사서 인수하기</button>');
   };
   LZ.act.handRemind = async function () { try { CL.d = await LZ.api('moimHand', { id: CL.d.moim.id, remind: 1 }); LZ.redraw(); LZ.toast('받는 분께 안내를 다시 보냈어요', 3500); } catch (e) { LZ.toast(LZ.errText(e), 4500); } };
-  LZ.act.leaveAsk = async function () { try { await LZ.api('moimLeave', { id: CL.d.moim.id, ask: 1 }); LZ.closeSheet(); LZ.toast('캡틴께 부탁을 보냈어요. 자리가 채워지면 나가실 수 있어요', 4500); } catch (e) { LZ.toast(LZ.errText(e), 4500); } };
+  LZ.act.leaveAsk = async function () { try { await LZ.api('moimLeave', { id: CL.d.moim.id, ask: 1 }); LZ.closeSheet(); LZ.toast('캡틴께 부탁을 보냈어요. 자리가 채워지면 탈퇴하실 수 있어요', 4500); } catch (e) { LZ.toast(LZ.errText(e), 4500); } };
   LZ.act.handCancel = async function () { if (!(await LZ.confirm('캡틴 넘기기를 멈출까요?', '받는 분께 알림이 가요. 나중에 다시 넘길 수 있어요.', '멈추기', 'r'))) return; try { CL.d = await LZ.api('moimHand', { id: CL.d.moim.id, cancel: 1 }); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e), 4500); } };
   /* 함께한 날 축하(100·200·365·1000일, 그날부터 7일 동안) */
   var CELEB = [100, 200, 365, 1000];
@@ -237,6 +242,10 @@
     var url = LZ.APP_URL + '?join=1', text = '⛳ 파크골프 공략수첩\n스크린 파크골프 칠 때 홀마다 어디로 얼마나 칠지 적어 두는 수첩이에요. 가입은 무료, 닉네임과 비밀번호 4자리면 끝!\n필드에서는 파크골프·일반골프 스코어도 기록해요.\n아래 링크를 누르면 가입 화면이 바로 열려요.';
     LZ.inviteSheet('공략수첩 가입 초대', text, url);
   };
+  LZ.act.clubKakao = function () { var m = CL.d.moim; LZ.kakaoShare('⛳ 파크골프 공략수첩 "' + m.name + '" 클럽에 초대해요 🏌\n가입은 무료예요. 클럽 코드 ' + m.code + '\n👇 아래 링크를 누르면 바로 가입하고 클럽 가입 신청이 돼요.', inviteUrl(m)); };
+  LZ.act.clubQr = function () { LZ.act.inviteQrShow(null, inviteUrl(CL.d.moim)); };
+  /** 클럽 나가기 = 이 화면만 닫기(탈퇴 아님) */
+  LZ.act.clubExit = function () { if (LZ.stack.length > 1) LZ.back(); else LZ.go('home', {}, { reset: true }); };
   LZ.act.clubInvite = function () { var m = CL.d.moim; LZ.inviteSheet('"' + m.name + '" 클럽 초대', '⛳ 파크골프 공략수첩 "' + m.name + '" 클럽에 초대해요 🏌\n가입은 무료예요. 클럽 코드 ' + m.code + '\n필드에서는 파크골프·일반골프 스코어도 기록해요.\n👇 아래 링크를 누르면 바로 가입하고 클럽 가입 신청이 돼요.', inviteUrl(m)); };
   /* ───── 안내장 이미지(1080×1350): 가입 안내 · 클럽 초대 · (단체 초대는 event.js 편성표 그림) ───── */
   /** QR을 캔버스에 그림(vendor/qrcode.js = kazuhikoarase qrcode-generator) */
@@ -330,26 +339,31 @@
   LZ.act.mgrTgl = async function (el, uid) { var on = el.classList.contains('on') ? 0 : 1; try { CL.d = await LZ.api('moimMgr', { id: CL.d.moim.id, uid: uid, on: on }); LZ.redraw(); LZ.act.clubMgr(); LZ.toast(on ? '매니저로 정했어요' : '매니저를 해제했어요'); } catch (e) { LZ.toast(e.message, 4500); } };
   LZ.act.mgrQuit = async function () { if (!(await LZ.confirm('매니저를 그만둘까요?', '회원으로 남고, 캡틴이 다시 정하면 매니저가 돼요.', '그만두기', 'r'))) return; try { await LZ.api('moimMgrQuit', { id: CL.d.moim.id }); await LZ.refreshMe(); LZ.go('club', { id: CL.d.moim.id }, { replace: true }); LZ.toast('매니저를 그만뒀어요'); } catch (e) { LZ.toast(e.message, 4500); } };
   LZ.act.clubClose = async function () { if (!(await LZ.confirm('클럽을 닫을까요?', '다른 회원님이 없을 때만 닫을 수 있어요. 블루회원권은 돌아오고, 넣었던 레드·골드회원권은 각 주인의 보관함으로 가요. 내 기록은 내 수첩으로 옮겨져요.', '클럽 닫기', 'r'))) return; try { var r = await LZ.api('moimClose', { id: CL.d.moim.id }); await LZ.refreshMe(); LZ.go('home', {}, { reset: true }); LZ.toast('클럽을 닫았어요' + (r.back ? ' · 회원권 ' + r.back + '장을 돌려받았어요' : ''), 4000); } catch (e) { LZ.toast(e.message, 4500); } };
-  /* 나가기(v7.1.0 §7): 이 클럽에 넣은 내 회원권이 있으면 먼저 보여 주고 고르게 */
+  /* 탈퇴하기(v7.1.0 §7 · v9.1 이름을 '탈퇴'로): 이 클럽에 넣은 내 회원권이 있으면 먼저 보여 주고 고르게 */
+  /** 탈퇴 확인: 무엇이 바뀌는지 · 회원권 */
+  function quitAsk(pass) {
+    var m = CL.d.moim;
+    return LZ.dialog({ title: m.name + (/클럽$/.test(m.name) ? '' : ' 클럽') + '을 탈퇴할까요?', html: '<ul class="quit9"><li>클럽 회원 목록 · 클럽 평균 · 소식 · 모임에서 빠져요</li><li>내 기록은 그대로 <b>내 수첩</b>으로 옮겨져요</li>' + (pass ? '<li>' + esc(pass) + '</li>' : '') + '<li>다시 들어오려면 가입 신청을 새로 해야 해요</li></ul><p class="muted small">화면만 닫으려면 [취소] 후 <b>클럽 나가기</b>를 누르세요.</p>', cancel: false, buttons: [{ label: '탈퇴하기', kind: 'r', value: true }, { label: '취소', kind: 'g', value: false }] });
+  }
   LZ.act.clubLeave = async function () {
     var mid = CL.d.moim.id, li;
     try { li = (await LZ.api('moimLeave', { id: mid, dry: 1 })).leave; } catch (e) { LZ.toast(LZ.errText(e), 4500); return; }
-    if (!li.mine.length) { if (!(await LZ.confirm('클럽에서 나갈까요?', '내 기록은 내 수첩으로 옮겨져요. 언제든 다시 가입 신청할 수 있어요.', '나가기', 'r'))) return; return leaveGo(mid, null); }
+    if (!li.mine.length) { if (!(await quitAsk(''))) return; return leaveGo(mid, null); }
     var opt = function (v, b, sub, cls) { return '<button type="button" class="opt' + (cls ? ' ' + cls : '') + '" data-act="leaveGo" data-v=\'' + esc(JSON.stringify(v)) + '\'><b>' + b + '</b><span>' + sub + '</span></button>'; };
-    var h = '<h2>' + LZ.ic('seat') + ' 내 회원권을 어떻게 할까요?</h2><p class="muted">이 클럽에 넣은 내 회원권 ' + li.mine.length + '장 · 회원 ' + li.n + '명(캡틴 빼고) / ' + li.seats + '자리</p>' + li.mine.map(function (p) { return LZ.packLine(p, {}); }).join('');
+    var h = '<h2>' + LZ.ic('seat') + ' 탈퇴 전에 · 내 회원권을 어떻게 할까요?</h2><p class="muted">이 클럽에 넣은 내 회원권 ' + li.mine.length + '장 · 회원 ' + li.n + '명(캡틴 빼고) / ' + li.seats + '자리</p>' + li.mine.map(function (p) { return LZ.packLine(p, {}); }).join('');
     if (li.shortAll === 0) {
-      h += opt({ give: '' }, '회원권 가지고 나가기', '내 보관함으로 옮겨져요(기간 그대로)');
-      if (li.reds) h += opt({ give: 'reds' }, '레드회원권은 캡틴에게 양도하고 나가기', LZ.nim(li.captainNick) + '의 회원권이 되어 클럽에 남아요' + (li.golds ? ' · 골드회원권은 가지고 나가요' : ''), 'g');
+      h += opt({ give: '' }, '회원권 가지고 탈퇴하기', '내 보관함으로 옮겨져요(기간 그대로)');
+      if (li.reds) h += opt({ give: 'reds' }, '레드회원권은 캡틴에게 양도하고 탈퇴하기', LZ.nim(li.captainNick) + '의 회원권이 되어 클럽에 남아요' + (li.golds ? ' · 골드회원권은 가지고 탈퇴해요' : ''), 'g');
     } else {
-      h += '<div class="box warn">가지고 나가면 자리가 <b>' + li.shortAll + '자리</b> 모자라요. 그냥은 가지고 나갈 수 없어요.</div>';
-      if (li.reds && li.shortGive === 0) h += opt({ give: 'reds' }, '캡틴에게 양도하고 나가기', '레드회원권 ' + li.reds + '장이 ' + LZ.nim(li.captainNick) + '의 회원권이 돼요' + (li.golds ? ' · 골드회원권은 가지고 나가요' : ''));
-      if (li.golds) h += '<button type="button" class="opt" data-go="pay" data-p=\'' + esc(JSON.stringify({ plan: 'red', give: mid, leave: 1, n: li.needAll })) + '\'><b>레드 사서 양도하고 골드 가지고 나가기</b><span>레드회원권 ' + li.needAll + '장을 사서 캡틴에게 양도하면, 확인될 때 골드회원권을 가지고 나가져요</span></button><button type="button" class="opt" data-act="leaveAsk"><b>캡틴이 레드를 사서 채우기</b><span>' + LZ.nim(li.captainNick) + '께 부탁을 보내요. 자리가 채워지면 골드회원권을 가지고 나갈 수 있어요</span></button><p class="hint">골드회원권은 양도할 수 없어요.</p>';
-      else if (!li.reds || li.shortGive > 0) h += '<p class="hint">캡틴이 회원권을 넣어 자리를 늘리면 나갈 수 있어요.</p>';
+      h += '<div class="box warn">가지고 탈퇴하면 자리가 <b>' + li.shortAll + '자리</b> 모자라요. 그냥은 가지고 탈퇴할 수 없어요.</div>';
+      if (li.reds && li.shortGive === 0) h += opt({ give: 'reds' }, '캡틴에게 양도하고 탈퇴하기', '레드회원권 ' + li.reds + '장이 ' + LZ.nim(li.captainNick) + '의 회원권이 돼요' + (li.golds ? ' · 골드회원권은 가지고 탈퇴해요' : ''));
+      if (li.golds) h += '<button type="button" class="opt" data-go="pay" data-p=\'' + esc(JSON.stringify({ plan: 'red', give: mid, leave: 1, n: li.needAll })) + '\'><b>레드 사서 양도하고 골드 가지고 탈퇴하기</b><span>레드회원권 ' + li.needAll + '장을 사서 캡틴에게 양도하면, 확인될 때 골드회원권을 가지고 탈퇴할 수 있어요</span></button><button type="button" class="opt" data-act="leaveAsk"><b>캡틴이 레드를 사서 채우기</b><span>' + LZ.nim(li.captainNick) + '께 부탁을 보내요. 자리가 채워지면 골드회원권을 가지고 탈퇴할 수 있어요</span></button><p class="hint">골드회원권은 양도할 수 없어요.</p>';
+      else if (!li.reds || li.shortGive > 0) h += '<p class="hint">캡틴이 회원권을 넣어 자리를 늘리면 탈퇴할 수 있어요.</p>';
     }
     LZ.sheet(h);
   };
-  LZ.act.leaveGo = async function (el, v) { var o = JSON.parse(v); if (!(await LZ.confirm('클럽에서 나갈까요?', (o.give ? '레드회원권은 캡틴에게 양도돼요. ' : '회원권은 내 보관함으로 옮겨져요. ') + '내 기록은 내 수첩으로 옮겨져요.', '나가기', 'r'))) return; LZ.closeSheet(); leaveGo(CL.d.moim.id, o.give || null); };
-  async function leaveGo(mid, give) { try { var r = await LZ.api('moimLeave', give ? { id: mid, give: give } : { id: mid }); await LZ.refreshMe(); LZ.go('home', {}, { reset: true }); LZ.toast('나갔어요' + (r.took ? ' · 회원권 ' + r.took + '장을 가지고' : '') + (r.gave ? ' · 레드 ' + r.gave + '장을 캡틴에게' : '') + (r.moved ? ' · 기록 ' + r.moved + '개를 내 수첩으로 옮겼어요' : ''), 4500); } catch (e) { LZ.toast(LZ.errText(e), 5000); } }
+  LZ.act.leaveGo = async function (el, v) { var o = JSON.parse(v); if (!(await quitAsk(o.give ? '레드회원권은 캡틴에게 양도돼요.' : '회원권은 내 보관함으로 옮겨져요(기간 그대로).'))) return; LZ.closeSheet(); leaveGo(CL.d.moim.id, o.give || null); };
+  async function leaveGo(mid, give) { try { var r = await LZ.api('moimLeave', give ? { id: mid, give: give } : { id: mid }); await LZ.refreshMe(); var nm = (CL.d && CL.d.moim && CL.d.moim.name) || '클럽'; LZ.go('home', {}, { reset: true }); LZ.toast(nm + (/클럽$/.test(nm) ? '' : ' 클럽') + '을 탈퇴했어요' + (r.took ? ' · 회원권 ' + r.took + '장을 가지고' : '') + (r.gave ? ' · 레드 ' + r.gave + '장을 캡틴에게' : '') + (r.moved ? ' · 기록 ' + r.moved + '개를 내 수첩으로 옮겼어요' : ''), 4500); } catch (e) { LZ.toast(LZ.errText(e), 5000); } }
 
   /* ───── 클럽 찾기 · 만들기 ───── */
   LZ.screens.find = {

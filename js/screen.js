@@ -47,7 +47,7 @@
         var flt = store.get('lz.cflt') || 'all', sort = store.get('lz.csort') || 'new', q = store.get('lz.cq') || '';
         if (!SORTS.some(function (x) { return x[0] === sort; })) sort = 'new';
         if (!FLT.some(function (x) { return x[0] === flt; })) flt = 'all';
-        var all = r.courses.filter(function (c) { return c.my === undefined || c.my; }).map(function (c) { c.n = c.n || nOf(c); if (c.pub === undefined) c.pub = 1; return c; });   // v9 내 수첩 = 내가 등록 · 가져옴 · 기록한 코스
+        var all = r.courses.filter(function (c) { return (c.my === undefined || c.my) && c.id !== LZ.delPend; }).map(function (c) { c.n = c.n || nOf(c); if (c.pub === undefined) c.pub = 1; return c; });   // v9 내 수첩 = 내가 등록 · 가져옴 · 기록한 코스
         var list = all.filter(function (c) { return flt === 'all' || cStat(c) === flt; });
         list.sort(sortFn(sort));
         var sortName = SORTS.filter(function (x) { return x[0] === sort; })[0][1], fName = FLT.filter(function (x) { return x[0] === flt; })[0][1];
@@ -56,9 +56,9 @@
           '<label class="srch9">' + LZ.ic('search') + '<input type="search" id="cq" value="' + esc(q) + '" placeholder="코스 찾기" aria-label="코스 찾기"></label>' +
           '<div class="flt9" role="tablist">' + FLT.map(function (x) { var cn = x[0] === 'all' ? all.length : all.filter(function (c) { return cStat(c) === x[0]; }).length; return '<button type="button" role="tab" aria-selected="' + (flt === x[0]) + '" class="' + (flt === x[0] ? 'on' : '') + '" data-act="cFltSet" data-v="' + x[0] + '">' + x[1] + ' <b>' + cn + '</b></button>'; }).join('') + '</div>' +
           '<div class="lbar">' + (r.canReg ? '<button type="button" class="btn g" data-go="reg">' + LZ.ic('plus') + '새 코스 등록</button>' : '') + '<button type="button" class="pill9" data-act="cSort" aria-label="정렬 · 지금 ' + sortName + '"><span>정렬</span>' + LZ.ic('down') + '</button></div>' +
+          '<button type="button" class="cimp9" data-go="cImport">' + LZ.ic('book') + '<span><b>코스 가져오기</b><small>다른 회원님이 등록한 코스를 내 수첩에 담아요</small></span>' + LZ.ic('chev') + '</button>' +
           (list.length ? '<div class="grp9">' + list.map(cRow).join('') + '</div>' : '<div class="empty">' + (all.length ? '고른 조건에 맞는 코스가 없어요.' : '아직 내 수첩에 코스가 없어요. 새로 등록하거나 다른 회원님이 등록한 코스를 가져와 보세요.') + '</div>') +
-          '<p class="fn9">' + sortName + (flt !== 'all' ? ' · ' + fName + '만' : '') + ' · 자물쇠를 누르면 공개/비공개가 바뀌어요</p>' +
-          '<button type="button" class="lnk cimpl" data-go="cImport">다른 회원이 등록한 코스 가져오기</button></div>';
+          '<p class="fn9">' + sortName + (flt !== 'all' ? ' · ' + fName + '만' : '') + ' · 자물쇠를 누르면 공개/비공개가 바뀌어요</p></div>';
         LZ.paintSync();
         var cq = $('#cq'), filt = function () { var v = cq.value.toLowerCase().replace(/\s+/g, ''); store.set('lz.cq', cq.value); $$('.crow9', root).forEach(function (b) { b.hidden = !!v && b.dataset.nm.indexOf(v) < 0; }); };
         if (cq) { cq.addEventListener('input', filt); if (q) filt(); }
@@ -237,8 +237,7 @@
       colh + (A ? '<div class="hdr9">전반 · 1–9홀</div><div class="grp9 holes9">' + A + '</div>' : '') +
       (B ? '<div class="hdr9">후반 · 1–9홀 (10–18홀)</div><div class="grp9 holes9">' + B + '</div>' : '') +
       (mode !== 'off' ? '<p class="fn9">' + esc(cmpName) + ' 기록도 ' + LZ.modeTxt(v) + LZ.ro(LZ.HL[v.h]) + ' 바꿔 보여요. 기록 칸 아래 글을 누르면 그 홀에 가져와요.' + (mode === 'avg' ? ' 평균은 공개한 회원 3명부터 보여요.' : '') + '</p>' : '') +
-      '<p class="fn9">↑ 강하게 · ↓ 약하게 · ⚠ 조심하기 · 끊어치는 홀은 1st · 2nd · 3rd 색 줄 · 홀을 누르면 그 홀부터 플레이</p>' +
-      '<button type="button" class="lnk" data-act="cEdit" data-v="' + (ed ? 0 : 1) + '">끊어치기 · 주의 고치기' + (ed ? ' 완료' : '') + '</button></div>';
+      '<p class="fn9">↑ 강하게 · ↓ 약하게 · ⚠ 조심하기 · 끊어치는 홀은 1st · 2nd · 3rd 색 줄 · 홀을 누르면 그 홀부터 플레이 · 끊어치기 · 주의는 오른쪽 위 ⋯에서 고쳐요</p></div>';
   }
   LZ.screens.holes = {
     tab: 'courses',
@@ -266,7 +265,39 @@
     LZ.sheet('<h2>' + esc(c.name) + '</h2>' + '<button type="button" class="opt" data-act="cEdit" data-v="1"><b>끊어치기 · 주의 고치기</b><span>홀마다 끊는 거리 · 강하게/약하게 · 조심하기 · 포인트 없음</span></button>' +
       (c.canEdit ? '<button type="button" class="opt" data-act="cInfoEdit"><b>코스 정보 고치기</b><span>이름 · 난이도 · 홀별 파·거리 · 기록 기준</span></button>' : '') +
       '<button type="button" class="opt" data-act="hPubSheet"><b>공개 · 비공개</b><span>지금 ' + (CUR.d.pub ? '공개' : '비공개') + '</span></button>' +
-      '<button type="button" class="opt" data-act="cHide"><b>내 수첩에서 빼기</b><span>기록은 남아요 · 다시 가져오면 돌아와요</span></button>');
+      '<button type="button" class="opt" data-act="cHide"><b>내 수첩에서 빼기</b><span>기록은 남아요 · 다시 가져오면 돌아와요</span></button>' +
+      (S.user.kind === 'admin' ? '<button type="button" class="opt" data-act="cMerge"><b>다른 코스와 합치기</b><span>같은 코스가 두 번 등록됐을 때 · 기록 · 파 · 거리를 옮기고 하나를 지워요</span></button>' : '') +
+      (c.mineReg || S.user.kind === 'admin' ? '<button type="button" class="opt dng" data-act="cDel"><b>코스 지우기</b><span>' + (S.user.kind === 'admin' ? '관리자 · 모든 회원님의 이 코스 기록도 지워져요' : '내가 등록한 코스 · 다른 회원님이 쓰고 있으면 관리자에게 요청해요') + '</span></button>' : ''));
+  };
+  /** 코스 지우기: 다른 회원님이 쓰면 관리자에게 요청 · 나만 쓰면 지우고 5초 동안 되돌리기(그 뒤에 서버로 보내요) */
+  LZ.act.cDel = async function () {
+    var c = CUR.d.course; LZ.closeSheet();
+    if (S.user.kind === 'admin') return LZ.act.ceDel();
+    var r; try { r = await LZ.api('delCourse', { id: c.id, dry: 1 }); } catch (e) { LZ.toast(LZ.errText(e), 4500); return; }
+    if (r.others > 0) {
+      if (!(await LZ.confirm('바로 지울 수 없어요', '다른 회원님 ' + r.others + '명이 이 코스를 쓰고 있어요. 관리자에게 지우기를 요청할까요? 관리자가 확인하고 정리해요.', '요청하기'))) return;
+      try { var a = await LZ.api('delCourse', { id: c.id, ask: 1 }); LZ.toast(a.again ? '이미 요청했어요 · 관리자가 확인 중이에요' : '관리자에게 지우기를 요청했어요', 3500); } catch (e) { LZ.toast(LZ.errText(e), 4500); }
+      return;
+    }
+    if (!(await LZ.confirm('이 코스를 지울까요?', '“' + c.name + '”과 내 기록이 함께 지워져요. 이 코스로 받은 포인트는 거둬요.', '지우기', 'r'))) return;
+    var id = c.id, gone = false; LZ.delPend = id; CUR.id = ''; CUR.key = ''; LZ.cacheSet('courses2', null);
+    LZ.go('courses', {}, { reset: true });
+    var t = setTimeout(async function () { gone = true; try { await LZ.api('delCourse', { id: id }); } catch (e) { LZ.toast(LZ.errText(e), 4500); } LZ.delPend = ''; LZ.cacheSet('courses2', null); if (LZ.cur().name === 'courses') LZ.redraw(); }, 5000);
+    LZ.undo('코스를 지웠어요', function () { if (gone) return; clearTimeout(t); LZ.delPend = ''; LZ.toast('되돌렸어요'); if (LZ.cur().name === 'courses') LZ.redraw(); }, 5000);
+  };
+  /** 관리자: 같은 코스 합치기 */
+  LZ.act.cMerge = async function () {
+    var c = CUR.d.course; LZ.closeSheet();
+    var r; try { r = await LZ.api('courseSimilar', { id: c.id }); } catch (e) { LZ.toast(LZ.errText(e), 4500); return; }
+    LZ.sheet('<h2>다른 코스와 합치기</h2><p class="muted">“' + esc(c.name) + '”(기록 ' + r.me.n + '명)의 기록 · 파 · 거리 · 끊어치기 · 주의를 고른 코스로 옮기고, 이 코스는 지워요. 같은 홀에 둘 다 있으면 고른 코스 것을 남겨요.</p>' +
+      (r.list.length ? r.list.map(function (x) { return '<button type="button" class="opt" data-act="cMergeGo" data-v="' + esc(x.id) + '"><b>' + esc(x.name) + (x.same ? ' · 같은 이름' : '') + '</b><span>기록 ' + x.n + '명 · 파 · 거리 ' + x.filled + '홀 · 여기로 합치기</span></button>'; }).join('') : '<p class="empty">비슷한 이름의 코스가 없어요.</p>'));
+  };
+  LZ.act.cMergeGo = async function (el, to) {
+    var c = CUR.d.course, nm = el ? el.querySelector('b').textContent : ''; LZ.closeSheet();
+    if (!(await LZ.confirm('코스를 합칠까요?', '“' + c.name + '” → “' + nm.replace(/ · 같은 이름$/, '') + '”. 합친 뒤 “' + c.name + '”는 지워져요. 되돌릴 수 없어요.', '합치기', 'r'))) return;
+    LZ.busy(true, '합치는 중…');
+    try { var r = await LZ.api('courseMerge', { from: c.id, to: to }); LZ.busy(false); CUR.id = ''; CUR.key = ''; LZ.cacheSet('courses2', null); LZ.toast('합쳤어요 · 기록 ' + r.moved + '명 옮김' + (r.mixed ? ' · ' + r.mixed + '명 빈 홀 채움' : ''), 4000); LZ.go('holes', { id: to, fresh: 1 }, { replace: true }); }
+    catch (e) { LZ.busy(false); LZ.toast(LZ.errText(e), 5000); }
   };
   LZ.act.cInfoEdit = function () { LZ.closeSheet(); LZ.go('courseEdit', { id: CUR.d.course.id }); };
   LZ.act.cEdit = function (el, v) { LZ.closeSheet(); EDIT = v === '1' ? CUR.d.course.id : ''; if (EDIT && CUR.d.course.stage === 'done' && (store.get('lz.half2.' + EDIT) || 'f') === 'f') { /* 그대로 */ } LZ.redraw(); };
@@ -282,7 +313,15 @@
       c.lay = c.lay.slice(); c.slope = c.slope.slice(); c.lay[i] = r.lay; c.slope[i] = r.slope; c.lay2 = (c.lay2 || []).slice(); c.lay2[i] = r.lay2 || 0; c.ca = (c.ca || []).slice(); if (r.ca) c.ca[i] = r.ca;
       CUR.at = 0; await loadCourse(c.id, true); LZ.cacheSet && LZ.cacheSet('course2:' + c.id + '|' + (store.get('lz.cmpBr') || '') + '|' + (store.get('lz.who.' + c.id) || ''), CUR.d);
       return true;
-    } catch (e) { LZ.toast(LZ.errText(e), 5000); return false; }
+    } catch (e) {
+      if (e.code === 'net' || e.code === 'server' || e.code === 'busy') {
+        LZ.queue.push('courseLay', Object.assign({ confirm: 1 }, body));
+        if (ch.lay !== undefined) { c.lay = c.lay.slice(); c.lay[i] = ch.lay; c.lay2 = (c.lay2 || []).slice(); c.lay2[i] = ch.lay2 || 0; }
+        if (ch.ca) { c.ca = (c.ca || []).slice(); c.ca[i] = ch.ca; }
+        LZ.toast('신호가 약해서 휴대폰에 먼저 저장했어요. 연결되면 보내요', 4000); return true;
+      }
+      LZ.toast(LZ.errText(e), 5000); return false;
+    }
   }
   LZ.layApply = layApply;
   LZ.act.cLay = function (el, i) { cutSheet(+i, false); };
@@ -410,9 +449,9 @@
   function parLine(c, i) { var h = c.holes[i]; return LZ.parMk(h[0]); }
   function playHead() {
     var d = ED.d, c = d.course, i = ED.i, h = c.holes[i], v = ED.v, bm = basisOf(d), vdiff = v.g !== bm.g || v.h !== bm.h, sl = slAt(c, i), nx = i + 1 < nOf(c) ? i + 1 : -1;
-    return '<div class="cname">' + esc(c.name) + '</div>' +
-      '<div class="hh phd">' + LZ.hn9(i + 1, 'xl') + '<span class="hpar">' + parLine(c, i) + '</span><span class="hmode' + (vdiff ? '' : ' off') + '">' + (vdiff ? LZ.modeTxt(v) : '') + '</span>' +
-      (hasDist(c, i) ? '<button type="button" class="hdist' + (sl ? (sl === 'up' ? ' up' : ' dn') : '') + '" data-act="plHd" aria-label="' + (i + 1) + '홀 파 · 거리 고치기">' + LZ.fmtM(h[1]) + '<small>m</small>' + (sl ? (sl === 'up' ? '↑' : '↓') : '') + '</button>' : '') + '</div>' +
+    return '<div class="cname">' + esc(c.name) + (vdiff ? ' · <span class="hmode9">' + LZ.modeTxt(v) + '</span>' : '') + '</div>' +
+      '<div class="hrow9"><span class="hbig9" aria-label="' + (i > 8 ? (i - 8) + '홀, 전체 ' + (i + 1) + '홀' : (i + 1) + '홀') + '">' + (i > 8 ? i - 8 : i + 1) + '<small>홀</small>' + (i > 8 ? '<small class="hn2">(' + (i + 1) + '홀)</small>' : '') + '</span>' +
+      '<button type="button" class="hpd9" data-act="plHd" aria-label="' + (i + 1) + '홀 파 · 거리 고치기">' + parLine(c, i) + (hasDist(c, i) ? '<span class="dot9">·</span><span class="hd9' + (sl ? (sl === 'up' ? ' up' : ' dn') : '') + '">' + LZ.fmtM(h[1]) + '<small>m</small>' + (sl ? (sl === 'up' ? '↑' : '↓') : '') + '</span>' : '') + '</button></div>' +
       (nx >= 0 && hasDist(c, nx) ? '<div class="nxp" aria-label="다음 홀 미리 보기">다음 ' + (nx > 8 ? (nx - 8) + '홀 (' + (nx + 1) + '홀)' : (nx + 1) + '홀') + ' · ' + LZ.parMk(c.holes[nx][0]) + ' · ' + LZ.fmtM(c.holes[nx][1]) + 'm' + (nSh(c, nx) > 1 ? ' · 끊어치기 ' + nSh(c, nx) + '번' : '') + '</div>' : '');
   }
   function playBody() {
@@ -446,12 +485,12 @@
     var oh = r.ohs && r.ohs.length ? r.ohs[r.ohs.length - 1] : null;
     if (oh && oh.one) { var ps = [oh.one].concat(oh.s2 ? [oh.s2] : []).concat(oh.s3 ? [oh.s3] : []); hs += (hs ? ' · ' : '') + '예전 ' + ps.map(function (x, k) { return (ps.length > 1 ? SHN[k] + ' ' : '') + esc(LZ.refTxt(x)) + ' ' + LZ.lrPlain(x) + ' ' + LZ.bsTxt(LZ.conv(x.p, r.g, r.h, v.g, v.h)); }).join(' · '); }
     var noteTx = r.o ? hiNote(r.o) : '없음';
-    var cutTx = L ? '끊어치기 <b>' + ns + '번</b>' : '끊어치기';
+    var cutTx = L ? '끊어치기 <b>' + ns + '</b>' : '끊어치기';
     return playHead() +
-      '<div class="opts"><button type="button" class="chip oc" data-act="plLaySheet"><span class="ot">' + cutTx + '</span>' + LZ.ic('down') + '</button>' +
-      '<button type="button" class="chip oc" data-act="plSlope"><span class="ot">' + (caN(c, i) ? '주의 <b>' + caN(c, i) + '</b>' : '주의하기') + '</span>' + LZ.ic('down') + '</button></div>' +
-      caTags(c, i) + aim +
-      '<button type="button" class="nrow" data-act="plNoteTgl" aria-expanded="' + !!ED.note + '" aria-controls="notep"><span class="lb">메모</span><span class="tx' + (r.o ? '' : ' e') + '">' + (r.chg ? '<b class="chgt">기준 바뀜</b> · ' : '') + noteTx + '</span>' + LZ.ic('down') + '</button>' +
+      '<div class="opts9"><button type="button" class="chip9' + (L ? ' on' : '') + '" data-act="plLaySheet">' + cutTx + LZ.ic('down') + '</button>' +
+      '<button type="button" class="chip9' + (caN(c, i) ? ' on' : '') + '" data-act="plSlope">' + (caN(c, i) ? '주의 <b>' + caN(c, i) + '</b>' : '주의하기') + LZ.ic('down') + '</button>' +
+      '<button type="button" class="chip9 memo9' + (r.o ? ' on' : '') + (r.chg ? ' chg' : '') + '" data-act="plNoteTgl" aria-expanded="' + !!ED.note + '" aria-controls="notep">' + (r.chg ? '기준 바뀜' : '메모') + (r.o ? ' <b>✓</b>' : '') + LZ.ic('down') + '</button></div>' +
+      caTags(c, i) + aim + (r.o && !ED.note ? '<button type="button" class="memo9t" data-act="plNoteTgl"><span class="lb">메모</span> ' + noteTx + '</button>' : '') +
       '<div class="notep" id="notep"' + (ED.note ? '' : ' hidden') + '>' + (r.o ? '<div class="full">' + hiNote(r.o) + '</div>' : '') + '<input type="text" id="plO" maxlength="20" value="' + esc(r.o) + '" placeholder="예: 맞바람, **반 칸** 세게" aria-label="메모(20자)">' +
       (r.chg ? '<p class="chgn">다른 회원님이 끊는 거리 · 주의를 바꿔서 기준이 바뀌었어요. 확인하고 저장하면 표시가 없어져요.</p>' : '') +
       '<div class="hs"><span>' + (hs ? '지난 값 ' + hs : '지난 값 없음') + '</span>' + ((r.ohs && r.ohs.length) || (r.hs && r.hs.length) ? '<button type="button" data-act="plUndo">예전 값으로</button>' : '') + '</div></div>';
@@ -591,7 +630,16 @@
       CUR.d.course = Object.assign(CUR.d.course, r.course); fixRecs(CUR.d); CUR.at = Date.now();
       LZ.toast('✓ 파 ' + HD.par + ' · ' + LZ.fmtM(m) + 'm 저장했어요' + (r.pts ? ' · 포인트 +' + r.pts + 'P' : ''), r.pts ? 3500 : 2000);
       if (LZ.cur().name === 'play') goHole(c.id, i, { auto: 0 }); else LZ.redraw();
-    } catch (e) { LZ.busy(false); LZ.toast(LZ.errText(e), 5000); }
+    } catch (e) {
+      LZ.busy(false);
+      if (e.code === 'net' || e.code === 'server' || e.code === 'busy') {
+        LZ.queue.push('holeSet', { id: c.id, i: i, par: HD.par, m: m }); LZ.closeSheet();
+        c.holes = c.holes.slice(); c.holes[i] = [HD.par, m]; CUR.at = Date.now();
+        LZ.toast('신호가 약해서 휴대폰에 먼저 저장했어요. 연결되면 보내요', 4000);
+        if (LZ.cur().name === 'play') goHole(c.id, i, { auto: 0 }); else LZ.redraw(); return;
+      }
+      LZ.toast(LZ.errText(e), 5000);
+    }
   };
 
   /* ═════════ 끊어치기(최대 3번) — 코스에 하나 · 포인트 없음 ═════════ */
@@ -977,14 +1025,30 @@
   /* ═════════ 새 코스 등록(v9): 두 단계 — 이름 → 기준. 18홀 고정 · 파 · 거리는 플레이하며 ═════════ */
   var RN = null, rnT = 0;
   var COMBO = ['AB', 'CD', 'EF', 'GH'];
-  function rnName() { var b = String(RN.base || '').replace(/\s+/g, ''); if (!b) return ''; return b + (RN.pk && !/파크골프장$/.test(b) ? '파크골프장' : '') + (RN.cb === 'own' ? String(RN.own || '').replace(/\s+/g, '') : RN.cb); }
-  function rnBase() { var b = String(RN.base || '').replace(/\s+/g, ''); return b + (RN.pk && b && !/파크골프장$/.test(b) ? '파크골프장' : ''); }
+  /** "파크골프" → "파크골프장"(이름은 하나로) */
+  var pkName = LZ.pkName = function (s) { return String(s || '').replace(/\s+/g, '').replace(/파크골프(?!장)/g, '파크골프장'); };
+  function rnBase() { var b = pkName(RN.base); return b + (RN.pk && b && !/파크골프장$/.test(b) ? '파크골프장' : ''); }
+  function rnName() { var b = rnBase(); if (!b) return ''; return b + (RN.cb === 'own' ? String(RN.own || '').replace(/\s+/g, '') : RN.cb); }
+  /** 이름 칸 안 회색 뒷부분: 적은 글자 뒤에 저절로 붙는 부분 */
+  function rnGhost() {
+    var g = $('#rnGh'), b = $('#rnBase'); if (!g || !b) return;
+    var raw = String(RN.base || ''), b0 = raw.replace(/\s+/g, ''), full = rnName(), suf = !b0 ? '' : full.indexOf(b0) === 0 ? full.slice(b0.length) : full.slice(pkName(b0).length);
+    g.innerHTML = '<span class="gt">' + esc(raw) + '</span><i>' + esc(suf) + '</i>';
+    g.hidden = !suf || b.scrollWidth > b.clientWidth + 1;
+  }
+  function rnStat() {
+    var nm = rnName();
+    if (!nm) return '<span class="muted">구장 이름만 적으면 뒤는 저절로 채워져요</span>';
+    if (RN.dupId) return '<em>이미 등록된 코스예요 · 아래에서 가져오기</em>';
+    return '<i class="ok">✓ 새 코스예요 · ' + esc(nm) + (RN.taken.length && RN.cb !== 'own' ? ' · ' + RN.taken.join(' · ') + '는 이미 있어서 ' + RN.cb + '로 골랐어요' : '') + '</i>';
+  }
   function rnPaint(root) {
     root = root || $('#app');
     var nm = rnName(), step = RN.step, same = RN.same || [];
     var body;
     if (step === 1) {
-      body = '<div class="rn"><label class="lb" for="rnBase">구장 이름</label><input type="text" id="rnBase" class="reginp" maxlength="20" value="' + esc(RN.base) + '" placeholder="예: 목행충주호" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done">' +
+      body = '<div class="rn"><label class="lb" for="rnBase">코스 이름</label><div class="rnin"><span id="rnGh" class="rngh" aria-hidden="true" hidden></span><input type="text" id="rnBase" class="reginp" maxlength="20" value="' + esc(RN.base) + '" placeholder="구장 이름 (예: 목행충주호)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done"></div>' +
+        '<div id="rnSt" class="rnst" aria-live="polite">' + rnStat() + '</div>' +
         '<div id="rnDyn1">' + rnDyn1() + '</div>' +
         '<input type="text" id="rnOwn" class="reginp" maxlength="6" value="' + esc(RN.own) + '" placeholder="예: 가나" aria-label="조합 직접 적기" autocomplete="off"' + (RN.cb === 'own' ? '' : ' hidden') + '>' +
         '<div id="rnDyn2">' + rnDyn2() + '</div>' +
@@ -999,7 +1063,7 @@
         '<div class="row2"><button type="button" class="btn g" data-act="rnBack">‹ 이름</button><button type="button" class="btn" data-act="rnSave">등록</button></div></div>';
     }
     root.innerHTML = LZ.hdr('새 코스 등록', { back: true }) + '<div class="wrap reg9"><div class="steps" aria-label="2단계 중 ' + step + '단계"><i class="' + (step === 1 ? 'on' : 'ok') + '">1 이름</i><i class="' + (step === 2 ? 'on' : '') + '">2 기준</i></div>' + body + '</div>';
-    var b = $('#rnBase'); if (b) { b.addEventListener('input', function () { RN.base = b.value; rnLook(); }); b.addEventListener('compositionend', function () { RN.base = b.value; rnLook(); }); b.addEventListener('keydown', function (e) { if (e.key === 'Enter') b.blur(); }); }
+    var b = $('#rnBase'); if (b) { var gh = $('#rnGh'), cs = getComputedStyle(b); gh.style.font = cs.font; gh.style.letterSpacing = cs.letterSpacing; gh.style.paddingLeft = (parseFloat(cs.paddingLeft) + parseFloat(cs.borderLeftWidth)) + 'px'; rnGhost(); b.addEventListener('input', function () { RN.base = b.value; rnLook(); }); b.addEventListener('compositionend', function () { RN.base = b.value; rnLook(); }); b.addEventListener('keydown', function (e) { if (e.key === 'Enter') b.blur(); }); }
     var ow = $('#rnOwn'); if (ow) ow.addEventListener('input', function () { RN.own = ow.value; rnDup(); rnUpd(2); });
     LZ.guard = { dirty: function () { return !!RN.base && !RN.saved; }, ask: async function () { return LZ.confirm('나갈까요?', '적던 내용이 사라져요.', '나가기', 'r'); } };
   }
@@ -1011,8 +1075,7 @@
   /** 등록할 이름 · 이미 있는 코스 · 다음 단추 */
   function rnDyn2() {
     var nm = rnName(), same = RN.same || [];
-    return '<div class="rnprev" aria-live="polite"><span>등록할 이름</span><b>' + (nm ? esc(nm) : '—') + '</b>' + (RN.dupId ? '<em>이미 있어요 · 아래에서 가져오기</em>' : nm ? '<i class="ok">✓ 새 코스예요' + (RN.taken.length && RN.cb !== 'own' ? ' · ' + RN.taken.join(' · ') + '는 이미 있어서 ' + RN.cb + '로 골랐어요' : '') + '</i>' : '') + '</div>' +
-      (same.length ? '<div class="kwrow"><b class="sm">이미 있는 코스 · 가져오기</b></div><div class="list rnsame">' + same.map(function (c) { return '<button type="button" class="li" data-act="rnTake" data-v="' + esc(c.id) + '"><span class="t"><b>' + esc(c.name) + '</b><span>' + LZ.stars(c.stars) + '</span></span><span class="go">가져오기</span></button>'; }).join('') + '</div>' : '') +
+    return (same.length ? '<div class="kwrow"><b class="sm">이미 있는 코스 · 가져오기</b></div><div class="list rnsame">' + same.map(function (c) { return '<button type="button" class="li" data-act="rnTake" data-v="' + esc(c.id) + '"><span class="t"><b>' + esc(c.name) + '</b><span>' + LZ.stars(c.stars) + '</span></span><span class="go">가져오기</span></button>'; }).join('') + '</div>' : '') +
       '<button type="button" class="btn" data-act="rnNext"' + (nm && !RN.dupId ? '' : ' disabled') + '>다음 ›</button>';
   }
   /** 이름 칸은 그대로 두고 아래만 고쳐 그려요(글자판 · 한글 조합이 끊기지 않게) */
@@ -1022,6 +1085,7 @@
     if (d1 && which !== 2) d1.innerHTML = rnDyn1();
     if (d2) d2.innerHTML = rnDyn2();
     if (ow) ow.hidden = RN.cb !== 'own';
+    var st = $('#rnSt'); if (st) st.innerHTML = rnStat(); rnGhost();
   }
   /** 바탕 이름이 바뀌면 잠깐 뒤에 서버에 물어서 AB · CD … 중 빈 첫 조합을 골라 둬요 */
   function rnLook() {
@@ -1031,7 +1095,7 @@
       try { var r = await LZ.api('nameNext', { base: base }); if (base !== rnBase()) return; RN.taken = r.taken || []; RN.same = r.same || []; if (RN.cb !== 'own' && (RN.auto || RN.taken.indexOf(RN.cb) >= 0)) { RN.cb = r.next || 'own'; RN.auto = true; } rnDup(); rnUpd(); } catch (e) { /* 신호 없음: 그대로 */ }
     }, 350);
   }
-  function rnDup() { var key = rnName().toLowerCase(), hit = (RN.same || []).filter(function (c) { return c.name.toLowerCase() === key; })[0]; RN.dupId = hit ? hit.id : ''; }
+  function rnDup() { var key = pkName(rnName()).toLowerCase(), hit = (RN.same || []).filter(function (c) { return pkName(c.name).toLowerCase() === key; })[0]; RN.dupId = hit ? hit.id : ''; }
   function rnRe() { var a = document.activeElement, id = a && a.id, pos = a && a.selectionStart; rnPaint(); if (id) { var e = $('#' + id); if (e) { e.focus(); try { e.setSelectionRange(pos, pos); } catch (x) { /* 무시 */ } } } }
   LZ.screens.reg = {
     tab: 'courses', wake: true,

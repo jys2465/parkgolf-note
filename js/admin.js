@@ -14,11 +14,13 @@
       if (!needAdmin()) return;
       root.innerHTML = LZ.hdr('관리자', { back: true }) + LZ.skeleton(5);
       var d = await LZ.api('dash', {}); if (!alive()) return; DASH = d;
-      var t = d.total, chip = function (label, n, to) { return '<button type="button" class="tchip' + (n ? ' on' : '') + '" data-go="' + to + '">' + label + ' ' + n + '</button>'; };
+      var t = d.total, row = function (label, n, attr, su) { return '<button type="button" class="li tdr9" ' + attr + '><span class="t"><b>' + label + '</b>' + (su ? '<span class="su">' + su + '</span>' : '') + '</span><span class="n9' + (n ? ' on' : '') + '">' + n + '</span>' + LZ.ic('chev') + '</button>'; };
       root.innerHTML = LZ.hdr('관리자', { back: true }) + '<div class="wrap">' +
-        '<div class="card todo"><h3>지금 처리할 일</h3><div class="tchips">' + chip('결제 확인', d.pending, 'pays') + chip('환불', d.refundReq, 'refunds') + chip('비밀번호', d.pwReq, 'pwreqs') + chip('문의', d.qnaOpen, 'qnaList') + (d.goldSoon ? chip('골드 만기', d.goldSoon + '명', 'goldList') : '') + (d.goldCand ? chip('골드 후보', d.goldCand + '명', 'goldCand') : '') + (d.blackSoon ? '<button type="button" class="tchip on" data-act="mbGo" data-v="_black">블랙 삭제 예정 ' + d.blackSoon + '</button>' : '') + (d.ptOwe ? '<button type="button" class="tchip on warn" data-go="ptOwe">포인트 회수 부족 ' + d.ptOwe + '명</button>' : '') + (d.soon.length ? '<button type="button" class="tchip on" data-go="adminGroup" data-p=\'{"g":"log"}\'>곧 끝나는 회원 ' + d.soon.length + '</button>' : '') + '</div></div>' +
+        '<p class="fn9 adm9n">관리자에게만 보여요 · 회원님께는 모두 “관리자” 이름으로 나가요</p>' +
+        '<div class="hdr9">지금 처리할 일</div><div class="grp9 todo9">' + row('결제 확인', d.pending, 'data-go="pays"') + row('환불', d.refundReq, 'data-go="refunds"') + row('비밀번호 찾기', d.pwReq, 'data-go="pwreqs"') + row('문의', d.qnaOpen, 'data-go="qnaList"') +
+          (d.goldSoon ? row('골드 만기', d.goldSoon, 'data-go="goldList"', '만기 30 · 14 · 7일 전 알려 드려요') : '') + (d.goldCand ? row('골드 후보', d.goldCand, 'data-go="goldCand"') : '') + (d.blackSoon ? row('블랙 삭제 예정', d.blackSoon, 'data-act="mbGo" data-v="_black"') : '') + (d.ptOwe ? row('포인트 회수 부족', d.ptOwe, 'data-go="ptOwe"') : '') + (d.soon.length ? row('곧 끝나는 회원', d.soon.length, 'data-go="adminGroup" data-p=\'{"g":"log"}\'') : '') + '</div>' +
         '<div class="kv dkv"><div><b>' + t.all + '</b><span>회원</span></div><div><b>' + d.moims.length + '</b><span>클럽</span></div><div><b>' + d.today + '</b><span>오늘</span></div></div>' +
-        '<div class="card tight groups">' +
+        '<div class="hdr9">관리</div><div class="card tight groups">' +
         gli('user', '회원', '만들기 · 회원권 지급 · 블랙 · 테스트 계정' + (d.tests ? ' ' + d.tests : ''), 'data-go="members"') +
         gli('check', '결제·환불·포인트', '입금 확인 ' + d.pending + ' · 환불 ' + d.refundReq + ' · 포인트 주기 · 이달 ' + won(d.month.amount), 'data-go="adminGroup" data-p=\'{"g":"pay"}\'') +
         gli('seat', '클럽·회원권', '클럽별 자리 · 무료 연장 · 골드 회수 · 골드 만기' + (d.goldSoon ? ' ' + d.goldSoon : ''), 'data-go="adminSeats"') +
