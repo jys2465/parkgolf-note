@@ -234,10 +234,17 @@
         grow('user', '프로필 사진', u.img ? '사진 바꾸기·지우기' : '사진 넣기', 'data-act="avatarMenu"') +
         grow('edit', '닉네임 바꾸기', '지금 ' + esc(u.nick) + (u.nickNext ? ' · ' + LZ.fmtDate(u.nickNext, true) + '부터 바꿀 수 있어요' : ' · 7일에 한 번'), 'data-go="nickChange"') +
         grow('lock', '비밀번호 바꾸기', '숫자 ' + u.pinLen + '자리 · 바꾸면 다른 휴대폰은 로그아웃', 'data-go="pinChange"') +
+        (u.kind === 'admin' ? '' : '<div id="bioRow"></div>') +
         (u.kind === 'admin' ? '' : grow('kakao', '카카오 본인 확인', u.kid ? '확인했어요 · 비밀번호를 잊으면 카카오로 찾아요' : '아직 안 했어요 · 눌러서 확인하기', u.kid ? 'data-act="kidInfo"' : 'data-go="kakaoAsk"')) +
         (u.kind === 'admin' || !u.kid ? '' : grow('unlock', '카카오 연결 풀기', u.kunNext ? LZ.fmtDate(u.kunNext) + '부터 할 수 있어요' : '다른 카카오로 잘못 연결했을 때 · ' + (u.kunDays || 30) + '일에 한 번', 'data-act="kunSelf"')) +   /* v7.1.0 §14 */
         '</div>' +
         '<p class="hint" style="margin:8px 0 0">' + LZ.ic('lock') + ' 내 기록 공개는 <b>코스마다</b> 정해요 · 스크린 › 내 수첩의 자물쇠</p></div>';
+      var br = $('#bioRow'); if (br && LZ.bio) LZ.bio.avail().then(function (ok) {
+        if (!$('#bioRow')) return; var B = LZ.bio, sv = B.saved(), on = !!(sv && sv.uid === u.uid), lb = B.label();
+        br.outerHTML = ok ? '<div class="li tgl bio9r"><span class="t"><b>' + lb + ' 로그인</b><span class="su">' + (on ? '이 휴대폰은 ' + lb + '로 들어와요' : '켜면 비밀번호 없이 ' + lb + '로 들어와요') + '</span></span>' + LZ.sw(on, on ? 'bioOff' : 'bioOn') + '</div>'
+          : '<div class="li bio9r off"><span class="t"><b>Face ID · 지문 로그인</b><span class="su">이 휴대폰(브라우저)에서는 쓸 수 없어요 · 홈 화면에 추가한 앱이나 사파리 · 크롬에서 열어 주세요</span></span></div>';
+        if (ok && !on) B.prep('reg');
+      });
     }
   };
   /* 도움 */

@@ -69,13 +69,21 @@
       el.style.fontSize = ''; el.classList.add('v9n');
       if (!el.clientWidth) continue;
       if (el.scrollWidth > el.clientWidth) {
-        var fs = parseFloat(getComputedStyle(el).fontSize), ratio = Math.max(0.72, (el.clientWidth - 1) / el.scrollWidth);
+        var fs = parseFloat(getComputedStyle(el).fontSize), ratio = Math.max(el.matches('.top h2') ? 0.6 : 0.72, (el.clientWidth - 1) / el.scrollWidth);
         el.style.fontSize = (fs * ratio * 0.97).toFixed(1) + 'px';
       }
     }
   };
+  /* 뒤로 단추 옆 이름이 안 들어가면(휴대폰 글자를 크게 한 분 · 좁은 화면) 이름만 숨기고 ‹ 만 */
+  V9.fitBack = function (root) {
+    var bs = (root || document).querySelectorAll('.top .bkt');
+    for (var i = 0; i < bs.length; i++) {
+      var t = bs[i], top = t.closest('.top'), h = top && top.querySelector('h2');
+      if (t.scrollWidth > t.clientWidth + 1 || (h && h.textContent && h.scrollWidth > h.clientWidth + 1)) { t.style.display = 'none'; if (h) { h.style.fontSize = ''; V9.fit(top); } }   // 제목이 먼저: 제목이 안 들어가면 뒤로 단추 이름을 숨겨요
+    }
+  };
   var fitQ = 0;
-  function fitSoon() { if (fitQ) return; fitQ = requestAnimationFrame(function () { fitQ = 0; V9.fit(document); }); }
+  function fitSoon() { if (fitQ) return; fitQ = requestAnimationFrame(function () { fitQ = 0; V9.fit(document); V9.fitBack(document); }); }
   document.addEventListener('DOMContentLoaded', function () {
     try { new MutationObserver(fitSoon).observe(document.body, { childList: true, subtree: true }); } catch (x) { /* 오래된 브라우저 */ }
     window.addEventListener('resize', fitSoon);

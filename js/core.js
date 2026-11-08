@@ -157,39 +157,61 @@
   /* 프로필: 사진이 있으면 사진, 없으면 닉네임 첫 글자(닉네임마다 색이 정해짐) */
   var AVC = ['#0B5D4B', '#1D4ED8', '#B45309', '#7C3AED', '#BE185D', '#0F766E', '#4338CA', '#9A3412'];
   LZ.avatar = function (x, cls) { x = x || {}; var nick = x.nick || x.n || '?', h = 0; for (var i = 0; i < nick.length; i++) h = (h * 31 + nick.charCodeAt(i)) % 9973; return x.img ? '<img class="av ' + (cls || '') + '" data-img="' + esc(x.img) + '" alt="">' : '<div class="av ' + (cls || '') + '" style="background:' + AVC[h % AVC.length] + '">' + esc(nick.charAt(0)) + '</div>'; };
-  /* ───── 간단 글 편집기(공지·소식·문의): 굵게 · 크게 · 빨강/파랑/초록 · 지우기. 서버가 허용하는 태그(b, span.big/c-r/c-b/c-g, br)로만 저장 ───── */
+  /* ───── 간단 글 편집기(공지·소식·문의) v9.1.2: 굵게 · 크게 · 검정(기본) · 빨강 · 파랑 · 초록 · 서식 지우기.
+     저장할 때는 화면에 실제로 보이는 모양(글자마다 색 · 굵기 · 크기)을 읽어서 서버가 허용하는 태그(b, span.big/c-r/c-b/c-g, br)로만 바꿔요.
+     그래서 빨강으로 쓰다 검정으로 돌아와도, 브라우저마다 다르게 끼워 넣는 태그가 꼬이지 않아요 ───── */
+  var RT_COL = { 'c-k': '', 'c-r': '#DC2626', 'c-b': '#2563EB', 'c-g': '#15803D' };
   LZ.richEditor = function (id, html, placeholder) {
-    return '<div class="rtb"><button type="button" data-rt="bold"><b>굵게</b></button><button type="button" data-rt="big"><span style="font-size:1.15em">크게</span></button><button type="button" data-rt="c-r" style="color:var(--red)">●</button><button type="button" data-rt="c-b" style="color:var(--blue)">●</button><button type="button" data-rt="c-g" style="color:var(--green)">●</button><button type="button" data-rt="clear">지우기</button></div>' +
+    var cb = function (k, label, col) { return '<button type="button" class="rtc" data-rt="' + k + '" aria-label="' + label + '" title="' + label + '"><i style="background:' + col + '"></i></button>'; };
+    return '<div class="rtb" role="toolbar" aria-label="글자 모양"><button type="button" data-rt="bold"><b>굵게</b></button><button type="button" data-rt="big"><span style="font-size:1.15em">크게</span></button>' +
+      cb('c-k', '검정(기본색)', 'currentColor') + cb('c-r', '빨강', 'var(--red)') + cb('c-b', '파랑', 'var(--blue)') + cb('c-g', '초록', 'var(--green)') +
+      '<button type="button" data-rt="clear" aria-label="서식 지우기(고른 글자를 보통 검정 글씨로)">지우기</button></div>' +
       '<div class="rte" id="' + id + '" contenteditable="true" data-ph="' + esc(placeholder || '') + '">' + (html || '') + '</div>';
   };
+  /* 단추를 눌러도 글을 고른 자리(선택)가 풀리지 않게 */
+  document.addEventListener('mousedown', function (e) { if (e.target.closest('[data-rt]')) e.preventDefault(); });
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-rt]'); if (!b) return; e.preventDefault();
     var ed = b.parentNode.nextElementSibling; if (!ed || !ed.isContentEditable) return; ed.focus();
     var k = b.dataset.rt; try {
+      document.execCommand('styleWithCSS', false, false);
       if (k === 'bold') document.execCommand('bold');
-      else if (k === 'clear') document.execCommand('removeFormat');
-      else if (k === 'big') document.execCommand('fontSize', false, '5');
-      else document.execCommand('foreColor', false, { 'c-r': '#DC2626', 'c-b': '#2563EB', 'c-g': '#15803D' }[k]);
+      else if (k === 'clear') { document.execCommand('removeFormat'); document.execCommand('foreColor', false, getComputedStyle(ed).color); }
+      else if (k === 'big') { var sel = window.getSelection(), n = sel && sel.anchorNode, el = n && (n.nodeType === 1 ? n : n.parentNode), big = el && parseFloat(getComputedStyle(el).fontSize) > parseFloat(getComputedStyle(ed).fontSize) * 1.1; document.execCommand('fontSize', false, big ? '3' : '5'); }
+      else document.execCommand('foreColor', false, RT_COL[k] || getComputedStyle(ed).color);   // 검정 = 편집 칸 기본 글자색(어두운 화면에서는 밝은 글씨)
     } catch (x) { /* 지원 안 되는 브라우저 */ }
   });
+  /** 보이는 색 → 빨강 · 파랑 · 초록 · 기본(검정) */
+  function rtHue(c) {
+    var m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c || ''); if (!m) return '';
+    var r = +m[1] / 255, g = +m[2] / 255, b = +m[3] / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+    if (d < 0.18) return '';                                                  // 검정 · 회색 · 흰색 = 기본색
+    var h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; h = (h * 60 + 360) % 360;
+    return h < 25 || h >= 330 ? 'c-r' : h >= 75 && h < 175 ? 'c-g' : h >= 185 && h < 265 ? 'c-b' : '';
+  }
   LZ.richRead = function (id) {
     var ed = $('#' + id); if (!ed) return '';
-    function walk(n) {
-      if (n.nodeType === 3) return esc(n.nodeValue);
-      if (n.nodeType !== 1) return '';
-      var tag = n.tagName.toLowerCase(), inner = Array.prototype.map.call(n.childNodes, walk).join('');
-      if (tag === 'br') return '<br>';
-      if (tag === 'b' || tag === 'strong') return '<b>' + inner + '</b>';
-      if (tag === 'div' || tag === 'p') return (inner === '<br>' ? '' : inner) + '<br>';
-      var cls = '', st = n.getAttribute('style') || '', col = (n.getAttribute('color') || '').toLowerCase(), size = n.getAttribute('size'), cl = n.getAttribute('class') || '';
-      if (/\bbig\b/.test(cl) || size === '5' || size === '6' || size === '7' || /font-size:\s*(x-large|xx-large|large|1\.[2-9]|[2-9]\d)/.test(st)) cls = 'big';
-      if (/c-r/.test(cl) || col === '#dc2626' || /color:\s*(rgb\(220, 38, 38\)|#dc2626)/i.test(st)) cls = 'c-r';
-      else if (/c-b/.test(cl) || col === '#2563eb' || /color:\s*(rgb\(37, 99, 235\)|#2563eb)/i.test(st)) cls = 'c-b';
-      else if (/c-g/.test(cl) || col === '#15803d' || /color:\s*(rgb\(21, 128, 61\)|#15803d)/i.test(st)) cls = 'c-g';
-      if (/font-weight:\s*(bold|[6-9]00)/.test(st)) inner = '<b>' + inner + '</b>';
-      return cls ? '<span class="' + cls + '">' + inner + '</span>' : inner;
+    var base = parseFloat(getComputedStyle(ed).fontSize) || 16, out = '', run = null;
+    function flush() { if (!run || !run.t) { run = null; return; } var h = run.t; if (run.b) h = '<b>' + h + '</b>'; if (run.big) h = '<span class="big">' + h + '</span>'; if (run.c) h = '<span class="' + run.c + '">' + h + '</span>'; out += h; run = null; }
+    function isBold(n) { for (var x = n; x && x !== ed; x = x.parentNode) { if (x.nodeType !== 1) continue; var t = x.tagName; if (t === 'B' || t === 'STRONG') return true; var w = x.style && x.style.fontWeight; if (w === 'bold' || +w >= 600) return true; if (w === 'normal' || (w && +w < 600)) return false; } return false; }
+    function text(n) {
+      var el = n.parentNode, cs = getComputedStyle(el), st = { c: rtHue(cs.color), big: parseFloat(cs.fontSize) > base * 1.1, b: isBold(el) };
+      if (run && (run.c !== st.c || run.big !== st.big || run.b !== st.b)) flush();
+      if (!run) run = { c: st.c, big: st.big, b: st.b, t: '' };
+      run.t += esc(n.nodeValue);
     }
-    return Array.prototype.map.call(ed.childNodes, walk).join('').replace(/(<br>)+$/, '');
+    function walk(n) {
+      if (n.nodeType === 3) { if (n.nodeValue) text(n); return; }
+      if (n.nodeType !== 1) return;
+      var tag = n.tagName;
+      if (tag === 'BR') { flush(); out += '<br>'; return; }
+      var block = tag === 'DIV' || tag === 'P' || tag === 'LI';
+      if (block) { flush(); if (out && !/<br>$/.test(out)) out += '<br>'; }
+      Array.prototype.forEach.call(n.childNodes, walk);
+      if (block) { flush(); if (!/<br>$/.test(out)) out += '<br>'; }
+    }
+    Array.prototype.forEach.call(ed.childNodes, walk); flush();
+    return out.replace(/(<br>)+$/, '').replace(/^(<br>)+/, '');
   };
   /** 이름 + 님(손님 이름이 이미 "…님"으로 끝나면 그대로: 박손님 → 박손님) */
   LZ.nim = function (n) { n = n === undefined || n === null ? '' : String(n); return /님$/.test(n) ? n : n + '님'; };
@@ -257,17 +279,35 @@
   LZ.BAR = BAR;
   LZ.topBtns = function (o) {
     o = o || {}; var big = LZ.big.get(), name = LZ.cur().name, n = S.me && S.me.noti ? S.me.noti : 0;
-    return '<div class="tbr">' + (o.sound || '') + (o.noGa ? '' : '<button type="button" class="tb ga' + (big ? ' on' : '') + '" data-act="big" aria-pressed="' + (big ? 'true' : 'false') + '" aria-label="글씨 크게" title="글씨 크게"><span class="ga2" aria-hidden="true"><i>가</i>가</span></button>') +
+    var rf = S.user && !o.noRf && !NORF[name] ? '<button type="button" class="tb rf9" data-act="reload" aria-label="새로고침" title="새로고침">' + LZ.ic('rf') + '</button>' : '';
+    return '<div class="tbr">' + (o.sound || '') + rf + (o.noGa ? '' : '<button type="button" class="tb ga' + (big ? ' on' : '') + '" data-act="big" aria-pressed="' + (big ? 'true' : 'false') + '" aria-label="글씨 크게" title="글씨 크게"><span class="ga2" aria-hidden="true"><i>가</i>가</span></button>') +
       (S.user && name === 'home' && !o.noBell ? '<button type="button" class="tb bell" data-go="noti" aria-label="알림' + (n ? ' ' + n + '개' : '') + '" title="알림">' + LZ.ic('bell') + (n ? '<i>' + (n > 99 ? '99+' : n) + '</i>' : '') + '</button>' : '') +
       (o.btns || '') +
       (S.user && o.logout ? '<button type="button" class="tb" data-act="logout" aria-label="로그아웃" title="로그아웃">' + LZ.ic('logout') + '</button>' : '') + '</div>';
   };
   LZ.titleOf = {}; LZ.ROOT9 = ['home', 'courses', 'field', 'me'];
+  /* v9.1.2 새로고침: ↻ 단추 · 화면을 아래로 당기기 · 앱으로 돌아올 때 · 알림이 올 때. 적는 중인 화면(플레이 · 등록 · 글쓰기 · 결제)은 손대지 않아요 */
+  var NORF = { play: 1, reg: 1, regOld: 1, courseEdit: 1, noticeEdit: 1, qnaNew: 1, pay: 1, join: 1, login: 1, nickChange: 1, pinChange: 1, round: 1, fieldEdit: 1, fieldReg: 1, evMake: 1, make: 1, tv: 1, ceremony: 1, refund: 1 };
+  var AUTORF = { home: 1, courses: 1, cImport: 1, members: 1, dash: 1, adminGroup: 1, pays: 1, refunds: 1, pwreqs: 1, club: 1, myclubs: 1, noti: 1, notices: 1, qnaList: 1, field: 1, me: 1, meTier: 1, mePoints: 1, moimAll: 1, holes: 1, capDash: 1 };
+  var rfBusy = false, lastTouch = 0;
+  function rfSafe() { var a = document.activeElement; return !document.querySelector('#layer .sheet, #layer .dlg') && !(a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) && !(LZ.guard && LZ.guard.dirty && LZ.guard.dirty()); }
+  /** 지금 화면을 서버에서 새로 받아 다시 그려요(스크롤 자리는 그대로) */
+  LZ.reload = async function (o) {
+    o = o || {}; var c = LZ.cur(); if (!S.user || rfBusy || NORF[c.name]) return false;
+    if (o.soft && (!AUTORF[c.name] || !rfSafe() || Date.now() - lastTouch < 4000)) return false;
+    rfBusy = true; var y = window.scrollY;
+    try {
+      Q.flush(); LZ.cacheDrop(); try { await LZ.refreshMe(); LZ.paintBell(); } catch (e) { /* 신호 없음: 화면만 */ }
+      if (LZ.cur() !== c) return false;
+      c.p = Object.assign({}, c.p || {}, { fresh: 1 }); await render(true); window.scrollTo(0, y);
+      return true;
+    } finally { rfBusy = false; }
+  };
   LZ.hdr = function (title, o) {
     o = o || {};
     var name = LZ.cur().name, bar = o.bar || BAR[name] || title, head = !o.nosub && String(title) !== String(bar);
     LZ.titleOf[name] = String(bar);
-    var prev = LZ.stack && LZ.stack.length > 1 ? LZ.stack[LZ.stack.length - 2] : null, bl = o.back ? (o.backText || (prev && prev.name !== name && LZ.titleOf[prev.name]) || '') : ''; if (bl.length > (document.body.classList.contains('big') ? 6 : 7)) bl = '';
+    var prev = LZ.stack && LZ.stack.length > 1 ? LZ.stack[LZ.stack.length - 2] : null, bl = o.back ? (o.backText || (prev && prev.name !== name && LZ.titleOf[prev.name]) || '') : ''; var bw = window.innerWidth || 375; if (bl.length > (bw >= 375 ? 7 : bw >= 350 ? 5 : 4) - (document.body.classList.contains('big') ? 1 : 0)) bl = '';   // 좁은 휴대폰(갤럭시 폴드 앞화면 등)은 짧은 이름만
     var root = !o.back && LZ.ROOT9.indexOf(name) >= 0;   // v9 아래 탭 첫 화면: 위 막대는 비우고 본문에 큰 제목
     return '<div class="top' + (root ? ' root9' : '') + '">' + (o.back ? '<button type="button" class="bk' + (bl ? ' bk9' : '') + '" data-act="back" aria-label="' + esc(o.backLabel || (bl ? bl + '(으)로 돌아가기' : '뒤로')) + '">' + LZ.ic('back') + (bl ? '<span class="bkt">' + esc(bl) + '</span>' : '') + '</button>' : '') + '<h2>' + (root ? '' : esc(bar)) + '</h2>' + LZ.topBtns(o) +
       '</div>' + (root ? '<h1 class="lt9">' + esc(bar) + '</h1>' : '') + (head || o.right ? '<div class="subh">' + (head ? '<h1 class="vt">' + esc(title) + '</h1>' : '') + (o.right ? '<div class="acts">' + o.right + '</div>' : '') + '</div>' : '');
@@ -538,6 +578,32 @@
   LZ.act.help = async function () { try { await LZ.need('help'); } catch (e) { /* 도움말 없이 */ } var h = LZ.HELP && LZ.HELP[LZ.cur().name]; if (!h) { if (S.user) LZ.go('helpHub'); else LZ.go('guide'); return; } LZ.sheet('<h2>' + esc(h.t) + '</h2>' + (h.img ? '<img src="assets/guide/' + h.img + '.webp" alt="" style="width:100%;border-radius:14px;border:1px solid var(--line);margin:4px 0 10px">' : '') + (typeof h.html === 'function' ? h.html() : h.html)); };
   LZ.act.sheetClose = function () { LZ.closeSheet(); };
   LZ.act.retry = function () { render(); };
+  LZ.act.reload = async function (el) {
+    if (LZ.guard && LZ.guard.dirty && LZ.guard.dirty() && !(await LZ.guard.ask())) return;
+    if (el) el.classList.add('spin');
+    var ok = await LZ.reload(); LZ.toast(ok ? '새로 불러왔어요' : '지금은 새로 불러올 수 없어요', 1500);
+  };
+  /* 화면 맨 위에서 아래로 당기면 새로고침 */
+  (function () {
+    var y0 = -1, dy = 0, ind = null;
+    function bar() { if (!ind) { ind = document.createElement('div'); ind.id = 'ptr9'; ind.innerHTML = LZ.ic('rf'); document.body.appendChild(ind); } return ind; }
+    document.addEventListener('touchstart', function (e) {
+      lastTouch = Date.now(); y0 = -1;
+      if (window.scrollY > 0 || !S.user || NORF[LZ.cur().name] || e.touches.length !== 1 || e.target.closest('#layer, .sheet, .dlg, input, textarea, [contenteditable], .flt9, .seg, .bnr, .cmb')) return;
+      y0 = e.touches[0].clientY; dy = 0;
+    }, { passive: true });
+    document.addEventListener('touchmove', function (e) {
+      if (y0 < 0) return; if (window.scrollY > 0) { y0 = -1; if (ind) ind.className = ''; return; }
+      dy = e.touches[0].clientY - y0; if (dy < 10) return;
+      var b = bar(), k = Math.min(dy, 110); b.className = 'on' + (dy > 75 ? ' go' : ''); b.style.transform = 'translate(-50%,' + (k * 0.6) + 'px) rotate(' + (k * 3) + 'deg)';
+    }, { passive: true });
+    document.addEventListener('touchend', function () {
+      if (y0 < 0) return; var go = dy > 75; y0 = -1; var b = ind; if (!b) return;
+      if (!go) { b.className = ''; b.style.transform = ''; return; }
+      b.className = 'on go spin'; b.style.transform = '';
+      LZ.reload().then(function (ok) { b.className = ''; if (ok) LZ.toast('새로 불러왔어요', 1300); });
+    }, { passive: true });
+  })();
   LZ.flip = function (el) { if (el && el.classList.contains('sw')) { el.classList.toggle('on'); el.setAttribute('aria-pressed', el.classList.contains('on')); return true; } return false; };
   LZ.act.theme = function (el) { LZ.theme.set(!LZ.theme.get()); if (!LZ.flip(el)) LZ.redraw(); };
   LZ.act.big = function () { LZ.big.set(!LZ.big.get()); LZ.toast(LZ.big.get() ? '글씨를 크게 했어요' : '보통 글씨로 했어요'); };
@@ -568,7 +634,10 @@
     },
     off: function () { try { if (wl) { wl.release(); wl = null; } } catch (e) { /* 무시 */ } if (vid) { try { vid.pause(); } catch (e) { /* 무시 */ } } }
   };
-  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') { var s = LZ.screens[LZ.cur().name]; if (s && s.wake) LZ.wake.on(); Q.flush(); LZ.meSync(); } });
+  var hidAt = 0;
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') { hidAt = Date.now(); return; } if (document.visibilityState === 'visible') { var s = LZ.screens[LZ.cur().name]; if (s && s.wake) LZ.wake.on(); Q.flush(); if (hidAt && Date.now() - hidAt > 30000) { lastTouch = 0; LZ.reload({ soft: true }).then(function (ok) { if (!ok) LZ.meSync(); }); } else LZ.meSync(); hidAt = 0; } });
+  /* 보고만 있는 목록 화면(회원 · 코스 · 결제 …)은 2분마다 조용히 새로(손대고 있으면 건너뜀) */
+  setInterval(function () { if (document.visibilityState === 'visible' && /^(members|dash|pays|cImport|courses|noti|adminGroup|refunds|pwreqs)$/.test(LZ.cur().name)) LZ.reload({ soft: true }); }, 120000);
   /* ───── 알림 바로 받기(v7 #30): 내 정보를 새로 받아 🔔 숫자·홈 클럽 목록을 고침 ─────
      ① 서버가 알림을 만들면 내 채널(noti-<열쇠>)로 방송 → 바로  ② 화면이 다시 보일 때  ③ 화면이 보이는 동안 1분마다 */
   function meSig(m) { return m ? JSON.stringify([m.noti || 0, m.reqs || 0, (m.moims || []).map(function (x) { return [x.id, x.members, x.cap, x.role, x.reqs || 0, x.locked ? 1 : 0, x.meLock ? 1 : 0, x.grace || 0]; }), m.user && m.user.tier, m.user && m.user.end, m.points && m.points.bal]) : ''; }
@@ -592,7 +661,7 @@
     try {
       var ws = NR.ws = new WebSocket(url);
       ws.onopen = function () { NR.tries = 0; send('phx_join', { config: { broadcast: { self: false }, presence: { key: '' } } }); NR.hb = setInterval(function () { send('heartbeat', {}, 'phoenix'); }, 25000); };
-      ws.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.topic === topic && m.event === 'broadcast' && m.payload && m.payload.event === 'noti') { var x = m.payload.payload || {}; if (x.kind === 'kick') { LZ.api('ping', {}).catch(function () { /* 끊긴 기기면 api 가 로그인 화면으로 */ }); return; } LZ.meSync(x.t || '새 알림이 왔어요'); } } catch (x2) { /* 무시 */ } };
+      ws.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.topic === topic && m.event === 'broadcast' && m.payload && m.payload.event === 'noti') { var x = m.payload.payload || {}; setTimeout(function () { LZ.reload({ soft: true }); }, 1500); if (x.kind === 'kick') { LZ.api('ping', {}).catch(function () { /* 끊긴 기기면 api 가 로그인 화면으로 */ }); return; } LZ.meSync(x.t || '새 알림이 왔어요'); } } catch (x2) { /* 무시 */ } };
       ws.onclose = function () { if (ws !== NR.ws) return; clearInterval(NR.hb); NR.ws = null; if (S.user && NR.key === key) { NR.tries++; NR.again = setTimeout(function () { if (S.user && NR.key === key) { NR.key = ''; NR.start(key); } }, Math.min(60000, 3000 * NR.tries)); } };
       ws.onerror = function () { /* onclose 에서 다시 */ };
     } catch (e) { NR.ws = null; }

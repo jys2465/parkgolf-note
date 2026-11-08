@@ -22,7 +22,7 @@
         '<div class="lbody"><div class="ltitle"><img src="icons/icon-192.png" alt="" class="llogo"><h1>파크골프 공략수첩</h1></div>' +
         (back ? '<p class="lsub">다시 오셨네요</p><div class="lwho">' + av + '<b>' + esc(who.nick) + (who.nick === '관리자' ? '' : ' <span>회원님</span>') + '</b><input type="text" id="nick" class="nick-ghost" value="' + esc(last) + '" autocomplete="username" maxlength="8" tabindex="-1" aria-label="닉네임"></div>'
           : '<p class="lsub">홀마다 나만의 공략을 적어 두세요</p><label class="sr" for="nick">닉네임</label><input type="text" id="nick" class="lnick" value="' + esc(last) + '" placeholder="닉네임" autocomplete="username" maxlength="8" autocapitalize="off" spellcheck="false">') +
-        padHtml(4) + '<p class="lhint" id="lhint">4자리를 누르면 바로 들어가요</p>' +
+        '<div id="bioBox"></div>' + padHtml(4) + '<p class="lhint" id="lhint">4자리를 누르면 바로 들어가요</p>' +
         '<a href="#" class="lforgot" data-act="forgot">비밀번호 찾기</a>' +
         '<hr class="ldiv" aria-hidden="true">' +   /* v7.1.0 §15: "비밀번호를 잊었어요"와 다음 줄 사이 긴 구분선(처음 로그인 화면도 같은 자리) */
         (back ? '<a href="#" class="lother" data-act="otherUser">다른 사람으로 로그인</a>' : '') +
@@ -31,11 +31,110 @@
         '<p class="lver">앱 버전 ' + LZ.VER + '</p></div></div>';
       var n = $('#nick'); n.addEventListener('input', function () { pinForce = 0; setPadLen(pinLen()); });
       n.addEventListener('keydown', function (e) { if (e.key === 'Enter') n.blur(); });
-      setPadLen(pinLen());
+      setPadLen(pinLen()); bioPaint();
       if (LZ.kickedNote) { LZ.kickedNote = false; LZ.kickNote(); }
       if (LZ.pinChangedNote) { LZ.pinChangedNote = false; LZ.dialog({ title: '비밀번호가 바뀌었어요', body: '다른 휴대폰에서 비밀번호를 새로 정해서 이 휴대폰은 로그아웃됐어요. 새 비밀번호로 로그인해 주세요.' }); }
     }
   };
+
+  /* ───── v9.1.2 Face ID · 지문 로그인(패스키): 휴대폰 안의 열쇠로 서명해서 들어와요. 얼굴 · 지문 정보는 휴대폰 밖으로 나가지 않아요 ───── */
+  function utf8(s) { return new TextEncoder().encode(String(s)); }
+  function b64u(buf) { var a = new Uint8Array(buf), s = ''; for (var i = 0; i < a.length; i++) s += String.fromCharCode(a[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function unb64u(s) { s = String(s).replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; var b = atob(s), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
+  /** 아주 작은 CBOR 읽기(패스키 등록 정보에서 공개키만 꺼내요) */
+  function cbor(buf) {
+    var d = new Uint8Array(buf), p = 0;
+    function n(ai) { if (ai < 24) return ai; if (ai === 24) return d[p++]; if (ai === 25) { var v = d[p] * 256 + d[p + 1]; p += 2; return v; } if (ai === 26) { var w = ((d[p] * 256 + d[p + 1]) * 256 + d[p + 2]) * 256 + d[p + 3]; p += 4; return w; } throw new Error('cbor'); }
+    function it() {
+      var b = d[p++], mt = b >> 5, ai = b & 31, l, i;
+      if (mt === 0) return n(ai); if (mt === 1) return -1 - n(ai);
+      if (mt === 2) { l = n(ai); var v = d.slice(p, p + l); p += l; return v; }
+      if (mt === 3) { l = n(ai); var t = new TextDecoder().decode(d.slice(p, p + l)); p += l; return t; }
+      if (mt === 4) { l = n(ai); var a = []; for (i = 0; i < l; i++) a.push(it()); return a; }
+      if (mt === 5) { l = n(ai); var o = {}; for (i = 0; i < l; i++) { var k = it(); o[k] = it(); } return o; }
+      if (mt === 7) { if (ai === 20) return false; if (ai === 21) return true; if (ai === 22) return null; }
+      throw new Error('cbor');
+    }
+    return it();
+  }
+  var BIO = LZ.bio = {
+    ok: null, ch: null,
+    label: function () { return /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) ? 'Face ID' : '지문 · 얼굴 인식'; },
+    avail: async function () {
+      if (BIO.ok !== null) return BIO.ok;
+      try { BIO.ok = !!(window.PublicKeyCredential && window.isSecureContext && window.TextEncoder && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); } catch (e) { BIO.ok = false; }
+      if (/KAKAOTALK|NAVER|Instagram|FBAN|FBAV|Line\//i.test(navigator.userAgent)) BIO.ok = false;   // 앱 안 브라우저는 안 돼요
+      return BIO.ok;
+    },
+    saved: function () { var x = store.json('lz.bio'); return x && x.cid ? x : null; },
+    /* 아이폰은 단추를 누른 "바로 그때" 열쇠를 써야 해서, 서버에서 받을 확인 번호를 미리 받아 둬요 */
+    prep: async function (kind) { try { var r = await LZ.api(kind === 'login' ? 'bioStart' : 'bioOpts', {}, kind === 'login' ? { noAuth: true, retry: 0 } : { retry: 0 }); BIO.ch = { ch: r.ch, at: Date.now(), kind: kind }; } catch (e) { BIO.ch = null; } },
+    fresh: function (kind) { return BIO.ch && BIO.ch.kind === kind && Date.now() - BIO.ch.at < 240000 ? BIO.ch.ch : null; },
+    register: async function () {
+      var ch = BIO.fresh('reg'); if (!ch) { await BIO.prep('reg'); ch = BIO.fresh('reg'); } if (!ch) throw new Error('인터넷 연결을 확인해 주세요.');
+      BIO.ch = null;
+      var cred = await navigator.credentials.create({ publicKey: { challenge: utf8(ch), rp: { name: '파크골프 공략수첩', id: location.hostname }, user: { id: utf8(S.user.uid), name: S.user.nick, displayName: S.user.nick }, pubKeyCredParams: [{ type: 'public-key', alg: -7 }], authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged', requireResidentKey: false }, timeout: 60000, attestation: 'none' } });
+      var ad = cbor(cred.response.attestationObject).authData, l = ad[53] * 256 + ad[54], key = cbor(ad.slice(55 + l));
+      if (key[3] !== -7 || !key[-2] || !key[-3]) throw new Error('이 휴대폰의 열쇠 방식은 아직 쓸 수 없어요.');
+      var body = { cid: b64u(cred.rawId), x: b64u(key[-2]), y: b64u(key[-3]), ad: b64u(ad), cd: b64u(cred.response.clientDataJSON), name: LZ.devLabel() };
+      await LZ.api('bioAdd', body, { retry: 0 });
+      store.setJSON('lz.bio', { cid: body.cid, uid: S.user.uid, nick: S.user.nick });
+      return true;
+    },
+    off: async function () { var sv = BIO.saved(); if (sv) { try { await LZ.api('bioDel', { cid: sv.cid }); } catch (e) { /* 서버에 없으면 그대로 */ } } store.del('lz.bio'); }
+  };
+  /** 켜기(단추에서 바로 부름) */
+  LZ.act.bioOn = async function (el) {
+    BIO.tap = true; var dl = el && el.closest && el.closest('.dlg'), cb = dl && dl.querySelector('[data-dlg]');
+    LZ.closeSheet();
+    var job = BIO.register(); if (cb) cb.click();
+    try { await job; LZ.toast('다음부터 ' + BIO.label() + '로 들어와요', 3500); if (LZ.cur().name === 'meAcct') LZ.redraw(); }
+    catch (e) { BIO.prep('reg'); LZ.toast(e && e.name === 'NotAllowedError' ? '취소했어요' : e && e.name === 'InvalidStateError' ? '이미 이 휴대폰에 켜져 있어요' : LZ.errText(e) || ('이 화면에서는 ' + BIO.label() + '를 켤 수 없어요'), 4000); }
+  };
+  LZ.act.bioOff = async function () {
+    if (!(await LZ.confirm(BIO.label() + ' 로그인을 끌까요?', '이 휴대폰에서는 다시 비밀번호로 들어와요. 언제든 다시 켤 수 있어요.', '끄기'))) return;
+    await BIO.off(); LZ.toast('껐어요'); LZ.redraw();
+  };
+  LZ.act.bioLater = function () { LZ.closeSheet(); if (S.user) store.set('lz.bioAsk.' + S.user.uid, '1'); };
+  /** 비밀번호로 들어온 뒤 한 번만: "다음부터 Face ID로 들어갈까요?" */
+  LZ.bioOffer = async function () {
+    if (!S.user || S.user.kind === 'admin' || store.get('lz.bioAsk.' + S.user.uid) === '1') return;
+    var sv = BIO.saved(); if (sv && sv.uid === S.user.uid) return;
+    if (!(await BIO.avail())) return;
+    for (var w = 0; w < 40 && (LZ.cur().name !== 'home' || document.querySelector('#layer .sheet:not([hidden]), #layer .dlg:not([hidden])')); w++) await new Promise(function (r) { setTimeout(r, 1500); });   // 공지 팝업 등이 닫힐 때까지 기다려요
+    if (!S.user || LZ.cur().name !== 'home' || document.querySelector('#layer .sheet:not([hidden]), #layer .dlg:not([hidden])')) return;
+    await BIO.prep('reg');
+    var lb = BIO.label(); BIO.tap = false;
+    var v = await LZ.dialog({ title: '다음부터 ' + lb + '로 들어갈까요?', html: '<p class="muted">비밀번호를 누르지 않고 ' + (lb === 'Face ID' ? '얼굴을 보면' : '지문이나 얼굴로') + ' 바로 들어와요. 얼굴 · 지문 정보는 휴대폰 밖으로 나가지 않고, 이 앱은 휴대폰이 확인했다는 표시만 받아요.</p>' +
+      '<button type="button" class="btn" data-act="bioOn">' + LZ.ic('shield') + lb + ' 켜기</button><p class="hint" style="margin:6px 0 0">내 정보 › 계정 · 안전에서 언제든 켜고 끌 수 있어요.</p>', cancel: false, buttons: [{ label: '다음에', kind: 'g', value: 'later' }] });
+    if (v === 'later' && !BIO.tap) store.set('lz.bioAsk.' + S.user.uid, '1');
+  };
+  /** 로그인 화면의 [Face ID로 들어가기] */
+  LZ.act.bioLogin = async function () {
+    var sv = BIO.saved(); if (!sv) return;
+    var ch = BIO.fresh('login'); if (!ch) { LZ.busy(true, '준비 중…'); await BIO.prep('login'); LZ.busy(false); ch = BIO.fresh('login'); if (!ch) { LZ.toast('인터넷 연결을 확인해 주세요'); return; } }
+    var a; try { a = await navigator.credentials.get({ publicKey: { challenge: utf8(ch), rpId: location.hostname, allowCredentials: [{ type: 'public-key', id: unb64u(sv.cid) }], userVerification: 'required', timeout: 60000 } }); }
+    catch (e) { BIO.ch = null; BIO.prep('login'); LZ.toast(e && e.name === 'NotAllowedError' ? '취소했어요 · 비밀번호로도 들어올 수 있어요' : '이 화면에서는 ' + BIO.label() + '를 쓸 수 없어요. 비밀번호로 들어와 주세요', 4000); return; }
+    BIO.ch = null; LZ.busy(true, '들어가는 중…');
+    try {
+      var r = await LZ.api('bioLogin', { cid: sv.cid, ad: b64u(a.response.authenticatorData), cd: b64u(a.response.clientDataJSON), sig: b64u(a.response.signature), dev: LZ.devLabel() }, { noAuth: true, retry: 0 });
+      LZ.busy(false); pin = ''; store.set('lz.nick', r.user.nick); LZ.setSession(r);
+      await LZ.refreshMe().catch(function () {});
+      if (LZ.acctGate()) return;
+      LZ.go('home', {}, { reset: true }); LZ.afterLogin('');
+      LZ.toast(r.back ? '다시 오셨네요! 블루로 돌아왔어요' : LZ.nim(r.user.nick) + ', 반가워요', 2500);
+    } catch (e) {
+      LZ.busy(false); BIO.prep('login');
+      if (e.code === 'nobio') { store.del('lz.bio'); LZ.render(); }
+      LZ.toast(e.message, 5000);
+    }
+  };
+  async function bioPaint() {
+    var box = $('#bioBox'), sv = BIO.saved(); if (!box || !sv || !(await BIO.avail())) return;
+    if (!$('#bioBox')) return;
+    box.innerHTML = '<button type="button" class="bio9" data-act="bioLogin">' + LZ.ic('shield') + '<span><b>' + BIO.label() + '로 들어가기</b><small>' + esc(sv.nick) + ' 회원님</small></span></button><p class="bio9or">또는 비밀번호</p>';
+    BIO.prep('login');
+  }
   LZ.act.otherUser = function () { store.del('lz.who'); store.del('lz.nick'); LZ.render(); };
   LZ.act.pk = function (el, k) {
     var len = pinLen();
@@ -56,6 +155,7 @@
       if (LZ.acctGate()) return;
       LZ.go('home', {}, { reset: true }); LZ.afterLogin('');
       LZ.toast(r.back ? '다시 오셨네요! 블루로 돌아왔어요' : LZ.nim(nick) + ', 반가워요', r.back ? 4500 : 2500);
+      setTimeout(function () { LZ.bioOffer(); }, 1800);
     } catch (e) {
       LZ.busy(false); pin = ''; paintDots();
       if (e.code === 'tmpold') { await LZ.dialog({ title: '임시 번호가 만료됐어요', body: e.message }); return; }
