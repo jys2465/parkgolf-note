@@ -44,6 +44,7 @@
         '<div class="list">' +
         grow('seat', '내 회원권', esc(tierShort(u)) + (passShort(u) ? ' · ' + esc(passShort(u)) + '장' : '') + (m.pending ? ' · 결제 ' + esc(m.pending.stName) : ''), 'data-go="meTier"') +
         grow('star', '포인트 내역', nf(pi.bal) + 'P · ' + esc(pi.lvName || '새싹') + ' ' + nf(pi.lvp) + '점', 'data-go="mePoints"') +
+        (adm ? '' : grow('medal', '출석 도장 · 배지', '모임 · 기록한 날에 도장 · 연속 주 · 배지', 'data-go="stamps"')) +
         '</div><div class="list">' + grow('lock', '계정 · 안전', '프로필 사진 · 닉네임 · 비밀번호' + (adm ? '' : ' · 카카오 확인'), 'data-go="meAcct"') +
           grow('help', '도움말 · 문의', '파크골프 첫걸음 · 사용 안내 · 공지' + (m.qnaOn ? ' · 문의' : ''), 'data-go="helpHub"') +
           grow('gear', '설정', '화면 밝기 · 글씨 · 소리 · 알림', 'data-go="settings"') + '</div>' +
@@ -67,7 +68,7 @@
       var tg = function (t, sub, sw) { return '<div class="tgl"><span>' + t + (sub ? '<span class="muted">' + sub + '</span>' : '') + '</span>' + sw + '</div>'; };
       var sg = function (t) { return '<div class="sgh">' + t + '</div>'; };
       root.innerHTML = LZ.hdr('설정', { back: true }) + '<div class="wrap v8 sett">' +
-        sg('화면') + '<div class="list"><div class="tgl seg9w">' + LZ.seg([['auto', '기기 따라'], ['light', '밝게'], ['dark', '어둡게']], LZ.v9 ? LZ.v9.themeMode() : 'auto', 'themeSet', 's') + '</div>' + tg('글씨 크게', '보통 · 크게 두 단계 · 위 막대 가 단추와 같아요', LZ.sw(LZ.big.get(), 'big')) + '</div>' +
+        sg('화면') + '<div class="list"><div class="tgl seg9w">' + LZ.seg([['auto', '기기 따라'], ['light', '밝게'], ['dark', '어둡게']], LZ.v9 ? LZ.v9.themeMode() : 'auto', 'themeSet', 's') + '</div>' + tg('글씨 크게', '보통 · 크게 두 단계 · 위 막대 가 단추와 같아요', LZ.sw(LZ.big.get(), 'big')) + tg('쉬운 기록', '플레이 화면에 좌우 · 볼스피드만 크게 · 나머지는 [더 적기]', LZ.sw(store.get('lz.easy') === '1' || (!store.get('lz.easy') && !(m && m.last)), 'easySet')) + '</div>' +
         sg('소리·진동') + '<div class="list">' + tg('단추 진동', '누르면 짧게 떨려요(아이폰은 눌림 움직임으로)', LZ.sw(store.get('lz.buzz') !== '0', 'buzz')) +
           grow('sound', '홀 안내 목소리', esc(v ? v.name : '휴대폰 기본') + ' · 켬·끔은 플레이 화면에서', 'data-act="voicePick"') + '</div>' +
         sg('알림') + '<div class="list" id="setNoti">' + setNotiRows(tg) + '</div>' +
@@ -247,6 +248,7 @@
       });
     }
   };
+  LZ.act.easySet = function () { var on = store.get('lz.easy') === '1' || (!store.get('lz.easy') && !(S.me && S.me.last)); store.set('lz.easy', on ? '0' : '1'); LZ.redraw(); };
   /* 도움 */
   LZ.screens.helpHub = {
     tab: 'me',

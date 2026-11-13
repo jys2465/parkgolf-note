@@ -287,8 +287,8 @@
   };
   LZ.titleOf = {}; LZ.ROOT9 = ['home', 'courses', 'field', 'me'];
   /* v9.1.2 새로고침: ↻ 단추 · 화면을 아래로 당기기 · 앱으로 돌아올 때 · 알림이 올 때. 적는 중인 화면(플레이 · 등록 · 글쓰기 · 결제)은 손대지 않아요 */
-  var NORF = { play: 1, reg: 1, regOld: 1, courseEdit: 1, noticeEdit: 1, qnaNew: 1, pay: 1, join: 1, login: 1, nickChange: 1, pinChange: 1, round: 1, fieldEdit: 1, fieldReg: 1, evMake: 1, make: 1, tv: 1, ceremony: 1, refund: 1 };
-  var AUTORF = { home: 1, courses: 1, cImport: 1, members: 1, dash: 1, adminGroup: 1, pays: 1, refunds: 1, pwreqs: 1, club: 1, myclubs: 1, noti: 1, notices: 1, qnaList: 1, field: 1, me: 1, meTier: 1, mePoints: 1, moimAll: 1, holes: 1, capDash: 1 };
+  var NORF = { chat: 1, play: 1, reg: 1, regOld: 1, courseEdit: 1, noticeEdit: 1, qnaNew: 1, pay: 1, join: 1, login: 1, nickChange: 1, pinChange: 1, round: 1, fieldEdit: 1, fieldReg: 1, evMake: 1, make: 1, tv: 1, ceremony: 1, refund: 1 };
+  var AUTORF = { meet: 1, rank: 1, album: 1, stamps: 1, home: 1, courses: 1, cImport: 1, members: 1, dash: 1, adminGroup: 1, pays: 1, refunds: 1, pwreqs: 1, club: 1, myclubs: 1, noti: 1, notices: 1, qnaList: 1, field: 1, me: 1, meTier: 1, mePoints: 1, moimAll: 1, holes: 1, capDash: 1 };
   var rfBusy = false, lastTouch = 0;
   function rfSafe() { var a = document.activeElement; return !document.querySelector('#layer .sheet, #layer .dlg') && !(a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) && !(LZ.guard && LZ.guard.dirty && LZ.guard.dirty()); }
   /** 지금 화면을 서버에서 새로 받아 다시 그려요(스크롤 자리는 그대로) */
@@ -505,7 +505,7 @@
     else if (S.user && S.user.needKid && S.user.kind !== 'admin' && !BLK_OK[cur.name] && cur.name !== 'kakaoAsk') { cur.name = 'kakaoAsk'; cur.p = {}; s = LZ.screens.kakaoAsk; }   // v7.0 카카오 확인 전: 확인·문의·알림만
     var boot = $('#boot'); if (boot) boot.remove();
     root.hidden = false; if (!keep) window.scrollTo(0, 0);
-    root.classList.toggle('nobar', !!s.nobar); LZ.tabs(s.tab); document.body.dataset.scr = cur.name; 
+    root.classList.toggle('nobar', !!s.nobar); LZ.tabs(s.tab); document.body.dataset.scr = cur.name; if (cur.name !== 'play') document.body.classList.remove('easy9', 'easyx'); 
     if (s.wake) LZ.wake.on(); else LZ.wake.off();
     if (!s.rt && LZ.rt) LZ.rt.stop();
     try { await s.show(cur.p || {}, root, alive); if (alive()) { LZ.enhance(root); if (LZ.fillImgs) LZ.fillImgs(root); } }
@@ -547,7 +547,7 @@
   LZ.goTo = function (to) {
     to = String(to || ''); var m = /^([a-z]+)(?::(.*))?$/.exec(to); if (!m) return;
     if (m[1] === 'adm') { if (S.asAdm) return LZ.goTo(m[2] || 'dash'); return LZ.admEnter(m[2] || ''); }   // v9.1.1 관리자 알림 → 관리 화면
-    var map = { myclubs: ['myclubs'], home: ['home'], me: ['me'], pay: [LZ.S.user && LZ.S.user.kind === 'admin' ? 'pays' : 'meTier'], join: ['join'], courses: ['courses'], club: ['club', { id: m[2] }], reqs: ['club', { id: m[2], reqs: 1 }], keep: ['clubKeep', { id: m[2] }], course: ['holes', { id: m[2] }], round: ['round', { id: m[2] }], event: ['event', { code: m[2] }], find: ['find'], qna: ['qnaList'], notices: ['notices'], dash: ['dash'], members: ['members'], pwreq: ['pwreqs'], refund: ['refunds'], fb: ['feedbacks'], meTier: ['meTier'], goldList: ['goldList'], points: ['mePoints'] };
+    var map = { myclubs: ['myclubs'], home: ['home'], howto: ['howto'], chat: ['chat', { mid: m[2] }], meet: ['meet', { mid: m[2] }], vs: ['versus', { code: m[2] }], rank: ['rank', { mid: m[2] }], album: ['album', { mid: m[2] }], me: ['me'], pay: [LZ.S.user && LZ.S.user.kind === 'admin' ? 'pays' : 'meTier'], join: ['join'], courses: ['courses'], club: ['club', { id: m[2] }], reqs: ['club', { id: m[2], reqs: 1 }], keep: ['clubKeep', { id: m[2] }], course: ['holes', { id: m[2] }], round: ['round', { id: m[2] }], event: ['event', { code: m[2] }], find: ['find'], qna: ['qnaList'], notices: ['notices'], dash: ['dash'], members: ['members'], pwreq: ['pwreqs'], refund: ['refunds'], fb: ['feedbacks'], meTier: ['meTier'], goldList: ['goldList'], points: ['mePoints'] };
     var x = map[m[1]]; if (x) LZ.go(x[0], x[1] || {});
   };
   /* 단추 공통 처리: data-go / data-tab / data-act */
@@ -661,7 +661,7 @@
     try {
       var ws = NR.ws = new WebSocket(url);
       ws.onopen = function () { NR.tries = 0; send('phx_join', { config: { broadcast: { self: false }, presence: { key: '' } } }); NR.hb = setInterval(function () { send('heartbeat', {}, 'phoenix'); }, 25000); };
-      ws.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.topic === topic && m.event === 'broadcast' && m.payload && m.payload.event === 'noti') { var x = m.payload.payload || {}; setTimeout(function () { LZ.reload({ soft: true }); }, 1500); if (x.kind === 'kick') { LZ.api('ping', {}).catch(function () { /* 끊긴 기기면 api 가 로그인 화면으로 */ }); return; } LZ.meSync(x.t || '새 알림이 왔어요'); } } catch (x2) { /* 무시 */ } };
+      ws.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.topic === topic && m.event === 'broadcast' && m.payload && m.payload.event === 'noti') { var x = m.payload.payload || {}; if (x.kind === 'chat') { var cm = String(x.to || '').replace(/^chat:/, ''); if (LZ.chatPing) LZ.chatPing(cm); if (LZ.cur().name !== 'chat') LZ.meSync(); return; } setTimeout(function () { LZ.reload({ soft: true }); }, 1500); if (x.kind === 'kick') { LZ.api('ping', {}).catch(function () { /* 끊긴 기기면 api 가 로그인 화면으로 */ }); return; } LZ.meSync(x.t || '새 알림이 왔어요'); } } catch (x2) { /* 무시 */ } };
       ws.onclose = function () { if (ws !== NR.ws) return; clearInterval(NR.hb); NR.ws = null; if (S.user && NR.key === key) { NR.tries++; NR.again = setTimeout(function () { if (S.user && NR.key === key) { NR.key = ''; NR.start(key); } }, Math.min(60000, 3000 * NR.tries)); } };
       ws.onerror = function () { /* onclose 에서 다시 */ };
     } catch (e) { NR.ws = null; }

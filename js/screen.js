@@ -408,7 +408,27 @@
   function plReset(cid) { PL = { cid: cid, orig: {}, pts: 0, at: Date.now() }; plKeep(); }
   function sayOn() { return store.get('lz.say') === '1'; }
   function sayBtns() { var on = sayOn(); return '<span class="sndw"><button type="button" class="tb snd' + (on ? ' on' : '') + '" data-act="say" aria-pressed="' + on + '" aria-label="홀 안내 ' + (on ? '켜짐 · 누르면 끔' : '꺼짐 · 누르면 켬') + '" title="홀 안내">' + LZ.ic(on ? 'sound' : 'mute') + '</button><button type="button" class="tb sagain" data-act="sayNow" aria-label="홀 안내 다시 듣기" title="다시 듣기"' + (on ? '' : ' disabled') + '>' + LZ.ic('again') + '</button></span>'; }
-  function playHdr() { return LZ.hdr('플레이', { back: true, nosub: 1, sound: sayBtns() }); }
+  function playHdr() { return LZ.hdr('플레이', { back: true, nosub: 1, sound: sayBtns(), btns: '<button type="button" class="hard9" data-act="plHard">어려워요</button>' }); }
+  /** v9.1.3 쉬운 기록: 좌우 · 볼스피드만 크게(처음엔 켜짐 — 기록이 아직 없는 분) */
+  function easyOn() { var v = store.get('lz.easy'); return v === null || v === undefined || v === '' ? !(S.me && S.me.last) : v === '1'; }
+  var EASYX = false;
+  LZ.act.plMore = function () { EASYX = !EASYX; document.body.classList.toggle('easyx', EASYX); var b = $('.more9e'); if (b) b.innerHTML = EASYX ? '− 접기' : '＋ 더 적기 <small>방향 기준 · 끊어치기 · 주의 · 메모</small>'; };
+  var HARD = ['좌우가 뭔지', '볼스피드 숫자', '저장이 됐는지', '글씨가 작아요', '파 · 거리 넣기', '끊어치기 · 주의', '기타'];
+  LZ.act.plHard = function () {
+    LZ.sheet('<h2>어디가 어려우세요?</h2><p class="muted">누르면 우리 클럽 캡틴이 도와드려요(관리자에게는 이름 없이)</p><div class="chips9">' + HARD.map(function (w) { return '<button type="button" data-act="plHardGo" data-v="' + esc(w) + '">' + esc(w) + '</button>'; }).join('') + '</div>' +
+      '<button type="button" class="btn" data-act="plCoachAgain">사용법 다시 보기</button>' +
+      (easyOn() ? '' : '<button type="button" class="btn g" data-act="plEasy">쉬운 기록으로 바꾸기</button>'));
+  };
+  LZ.act.plHardGo = function (el, v) { LZ.api('hard', { what: v, scr: 'play' }).catch(function () {}); LZ.closeSheet(); if (v === '글씨가 작아요' && !LZ.big.get()) { LZ.big.set(true); LZ.redraw(); LZ.toast('글씨를 크게 바꿨어요 · 위 가 단추로 돌아가요', 3500); return; } LZ.toast('알려 주셔서 고마워요. 캡틴이 도와드릴 거예요', 3000); if (v === '좌우가 뭔지' || v === '볼스피드 숫자' || v === '저장이 됐는지') LZ.act.plCoachAgain(); };
+  LZ.act.plCoachAgain = function () { LZ.closeSheet(); store.del('lz.coach.play9'); playCoach(); };
+  LZ.act.plEasy = function () { LZ.closeSheet(); store.set('lz.easy', '1'); EASYX = false; rep(); LZ.toast('쉬운 기록 · 설정에서 끌 수 있어요', 3000); };
+  function playCoach() {
+    LZ.coach('play9', [
+      { sel: '.pfix .ctlp .ctr2', text: '<b>① 방향 · 좌우</b><br>스크린에서 공이 왼쪽으로 갔으면 ◀, 오른쪽이면 ▶를 눌러요. 똑바로 갔으면 그대로 두세요.' },
+      { sel: '.pfix .ctlp .vd + .ctr2', text: '<b>② 볼스피드</b><br>스크린에 나온 볼스피드 숫자에 ▼▲로 맞춰요. 0.5씩 움직여요.' },
+      { sel: '.pfix [data-act="plNext"]', text: '<b>③ 다음 = 저장</b><br>다 맞췄으면 [다음]. 수첩에 저장되고 다음 홀로 가요.' }
+    ]);
+  }
   /** 새 샷 기본값: 마지막 샷은 홀컵, 그 앞 샷은 첫화면에서 */
   function newShot(c, i, k, v, a) { var last = k > 0 && k === nSh(c, i) - 1; return { r: last ? 'c' : 'f', t: '', d: a && a.lr < 0 ? 'L' : 'R', n: a ? Math.abs(a.lr) : 0, p: LZ.half(a ? LZ.sugOf(a.m, v.g, v.h) : baseOf(c, i, k, v)) }; }
   /* ═════════ 플레이(v9): 위 = 홀 · 가운데 = 샷 구역(1st · 2nd · 3rd) · 아래 = 조정 칸. “다음” = 저장하고 넘어가기 ═════════ */
@@ -515,10 +535,16 @@
   function paintPlay(root) {
     root = root || $('#app');
     root.innerHTML = playHdr() + '<div class="wrap play3 play2 v9play">' + playBody() + '</div>' + playFix();
+    var ez = easyOn() && !ED.empty; document.body.classList.toggle('easy9', ez); document.body.classList.toggle('easyx', ez && EASYX);
+    if (ez) { var am = root.querySelector('.v9play .aim'); if (am) am.insertAdjacentHTML('afterend', '<button type="button" class="more9e" data-act="plMore">' + (EASYX ? '− 접기' : '＋ 더 적기 <small>방향 기준 · 끊어치기 · 주의 · 메모</small>') + '</button>'); }
+    var tp = ED.d && ED.d.tips; if (tp && !ED.empty) { var tw = root.querySelector('.v9play'); if (tw) tw.insertAdjacentHTML('afterbegin', '<button type="button" class="tip9c" data-act="plTips">' + LZ.ic('bulb') + '<b>클럽 팁</b>' + (tp[ED.i] ? '<span>' + tp[ED.i] + '</span>' : '<small>첫 팁 남기기</small>') + '</button>'); }   // v9.3
     fitPad();
+    if (!ED.empty) setTimeout(playCoach, 450);
     var o = $('#plO'); if (o) o.addEventListener('input', function () { ED.r.o = o.value; ED.dirty = true; var t = $('.nrow .tx'); if (t) { t.innerHTML = o.value ? hiNote(o.value) : '없음'; t.classList.toggle('e', !o.value); } var ps = $('.pfix .pst'); if (ps) { ps.textContent = '● 고침 · “다음”을 누르면 저장'; ps.classList.add('no'); } });
   }
   window.addEventListener('resize', function () { if (LZ.cur && LZ.cur().name === 'play') fitPad(); });
+  LZ.act.plTips = function () { if (!ED) return; var c = ED.d.course, h = c.holes && c.holes[ED.i]; LZ.tipSheet(c.id, ED.i, c.name, h ? +h[0] : 0); };
+  LZ.tipCount = function (cid, h, n) { if (ED && ED.d && ED.d.course.id === cid && ED.d.tips) { ED.d.tips[h] = n; if (ED.i === h && LZ.cur().name === 'play') { var b = $('.tip9c'); if (b) b.innerHTML = LZ.ic('bulb') + '<b>클럽 팁</b>' + (n ? '<span>' + n + '</span>' : '<small>첫 팁 남기기</small>'); } } };
   function rep() { var w = $('.play3'), y = w ? w.scrollTop : 0; paintPlay(); w = $('.play3'); if (w) w.scrollTop = y; }
   LZ.act.plP = function (el, v) {
     if (!ED || ED.empty) return;

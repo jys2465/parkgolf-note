@@ -20,6 +20,7 @@
         '<div class="hdr9">지금 처리할 일</div><div class="grp9 todo9">' + row('결제 확인', d.pending, 'data-go="pays"') + row('환불', d.refundReq, 'data-go="refunds"') + row('비밀번호 찾기', d.pwReq, 'data-go="pwreqs"') + row('문의', d.qnaOpen, 'data-go="qnaList"') +
           (d.goldSoon ? row('골드 만기', d.goldSoon, 'data-go="goldList"', '만기 30 · 14 · 7일 전 알려 드려요') : '') + (d.goldCand ? row('골드 후보', d.goldCand, 'data-go="goldCand"') : '') + (d.blackSoon ? row('블랙 삭제 예정', d.blackSoon, 'data-act="mbGo" data-v="_black"') : '') + (d.ptOwe ? row('포인트 회수 부족', d.ptOwe, 'data-go="ptOwe"') : '') + (d.soon.length ? row('곧 끝나는 회원', d.soon.length, 'data-go="adminGroup" data-p=\'{"g":"log"}\'') : '') + '</div>' +
         '<div class="kv dkv"><div><b>' + t.all + '</b><span>회원</span></div><div><b>' + d.moims.length + '</b><span>클럽</span></div><div><b>' + d.today + '</b><span>오늘</span></div></div>' +
+        (d.hard && d.hard.length ? '<div class="hdr9">어려워요 · 최근 30일 <span>회원님이 누른 곳(이름 없이)</span></div><div class="grp9 todo9">' + d.hard.map(function (x) { return '<div class="li tdr9"><span class="t"><b>' + esc(x.what) + '</b></span><span class="n9 on">' + x.n + '</span></div>'; }).join('') + '</div>' : '') +
         '<div class="hdr9">관리</div><div class="card tight groups">' +
         gli('user', '회원', '만들기 · 회원권 지급 · 블랙 · 테스트 계정' + (d.tests ? ' ' + d.tests : ''), 'data-go="members"') +
         gli('check', '결제·환불·포인트', '입금 확인 ' + d.pending + ' · 환불 ' + d.refundReq + ' · 포인트 주기 · 이달 ' + won(d.month.amount), 'data-go="adminGroup" data-p=\'{"g":"pay"}\'') +
