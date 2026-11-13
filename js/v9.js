@@ -126,7 +126,7 @@
   /* ───── 8. 글자판이 올라와 화면이 밀려도 위 막대는 보이는 맨 위에(아이폰) ───── */
   try {
     var vv = window.visualViewport;
-    if (vv) { var vvFix = function () { var off = Math.max(0, vv.offsetTop || 0); document.documentElement.style.setProperty('--vvTop', off + 'px'); }; vv.addEventListener('resize', vvFix); vv.addEventListener('scroll', vvFix); }
+    if (vv) { var vvLast = -1, vvFix = function () { var off = Math.round(Math.max(0, vv.offsetTop || 0)); if (off === vvLast) return; vvLast = off; document.documentElement.style.setProperty('--vvTop', off + 'px'); }; vv.addEventListener('resize', vvFix); vv.addEventListener('scroll', vvFix); }
   } catch (x) { /* 오래된 브라우저 */ }
   /* ───── 9. 글자 칸: 휴대폰 자동 완성(연락처 · 주소) 줄이 뜨지 않게 ───── */
   document.addEventListener('focusin', function (e) {

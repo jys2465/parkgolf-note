@@ -165,15 +165,31 @@
     var cb = function (k, label, col) { return '<button type="button" class="rtc" data-rt="' + k + '" aria-label="' + label + '" title="' + label + '"><i style="background:' + col + '"></i></button>'; };
     return '<div class="rtb" role="toolbar" aria-label="글자 모양"><button type="button" data-rt="bold"><b>굵게</b></button><button type="button" data-rt="big"><span style="font-size:1.15em">크게</span></button>' +
       cb('c-k', '검정(기본색)', 'currentColor') + cb('c-r', '빨강', 'var(--red)') + cb('c-b', '파랑', 'var(--blue)') + cb('c-g', '초록', 'var(--green)') +
-      '<button type="button" data-rt="clear" aria-label="서식 지우기(고른 글자를 보통 검정 글씨로)">지우기</button></div>' +
+      '<button type="button" data-rt="clear" aria-label="서식 지우기(고른 글자를 보통 검정 글씨로)">지우기</button>' +
+      '<span class="rtsp"></span><button type="button" class="rt2" data-rt="all">전체 선택</button><button type="button" class="rt2" data-rt="copy">복사</button><button type="button" class="rt2" data-rt="paste">붙여넣기</button><button type="button" class="rt2" data-rt="undo">되돌리기</button></div>' +
       '<div class="rte" id="' + id + '" contenteditable="true" data-ph="' + esc(placeholder || '') + '">' + (html || '') + '</div>';
   };
   /* 단추를 눌러도 글을 고른 자리(선택)가 풀리지 않게 */
   document.addEventListener('mousedown', function (e) { if (e.target.closest('[data-rt]')) e.preventDefault(); });
+  /* v9.3.1 고른 자리를 기억해 두었다가 단추를 누를 때 되살려요(휴대폰은 단추를 누르는 순간 고른 자리가 풀리기도 해요) */
+  var rtSel = null, rtHold = 0;
+  ['pointerdown', 'touchstart', 'mousedown'].forEach(function (ev) { document.addEventListener(ev, function (e) { if (!e.target.closest || !e.target.closest('[data-rt]') || (rtHold && Date.now() - rtHold < 1500)) return; rtHold = Date.now(); rtKeep(); }, { capture: true, passive: true }); });
+  function rtKeep() { var s = window.getSelection(); if (!s || !s.rangeCount) return; var n = s.anchorNode, el = n && (n.nodeType === 1 ? n : n.parentNode), ed = el && el.closest && el.closest('.rte'); if (ed) rtSel = { ed: ed, r: s.getRangeAt(0).cloneRange() }; }
+  document.addEventListener('selectionchange', function () { if (rtHold && Date.now() - rtHold < 1500) return; rtKeep(); });
+  function rtBack(ed) { var s = window.getSelection(); if (!s) return; if (rtSel && rtSel.ed === ed && document.contains(rtSel.r.startContainer)) { try { s.removeAllRanges(); s.addRange(rtSel.r); } catch (x) { /* 무시 */ } } }
+  function rtAll(ed) { var r = document.createRange(); r.selectNodeContents(ed); var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); }
+  function rtInsert(ed, text) { ed.focus(); rtBack(ed); var ok = false; try { ok = document.execCommand('insertText', false, text); } catch (x) { ok = false; } if (!ok) { var s = window.getSelection(); if (s.rangeCount) { var r = s.getRangeAt(0); r.deleteContents(); r.insertNode(document.createTextNode(text)); r.collapse(false); } else ed.appendChild(document.createTextNode(text)); } }
+  /* 붙여 넣을 때는 글자만(다른 앱의 글꼴 · 배경이 딸려 오지 않게) */
+  document.addEventListener('paste', function (e) { var ed = e.target && e.target.closest && e.target.closest('.rte'); if (!ed) return; var cd = e.clipboardData || window.clipboardData, t = cd ? cd.getData('text/plain') || cd.getData('text') : ''; if (!t) return; e.preventDefault(); rtInsert(ed, t.replace(/\r\n?/g, '\n')); });
   document.addEventListener('click', function (e) {
     var b = e.target.closest('[data-rt]'); if (!b) return; e.preventDefault();
-    var ed = b.parentNode.nextElementSibling; if (!ed || !ed.isContentEditable) return; ed.focus();
-    var k = b.dataset.rt; try {
+    var ed = b.parentNode.nextElementSibling; if (!ed || !ed.isContentEditable) return; ed.focus(); rtBack(ed); setTimeout(function () { rtHold = 0; rtKeep(); }, 0);
+    var k = b.dataset.rt;
+    if (k === 'all') { rtAll(ed); return; }
+    if (k === 'undo') { try { document.execCommand('undo'); } catch (x) { /* 무시 */ } return; }
+    if (k === 'copy') { var cs = window.getSelection(); if (!cs || !String(cs)) rtAll(ed); var txt = String(window.getSelection()); if (!txt) { LZ.toast('복사할 글이 없어요'); return; } var done = function () { LZ.toast('복사했어요', 1500); }; var ok2 = false; try { ok2 = document.execCommand('copy'); } catch (x) { ok2 = false; } if (ok2) done(); else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, function () { LZ.toast('글을 길게 눌러 “복사”를 골라 주세요', 3500); }); else LZ.toast('글을 길게 눌러 “복사”를 골라 주세요', 3500); return; }
+    if (k === 'paste') { var no = function () { LZ.toast('글 칸을 길게 눌러 “붙여넣기”를 골라 주세요', 3500); }; if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(function (t) { if (t) rtInsert(ed, t.replace(/\r\n?/g, '\n')); else LZ.toast('복사해 둔 글이 없어요'); }, no); else no(); return; }
+    try {
       document.execCommand('styleWithCSS', false, false);
       if (k === 'bold') document.execCommand('bold');
       else if (k === 'clear') { document.execCommand('removeFormat'); document.execCommand('foreColor', false, getComputedStyle(ed).color); }
@@ -350,13 +366,32 @@
   var inflight = 0; function bar(on) { inflight += on ? 1 : -1; var b = $('#pbar'); if (!b) { b = document.createElement('div'); b.id = 'pbar'; document.body.appendChild(b); } b.classList.toggle('on', inflight > 0); }
   /* v7.1.1 읽기만 하는 요청(다시 보내도 괜찮음). 나머지(쓰기)는 요청 번호(rq)를 붙여 보내고, 서버가 같은 번호는 10분 동안 한 번만 처리해요
      → 응답이 끊겨 다시 보내도 결제·환불·회원권 옮기기·클럽 만들기가 두 번 되지 않아요. 번호 없이 보내는 쓰기(o.rq === false)는 저절로 다시 보내지 않아요 */
-  var READS = /^(cfg|firstSteps|firstAdmin|guideCards|guideAdmin|me|ping|bye|nickCheck|depGet|courses|course|nameCheck|prefs|trust|qnaList|noticeList|payInfo|payList|points|ptLook|ptOwe|packList|goldList|goldCand|members|dash|adminCfg|log|refundInfo|refundList|imgGet|joinCheck|refName|moimFind|moimCode|moimGet|moimAll|feedbackList|fieldList|roundGet|roundMine|eventGet|eventBoard|capDash|eventMine|kakaoCheck|kakaoPeek|pwKakao|pwReqStatus|pwReqList)$/;
+  var READS = /^(cfg|firstSteps|firstAdmin|guideCards|guideAdmin|me|ping|bye|nickCheck|depGet|courses|course|nameCheck|prefs|trust|qnaList|noticeList|payInfo|payList|points|ptLook|ptOwe|packList|goldList|goldCand|members|dash|adminCfg|log|refundInfo|refundList|imgGet|joinCheck|refName|moimFind|moimCode|moimGet|moimAll|feedbackList|fieldList|roundGet|roundMine|eventGet|eventBoard|capDash|eventMine|kakaoCheck|kakaoPeek|pwKakao|pwReqStatus|pwReqList|meetGet|stamps|clubRank|tipList|albumList|vsGet|bioList)$/;
   LZ.isRead = function (a) { return READS.test(a); };
   LZ.rqId = function () { var s = Date.now().toString(36); try { var b = new Uint8Array(9); crypto.getRandomValues(b); for (var i = 0; i < b.length; i++) s += (b[i] % 36).toString(36); } catch (e) { s += Math.random().toString(36).slice(2, 12); } return s.slice(0, 32); };
+  /* v9.3.1 화면을 넘길 때 기다리지 않게: 방금 받은 답은 20초 동안 그대로 쓰고, 10분 안의 답은 먼저 보여 준 뒤 뒤에서 새로 받아 달라졌으면 다시 그려요.
+     무엇이든 저장(쓰기)하면 모두 비워요. 적는 화면(플레이 · 등록 · 글쓰기 …)과 점수판 · 결제는 늘 새로 받아요 */
+  var MEM = {}, SWRX = /^(moimGet|moimAll|noticeList|fieldList|roundMine|eventMine|capDash|points|payList|qnaList|members|dash|meetGet|stamps|clubRank|albumList|tipList|vsGet|packList|goldList|goldCand|guideCards|firstSteps|refundList|pwReqList|feedbackList|log)$/, MEM_FRESH = 20000, MEM_STALE = 600000;
+  function memKey(a, body) { var b = body || {}, ks = Object.keys(b).sort(), o2 = {}; ks.forEach(function (k) { o2[k] = b[k]; }); return a + '|' + JSON.stringify(o2) + '|' + (S.asAdm ? 1 : 0) + '|' + (S.br || '') + '|' + (S.user ? S.user.uid : ''); }
+  LZ.memDrop = function () { MEM = {}; };
+  function memRedrawOk() { var a = document.activeElement; return !document.querySelector('#layer .sheet, #layer .dlg, #layer .qwait, .coach') && !(a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) && !(LZ.guard && LZ.guard.dirty && LZ.guard.dirty()); }
+  function memRefresh(ck, a, body, hit) {
+    if (hit.busy) return; hit.busy = 1; var scr = LZ.cur();
+    post(a, body, {}).then(function (d) { var s = JSON.stringify(d), ch = s !== hit.s; if (MEM[ck] !== hit) return; MEM[ck] = { t: Date.now(), s: s }; if (ch && LZ.cur() === scr && !NORF[scr.name] && memRedrawOk()) LZ.redraw(); }, function () { hit.busy = 0; });
+  }
+  /** 미리 받아 두기(홈에서 내 클럽 · 필드 탭) */
+  LZ.warm = function (a, body) { if (!S.user || !SWRX.test(a) || MEM[memKey(a, body)] || (navigator.connection && navigator.connection.saveData)) return; LZ.api(a, body, { quiet: 1 }).catch(function () {}); };
   LZ.api = async function (a, body, o) {
+    var ck = (!o || (o.quiet && Object.keys(o).length === 1)) && S.user && SWRX.test(a) ? memKey(a, body) : '';
+    if (ck) { var hit = MEM[ck], age = hit ? Date.now() - hit.t : 1e12; if (age < MEM_FRESH) return JSON.parse(hit.s); if (age < MEM_STALE && !NORF[LZ.cur().name]) { memRefresh(ck, a, body, hit); return JSON.parse(hit.s); } }
+    var d0 = await apiNet(a, body, o);
+    if (ck) { try { if (Object.keys(MEM).length > 80) MEM = {}; MEM[ck] = { t: Date.now(), s: JSON.stringify(d0) }; } catch (e) { /* 무시 */ } } else if (!READS.test(a)) MEM = {};
+    return d0;
+  };
+  async function apiNet(a, body, o) {
     o = o || {}; var tries = o.retry === undefined ? 1 : o.retry;
     if (!READS.test(a)) { if (o.rq === false) tries = 0; else { var b2 = {}; for (var k in (body || {})) b2[k] = body[k]; if (!b2.rq) b2.rq = LZ.rqId(); body = b2; } }
-    bar(true);
+    var quiet = !!o.quiet; if (!quiet) bar(true);
     try { for (var i = 0; ; i++) {
       try { return await post(a, body, o); }
       catch (e) {
@@ -368,8 +403,8 @@
         if ((e.code === 'net' || e.code === 'server' || e.code === 'busy') && i < tries) { await LZ.sleep(800 + i * 700); continue; }
         throw e;
       }
-    } } finally { bar(false); }
-  };
+    } } finally { if (!quiet) bar(false); }
+  }
   LZ.queueWait = function (d) {
     if (waiting) return waiting;
     var ov = document.createElement('div'); ov.className = 'qwait';
@@ -418,7 +453,7 @@
     if (o.img && !o.av && /^[\w-]{4,80}$/.test(o.img)) LZ.api('imgGet', { id: o.img }).then(function (r) { if (r && r.data && r.data.length < 60000) { o.av = r.data; store.setJSON('lz.who', o); } }).catch(function () {});
     else if (o.img && /^(data:image|assets\/)/.test(o.img)) { o.av = o.img; store.setJSON('lz.who', o); }
   };
-  LZ.refreshMe = async function () { var r = await LZ.api('me', {}); applyMe(r); if (!S.asAdm) { try { store.setJSON('lz.k.me', { t: Date.now(), d: r }); } catch (e) { /* 무시 */ } } return r; };
+  LZ.refreshMe = async function (quiet) { var r = await LZ.api('me', {}, quiet ? { quiet: 1 } : undefined); applyMe(r); if (!S.asAdm) { try { store.setJSON('lz.k.me', { t: Date.now(), d: r }); } catch (e) { /* 무시 */ } } return r; };
   /* ───── v9.1.1 관리자 겸 회원: 내 계정 그대로 관리 화면에 들어가요(다시 로그인 없음). 관리 화면에서 한 일은 회원님께 "관리자"로 보여요 ───── */
   function admBar(on) {
     var b = document.getElementById('admBar');
@@ -441,7 +476,7 @@
   /* ───── 마지막 응답 저장: 화면을 열 때 먼저 보여 주고 뒤에서 새로 받음 ───── */
   LZ.cacheGet = function (k) { try { var x = store.json('lz.k.' + (S.user ? S.user.uid : '') + '.' + k); return x && Date.now() - x.t < 7 * 86400000 ? x.d : null; } catch (e) { return null; } };
   LZ.cacheSet = function (k, d) { try { store.setJSON('lz.k.' + (S.user ? S.user.uid : '') + '.' + k, { t: Date.now(), d: d }); } catch (e) { /* 용량 */ } };
-  LZ.cacheDrop = function () { try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('lz.k.') === 0) localStorage.removeItem(k); }); } catch (e) { /* 무시 */ } };
+  LZ.cacheDrop = function () { MEM = {}; try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('lz.k.') === 0) localStorage.removeItem(k); }); } catch (e) { /* 무시 */ } };
   /* ───── 오프라인 큐: 신호가 약할 때 저장을 모아 두었다가 보냄 ───── */
   var Q = LZ.queue = {
     list: function () { return store.json('lz.q') || []; },
@@ -646,8 +681,9 @@
     if (!S.user || !S.token || syncBusy || !LZ.booted) return; syncBusy = true;
     var before = meSig(S.me);
     try {
-      await LZ.refreshMe(); LZ.paintBell();
+      await LZ.refreshMe(true); LZ.paintBell();
       if (toast) LZ.toast(toast, 4000);
+      if (meSig(S.me) !== before) LZ.memDrop();
       if (meSig(S.me) !== before && /^(home|me)$/.test(LZ.cur().name) && !document.querySelector('#layer .sheet, #layer .dlg')) LZ.redraw();
     } catch (e) { /* 다음에 */ } finally { syncBusy = false; }
   };
@@ -661,7 +697,7 @@
     try {
       var ws = NR.ws = new WebSocket(url);
       ws.onopen = function () { NR.tries = 0; send('phx_join', { config: { broadcast: { self: false }, presence: { key: '' } } }); NR.hb = setInterval(function () { send('heartbeat', {}, 'phoenix'); }, 25000); };
-      ws.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.topic === topic && m.event === 'broadcast' && m.payload && m.payload.event === 'noti') { var x = m.payload.payload || {}; if (x.kind === 'chat') { var cm = String(x.to || '').replace(/^chat:/, ''); if (LZ.chatPing) LZ.chatPing(cm); if (LZ.cur().name !== 'chat') LZ.meSync(); return; } setTimeout(function () { LZ.reload({ soft: true }); }, 1500); if (x.kind === 'kick') { LZ.api('ping', {}).catch(function () { /* 끊긴 기기면 api 가 로그인 화면으로 */ }); return; } LZ.meSync(x.t || '새 알림이 왔어요'); } } catch (x2) { /* 무시 */ } };
+      ws.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.topic === topic && m.event === 'broadcast' && m.payload && m.payload.event === 'noti') { var x = m.payload.payload || {}; LZ.memDrop(); if (x.kind === 'chat') { var cm = String(x.to || '').replace(/^chat:/, ''); if (LZ.chatPing) LZ.chatPing(cm); if (LZ.cur().name !== 'chat') LZ.meSync(); return; } setTimeout(function () { LZ.reload({ soft: true }); }, 1500); if (x.kind === 'kick') { LZ.api('ping', {}).catch(function () { /* 끊긴 기기면 api 가 로그인 화면으로 */ }); return; } LZ.meSync(x.t || '새 알림이 왔어요'); } } catch (x2) { /* 무시 */ } };
       ws.onclose = function () { if (ws !== NR.ws) return; clearInterval(NR.hb); NR.ws = null; if (S.user && NR.key === key) { NR.tries++; NR.again = setTimeout(function () { if (S.user && NR.key === key) { NR.key = ''; NR.start(key); } }, Math.min(60000, 3000 * NR.tries)); } };
       ws.onerror = function () { /* onclose 에서 다시 */ };
     } catch (e) { NR.ws = null; }

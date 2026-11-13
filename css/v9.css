@@ -6,7 +6,7 @@
   --v9-up:#C2481A;--v9-dn:#2B61BE;--v9-gold:#B5872B;
   --v9-s1:#FBF0DC;--v9-s1l:#D4962A;--v9-s2:#DEF3EC;--v9-s2l:#2A9A78;--v9-s3:#EBE7FB;--v9-s3l:#7A67D6;
   --v9-p3:#0284C7;--v9-p4:#15803D;--v9-p5:#BE185D;
-  --v9-bar:rgba(249,250,248,.86);
+  --v9-bar:rgba(249,250,248,.97);
 }
 html[data-theme="dark"]{
   --v9-acc:#35C2AE;--v9-acc-t:#0E2F2B;
@@ -14,7 +14,7 @@ html[data-theme="dark"]{
   --v9-up:#FF8A5B;--v9-dn:#7BA8FF;--v9-gold:#E1B75B;
   --v9-s1:#3A2D16;--v9-s1l:#E3B45A;--v9-s2:#123129;--v9-s2l:#45C39A;--v9-s3:#28233F;--v9-s3l:#A596F2;
   --v9-p3:#38BDF8;--v9-p4:#4ADE80;--v9-p5:#F472B6;
-  --v9-bar:rgba(22,23,22,.86);
+  --v9-bar:rgba(22,23,22,.97);
 }
 body{font-family:'Noto Sans KR',-apple-system,'Apple SD Gothic Neo',sans-serif;-webkit-font-smoothing:antialiased}
 
@@ -515,11 +515,11 @@ body[data-scr="chat"]{background:#E6EDEA}:root[data-theme="dark"] body[data-scr=
 .cm9 .tm{font-size:calc(11px*var(--k,1));color:var(--v9-l2);flex:0 0 auto}
 .cb9{border:0;background:var(--v9-card);color:var(--v9-l1);border-radius:4px 14px 14px 14px;padding:9px 12px;font:inherit;font-size:calc(16px*var(--k,1));line-height:1.45;text-align:left;max-width:min(260px,70vw);white-space:pre-wrap;overflow-wrap:anywhere;cursor:pointer}
 .cb9 .rp{display:block;font-size:calc(12px*var(--k,1));color:var(--v9-l2);border-left:2px solid currentColor;padding-left:6px;margin-bottom:4px}
-.cm9.me{justify-content:flex-end;align-items:flex-end}.cm9.me .cb9{background:#FEE500;color:#191600;border-radius:14px 4px 14px 14px}.cm9.me .cb9 .rp{color:#6B5F00}.cm9.cont{margin-top:-2px}
+.cm9.me{justify-content:flex-end;align-items:flex-end}.cm9.me .cb9{background:#FEE500;color:#191600;border-radius:14px 4px 14px 14px}.cm9.me .cb9 .rp{color:#6B5F00}.cm9.cm9c{margin-top:-2px}
 .cb9.hid{opacity:.55;font-style:italic}
 .cin9{background:var(--v9-bar,#F9FAF8);border-top:1px solid var(--v9-sep);padding:8px 10px calc(10px + env(safe-area-inset-bottom))}
 .crp9{display:flex;align-items:center;gap:8px;font-size:calc(13px*var(--k,1));color:var(--v9-l2);padding:0 4px 6px}.crp9 span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.crp9 button{border:0;background:none;width:32px;height:32px;color:var(--v9-l2);cursor:pointer}
-.crow9{display:flex;gap:8px;align-items:flex-end}.crow9 textarea{flex:1;min-height:44px;max-height:120px;border:0;border-radius:22px;background:var(--v9-card);padding:11px 16px;font:inherit;font-size:16px;line-height:1.4;resize:none;color:var(--v9-l1)}
+.cinr9{display:flex;gap:8px;align-items:flex-end}.cinr9 textarea{flex:1;min-height:44px;max-height:120px;border:0;border-radius:22px;background:var(--v9-card);padding:11px 16px;font:inherit;font-size:16px;line-height:1.4;resize:none;color:var(--v9-l1)}
 .csend9{width:44px;height:44px;border:0;border-radius:50%;background:var(--v9-acc);color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;cursor:pointer}.csend9 svg{width:20px;height:20px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
@@ -572,4 +572,23 @@ body[data-scr="chat"]{background:#E6EDEA}:root[data-theme="dark"] body[data-scr=
 .vsl9 .it{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--v9-sep)}.vsl9 .it em{font-style:normal;width:20px;color:var(--v9-l2)}.vsl9 .it b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.vsl9 .it small{color:var(--v9-l2)}
 .vsw9 select[size]{height:auto;padding:4px}
 @media (max-width:359px){.tb.hard9,.hard9{padding:0 8px;font-size:calc(12px*var(--k,1))}}
-.v9 .crow9 .sr,.crow9 .sr{white-space:normal}
+
+/* ───── v9.3.1 채팅: 화면에 딱 맞게(입력 칸은 늘 아래 · 글자판 바로 위) ───── */
+body[data-scr="chat"]{overflow:hidden;overscroll-behavior:none}
+body[data-scr="chat"] #app{padding-bottom:0!important;min-height:0}
+.chat9{position:fixed;left:0;right:0;top:56px;bottom:auto;height:calc(100vh - 56px);margin:0 auto;z-index:3}
+@supports (height:100dvh){.chat9{height:calc(100dvh - 56px)}}
+.clist9{min-height:0;overscroll-behavior:contain}
+.cin9{flex:0 0 auto}body.kb .cin9{padding-bottom:8px}
+.cinr9 .sr{white-space:normal}
+.cnew9{align-self:center;margin:-44px auto 6px;position:relative;z-index:2;border:0;border-radius:99px;background:var(--v9-acc);color:#fff;font:inherit;font-size:calc(13px*var(--k,1));font-weight:700;padding:8px 14px;box-shadow:0 2px 8px rgba(0,0,0,.2);cursor:pointer}
+/* ───── v9.3.1 글 편집기: 글자 고르기 · 복사 · 붙여넣기 ───── */
+.rte,.rte *,input,textarea,.ntbody,.ntbody *{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+.rte{-webkit-user-modify:read-write;cursor:text;touch-action:auto;overflow-wrap:anywhere}
+.rtb .rtsp{flex-basis:100%;height:0}.rtb .rt2{height:36px;border:0;background:var(--v9-fill,#E8EBE8);font-weight:600;font-size:calc(13px*var(--k,1))}:root[data-theme="dark"] .rtb .rt2{background:#26302D}
+body[data-scr="chat"] .tabs{display:none!important}
+/* ───── v9.3.1 가볍게: 위 · 아래 막대의 흐림 효과를 없애고(보급형 휴대폰에서 밀릴 때 끊김), 진행 줄은 보일 때만 움직여요 ───── */
+.top,.tabs,.v9foot{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+#pbar::before{left:0!important;animation:none!important;transform:translateX(-100%)}
+#pbar.on::before{animation:pb9 1s linear infinite!important}@keyframes pb9{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+.chat9{background:#E6EDEA}:root[data-theme="dark"] .chat9{background:#0E1513}

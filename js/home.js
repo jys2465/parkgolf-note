@@ -61,7 +61,9 @@
         (moims.length ? '<div class="list clubs clubs9">' + moims.slice(0, 2).map(clubRow).join('') + '</div>' + (moims.length > 2 ? '<button type="button" class="lnk more9" data-go="myclubs">' + (moims.length - 2) + '개 더 보기</button>' : '')
           : '<div class="list clubs clubs9"><p class="muted" style="margin:0;padding:16px">아직 함께하는 클럽이 없어요. 위에서 클럽을 찾거나 만들어 보세요.</p></div>')) + (adm ? '' : (LZ.inviteCard ? LZ.inviteCard() : '')) + '</div>';
       LZ.paintSync(); LZ.fillImgs && LZ.fillImgs(root); bannerRun();
-      setTimeout(function () { if (!LZ.cacheGet('courses:' + S.br)) LZ.api('courses', {}).then(function (r) { LZ.cacheSet('courses:' + S.br, r); }).catch(function () {}); }, 600);   // 코스 목록 미리 받아 두기
+      setTimeout(function () { if (!LZ.cacheGet('courses:' + S.br)) LZ.api('courses', {}).then(function (r) { LZ.cacheSet('courses:' + S.br, r); }).catch(function () {}); }, 600);
+      if ((adm || m.own) && !LZ.warmedA && LZ.need) { LZ.warmedA = 1; setTimeout(function () { LZ.need('admin').catch(function () {}); }, 1800); }
+      if (!adm && !LZ.warmed) { LZ.warmed = 1; setTimeout(function () { if (LZ.cur().name !== 'home') return; moims.slice(0, 3).forEach(function (m, i) { setTimeout(function () { LZ.warm('moimGet', { id: m.id }); }, i * 400); }); setTimeout(function () { LZ.warm('roundMine', {}); }, 1400); if (LZ.need) { setTimeout(function () { LZ.need('event').catch(function () {}); }, 2500); } }, 1200); }   // v9.3.1 내 클럽 · 필드 탭 · 단체 화면을 미리   // 코스 목록 미리 받아 두기
       if (LZ.firstGuide) { LZ.firstGuide = false; LZ.coach('home', [{ sel: '.hbn', text: '<b>내 수첩</b> — 내 기록만 모아 봐요. 어느 클럽에서 적어도 기록은 하나예요.' }, { sel: moims.length ? '.clubs .li' : '[data-go="find"]', text: moims.length ? '<b>클럽</b> — 회원님들의 기록 평균과 모임·소식을 봐요.' : '<b>클럽 찾기</b> — 공개 클럽에 가입 신청하거나, 캡틴이 준 코드 6자리로 들어가요.' }, { sel: '[data-tab="courses"]', text: '<b>스크린</b> — 코스를 열고 홀마다 좌우·볼스피드를 적어요.', pos: 'above' }, { sel: '[data-tab="field"]', text: '<b>필드</b> — 점수판과 시상식. 2~5명이 쳐도 시상식이 열려요.', pos: 'above' }]); }
     }
   };
@@ -123,6 +125,7 @@
     show: async function (p, root, alive) {
       root.innerHTML = LZ.hdr('클럽', { back: true }) + LZ.skeleton(6);
       var d = await LZ.api('moimGet', { id: p.id }); if (!alive()) return; CL.d = d;
+      if (d.me && CL.warm !== p.id) { CL.warm = p.id; setTimeout(function () { if (LZ.cur().name !== 'club') return; LZ.warm('meetGet', { mid: p.id }); setTimeout(function () { LZ.warm('clubRank', { mid: p.id, by: 'score', ym: '' }); }, 500); setTimeout(function () { LZ.warm('noticeList', { mid: p.id }); }, 1000); setTimeout(function () { LZ.warm('albumList', { mid: p.id }); }, 1500); }, 900); }   // v9.3.1 클럽 안 화면을 미리
       var m = d.moim, cap = d.cap, staff = d.staff || cap, me = S.user, s = d.seat || {}, nReq = (d.reqs || []).length;
       var li = function (icon, t, su, attr, end) { return '<button type="button" class="li" ' + attr + '>' + (icon ? LZ.ic(icon, 'gi') : '') + '<div class="t"><b>' + t + '</b>' + (su ? '<span class="su">' + su + '</span>' : '') + '</div>' + (end || '') + LZ.ic('chev') + '</button>'; };
       var info = [];
@@ -615,33 +618,57 @@
       var rp = c.reply ? d.list.filter(function (y) { return y.id === c.reply; })[0] : null, cont = lastUid === c.uid && c.at - lastAt < 180000;
       var bub = '<button type="button" class="cb9' + (c.hide ? ' hid' : '') + '" data-act="chatMsg" data-v="' + esc(c.id) + '">' + (rp ? '<span class="rp">↳ ' + esc(rp.nick || '') + ': ' + esc((rp.text || '(가린 글)').slice(0, 24)) + '</span>' : '') + (c.hide ? '가린 글이에요' : esc(c.text)) + '</button>';
       out += c.mine ? '<div class="cm9 me">' + '<span class="tm">' + hm(c.at) + '</span>' + bub + '</div>'
-        : '<div class="cm9' + (cont ? ' cont' : '') + '">' + (cont ? '<span class="avs"></span>' : LZ.avatar(c)) + '<div class="cw">' + (cont ? '' : '<span class="nk">' + esc(c.nick) + '</span>') + '<div class="cr">' + bub + '<span class="tm">' + hm(c.at) + '</span></div></div></div>';
+        : '<div class="cm9' + (cont ? ' cm9c' : '') + '">' + (cont ? '<span class="avs"></span>' : LZ.avatar(c)) + '<div class="cw">' + (cont ? '' : '<span class="nk">' + esc(c.nick) + '</span>') + '<div class="cr">' + bub + '<span class="tm">' + hm(c.at) + '</span></div></div></div>';
       lastUid = c.uid; lastAt = c.at;
     });
     return out || '<div class="empty">첫 인사를 남겨 보세요.</div>';
   }
-  function chatPaint(root, keepInput) {
-    var d = CH.d, inp = $('#chIn'), val = keepInput && inp ? inp.value : '';
+  function chatHead() {
+    var d = CH.d;
+    return (CH.reply ? '<div class="crp9"><span>↳ ' + esc(CH.reply.nick || '') + ': ' + esc((CH.reply.text || '').slice(0, 30)) + '</span><button type="button" data-act="chatReplyOff" aria-label="답장 취소">✕</button></div>' : '');
+  }
+  function chatList(d) { return (d.more ? '<button type="button" class="lnk" data-act="chatOlder">이전 글 더 보기</button>' : '') + chatBody(d); }
+  /** 채팅 칸 높이: 위 막대 아래부터 글자판 바로 위까지(아이폰은 글자판이 화면을 덮으므로 보이는 높이로 맞춰요) */
+  function chatFit() {
+    var box = $('.chat9'); if (!box) return; var top = $('#app > .top'), vv = window.visualViewport;
+    var t = top ? Math.round(top.getBoundingClientRect().height) : 56, off = vv ? Math.max(0, vv.offsetTop || 0) : 0, vh = vv ? vv.height : window.innerHeight;
+    box.style.top = (t + off) + 'px'; box.style.height = Math.max(160, Math.round(vh - t)) + 'px';
+    if (off && window.scrollY) window.scrollTo(0, 0);
+  }
+  if (window.visualViewport) ['resize', 'scroll'].forEach(function (ev) { window.visualViewport.addEventListener(ev, function () { if (LZ.cur().name !== 'chat') return; var l = $('#chList'), end = l && l.scrollHeight - l.scrollTop - l.clientHeight < 80; chatFit(); if (l && end) l.scrollTop = l.scrollHeight; }); });
+  window.addEventListener('resize', function () { if (LZ.cur().name === 'chat') chatFit(); });
+  /** how: 'list' = 글 목록만 바꿔요(적던 글 · 글자판 · 읽던 자리 그대로) · 그 밖에는 화면 전체 */
+  function chatPaint(root, keepInput, how) {
+    var d = CH.d, inp = $('#chIn'), l0 = $('#chList');
+    if (how === 'list' && inp && l0) {
+      var end = l0.scrollHeight - l0.scrollTop - l0.clientHeight < 80, h0 = l0.scrollHeight, y0 = l0.scrollTop;
+      l0.innerHTML = chatList(d); if (LZ.fillImgs) LZ.fillImgs(l0);
+      var rp = $('.cin9 .crp9'); if (rp) rp.remove(); var hd = chatHead(); if (hd) $('.cin9').insertAdjacentHTML('afterbegin', hd);
+      if (end || how === 'end') l0.scrollTop = l0.scrollHeight; else { l0.scrollTop = y0; var nb = $('#chNew'); if (!nb && l0.scrollHeight > h0) $('.cin9').insertAdjacentHTML('beforebegin', '<button type="button" id="chNew" class="cnew9" data-act="chatEnd">새 글 보기 ↓</button>'); }
+      return;
+    }
+    var val = keepInput && inp ? inp.value : '', foc = keepInput && inp && document.activeElement === inp;
     root.innerHTML = LZ.hdr(d.name, { back: true, nosub: 1, noRf: 1, btns: '<button type="button" class="tb" data-act="chatMenu" aria-label="채팅 메뉴">' + LZ.ic('more') + '</button>' }) +
       '<div class="chat9"' + (d.color ? ' style="--clc:' + esc(d.color) + '"' : '') + '>' + (d.pin ? '<button type="button" class="cpin9" data-go="notices" data-p=\'' + esc(JSON.stringify({ mid: CH.mid })) + '\'><span>공지</span>' + esc(d.pin.title) + '</button>' : '') +
-      '<div class="clist9" id="chList">' + (d.more ? '<button type="button" class="lnk" data-act="chatOlder">이전 글 더 보기</button>' : '') + chatBody(d) + '</div>' +
-      '<div class="cin9">' + (CH.reply ? '<div class="crp9"><span>↳ ' + esc(CH.reply.nick || '') + ': ' + esc((CH.reply.text || '').slice(0, 30)) + '</span><button type="button" data-act="chatReplyOff" aria-label="답장 취소">✕</button></div>' : '') +
-      '<div class="crow9"><label class="sr" for="chIn">메시지</label><textarea id="chIn" rows="1" maxlength="500" placeholder="메시지 보내기" enterkeyhint="send"></textarea><button type="button" class="csend9" data-act="chatSend" aria-label="보내기">' + LZ.ic('play') + '</button></div></div></div>';
-    var t = $('#chIn'); if (t) { t.value = val; t.addEventListener('input', function () { t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 120) + 'px'; }); t.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); LZ.act.chatSend(); } }); }
-    var l = $('#chList'); if (l) l.scrollTop = l.scrollHeight;
+      '<div class="clist9" id="chList">' + chatList(d) + '</div>' +
+      '<div class="cin9">' + chatHead() +
+      '<div class="cinr9"><label class="sr" for="chIn">메시지</label><textarea id="chIn" rows="1" maxlength="500" placeholder="메시지 보내기"></textarea><button type="button" class="csend9" data-act="chatSend" aria-label="보내기">' + LZ.ic('play') + '</button></div></div></div>';
+    var t = $('#chIn'); if (t) { t.value = val; t.addEventListener('input', function () { t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 120) + 'px'; }); t.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !('ontouchstart' in window)) { e.preventDefault(); LZ.act.chatSend(); } }); t.addEventListener('focus', function () { setTimeout(function () { chatFit(); var l2 = $('#chList'); if (l2) l2.scrollTop = l2.scrollHeight; }, 250); }); if (foc) t.focus(); }
+    chatFit(); var l = $('#chList'); if (l) { l.scrollTop = l.scrollHeight; l.addEventListener('scroll', function () { if (l.scrollHeight - l.scrollTop - l.clientHeight < 80) { var nb = $('#chNew'); if (nb) nb.remove(); } }, { passive: true }); }
   }
+  LZ.act.chatEnd = function () { var l = $('#chList'), nb = $('#chNew'); if (nb) nb.remove(); if (l) l.scrollTop = l.scrollHeight; };
   async function chatLoad(fresh) {
     if (CH.busy) return; CH.busy = true;
-    try { var d = await LZ.api('chatList', { mid: CH.mid }); if (LZ.cur().name !== 'chat') return; var n0 = CH.d ? CH.d.list.length : -1; CH.d = d; if (fresh || d.list.length !== n0) chatPaint($('#app'), true); if (S.me && S.me.chat) delete S.me.chat[CH.mid]; }
+    try { var d = await LZ.api('chatList', { mid: CH.mid }); if (LZ.cur().name !== 'chat') return; var n0 = CH.d ? CH.d.list.length : -1; CH.d = d; var sig = d.list.length + ':' + (d.list.length ? d.list[d.list.length - 1].id : '') + ':' + d.list.filter(function (x) { return x.hide; }).length; if (fresh === 'full' || !$('#chIn')) chatPaint($('#app'), true); else if (fresh || sig !== CH.sig) chatPaint($('#app'), true, 'list'); CH.sig = sig; if (S.me && S.me.chat) delete S.me.chat[CH.mid]; }
     catch (e) { if (fresh) LZ.toast(LZ.errText(e), 4000); } finally { CH.busy = false; }
   }
   LZ.chatPing = function (mid) { if (LZ.cur().name === 'chat' && CH.mid === mid) chatLoad(false); };
   LZ.screens.chat = {
-    tab: 'home', nobar: true,
+    nobar: true,                                                                // v9.3.1 아래 탭은 숨겨요(입력 칸이 탭에 가려졌어요)
     show: async function (p, root, alive) {
       if (CH.mid !== p.mid) { CH.d = null; CH.reply = null; } CH.mid = p.mid;
       if (CH.d) chatPaint(root); else root.innerHTML = LZ.hdr('클럽 채팅', { back: true }) + LZ.skeleton(5);
-      await chatLoad(true); if (!alive()) return;
+      await chatLoad('full'); if (!alive()) return;
       clearInterval(CH.poll); CH.poll = setInterval(function () { if (LZ.cur().name !== 'chat') { clearInterval(CH.poll); return; } if (document.visibilityState === 'visible') chatLoad(false); }, 20000);   // 실시간이 끊겨도 20초마다
     }
   };
@@ -649,9 +676,9 @@
     var t = $('#chIn'), v = t ? t.value.replace(/^\s+|\s+$/g, '') : ''; if (!v) return;
     var body = { mid: CH.mid, text: v }; if (CH.reply) body.reply = CH.reply.id;
     t.value = ''; t.style.height = 'auto'; var rp = CH.reply; CH.reply = null;
-    var tmp = { id: 'tmp', uid: S.user.uid, nick: S.user.nick, text: v, at: Date.now(), reply: rp ? rp.id : '', kind: '', hide: 0, mine: 1 }; CH.d.list.push(tmp); chatPaint($('#app')); var ti = $('#chIn'); if (ti) ti.focus();
-    try { await LZ.api('chatSend', body, { retry: 0 }); await chatLoad(true); var t2 = $('#chIn'); if (t2) t2.focus(); }
-    catch (e) { CH.d.list = CH.d.list.filter(function (x) { return x !== tmp; }); chatPaint($('#app')); var t3 = $('#chIn'); if (t3) t3.value = v; LZ.toast(LZ.errText(e), 4000); }
+    var tmp = { id: 'tmp', uid: S.user.uid, nick: S.user.nick, text: v, at: Date.now(), reply: rp ? rp.id : '', kind: '', hide: 0, mine: 1 }; CH.d.list.push(tmp); chatPaint($('#app'), true, 'list'); var l9 = $('#chList'); if (l9) l9.scrollTop = l9.scrollHeight; var ti = $('#chIn'); if (ti) ti.focus();
+    try { await LZ.api('chatSend', body, { retry: 0 }); await chatLoad(true); var l8 = $('#chList'); if (l8) l8.scrollTop = l8.scrollHeight; }
+    catch (e) { CH.d.list = CH.d.list.filter(function (x) { return x !== tmp; }); chatPaint($('#app'), true, 'list'); var t3 = $('#chIn'); if (t3) t3.value = v; LZ.toast(LZ.errText(e), 4000); }
   };
   LZ.act.chatMsg = function (el, id) {
     var c = CH.d.list.filter(function (x) { return x.id === id; })[0]; if (!c || id === 'tmp') return;
@@ -660,11 +687,11 @@
       (c.mine || CH.d.staff ? '<button type="button" class="opt" data-act="chatHideGo" data-v="' + esc(id) + '"><b>' + (c.hide ? '다시 보이기' : '가리기') + '</b><span>' + (c.mine ? '내 글' : '캡틴 · 매니저') + '</span></button>' : '') +
       (!c.mine && !c.hide ? '<button type="button" class="opt dng" data-act="chatReportGo" data-v="' + esc(id) + '"><b>신고</b><span>캡틴 · 매니저에게 알려요</span></button>' : ''));
   };
-  LZ.act.chatReply = function (el, id) { LZ.closeSheet(); CH.reply = CH.d.list.filter(function (x) { return x.id === id; })[0] || null; chatPaint($('#app'), true); var t = $('#chIn'); if (t) t.focus(); };
-  LZ.act.chatReplyOff = function () { CH.reply = null; chatPaint($('#app'), true); };
+  LZ.act.chatReply = function (el, id) { LZ.closeSheet(); CH.reply = CH.d.list.filter(function (x) { return x.id === id; })[0] || null; chatPaint($('#app'), true, 'list'); var t = $('#chIn'); if (t) t.focus(); };
+  LZ.act.chatReplyOff = function () { CH.reply = null; chatPaint($('#app'), true, 'list'); };
   LZ.act.chatHideGo = async function (el, id) { var c = CH.d.list.filter(function (x) { return x.id === id; })[0]; LZ.closeSheet(); try { await LZ.api('chatHide', { mid: CH.mid, id: id, show: c && c.hide ? 1 : 0 }); chatLoad(true); } catch (e) { LZ.toast(LZ.errText(e), 4000); } };
   LZ.act.chatReportGo = async function (el, id) { LZ.closeSheet(); if (!(await LZ.confirm('이 글을 신고할까요?', '캡틴 · 매니저에게 알림이 가요. 누가 신고했는지는 알리지 않아요.', '신고'))) return; try { await LZ.api('chatReport', { mid: CH.mid, id: id }); LZ.toast('알렸어요', 2500); } catch (e) { LZ.toast(LZ.errText(e), 4000); } };
-  LZ.act.chatOlder = async function () { try { var d = await LZ.api('chatList', { mid: CH.mid, before: CH.d.list[0] ? CH.d.list[0].at : Date.now() }); CH.d.list = d.list.concat(CH.d.list); CH.d.more = d.more; chatPaint($('#app'), true); } catch (e) { LZ.toast(LZ.errText(e), 4000); } };
+  LZ.act.chatOlder = async function () { try { var d = await LZ.api('chatList', { mid: CH.mid, before: CH.d.list[0] ? CH.d.list[0].at : Date.now() }); var lo = $('#chList'), ho = lo ? lo.scrollHeight : 0; CH.d.list = d.list.concat(CH.d.list); CH.d.more = d.more; chatPaint($('#app'), true, 'list'); if (lo) lo.scrollTop = lo.scrollHeight - ho; } catch (e) { LZ.toast(LZ.errText(e), 4000); } };
   LZ.act.chatMenu = function () { LZ.sheet('<h2>' + esc(CH.d.name) + ' 채팅</h2><button type="button" class="opt" data-go="club" data-p=\'' + esc(JSON.stringify({ id: CH.mid })) + '\'><b>클럽 화면</b></button><button type="button" class="opt" data-go="meet" data-p=\'' + esc(JSON.stringify({ mid: CH.mid })) + '\'><b>이번 모임 · 참석 투표</b></button><button type="button" class="opt" data-go="notiCfg"><b>알림 설정</b><span>클럽 채팅 알림 켜고 끄기 · 같은 클럽은 10분에 한 번만 울려요</span></button><p class="hint">대화는 90일 동안 보관해요. 길게 쓴 글을 누르면 답장 · 복사 · 신고를 할 수 있어요.</p>'); };
   LZ.screens.firstSteps = { show: guideShow('first') };
   /* v9.1.3 1분 사용법: 기록은 세 가지만 · 인쇄(A4 · QR) */
@@ -790,7 +817,7 @@
     show: async function (p, root, alive) {
       if (p.mid !== RK.mid) { RK.by = 'score'; RK.ym = ''; } RK.mid = p.mid;
       root.innerHTML = LZ.hdr('이달의 클럽 순위', { back: true }) + LZ.skeleton(5);
-      var d = await LZ.api('clubRank', { mid: p.mid, by: RK.by, ym: RK.ym }); if (!alive()) return; RK.d = d; RK.ym = d.ym;
+      var d = await LZ.api('clubRank', { mid: p.mid, by: RK.by, ym: RK.ym || '' }); if (!alive()) return; RK.d = d;
       var now = new Date(), cur = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2), L = d.list, top = L.slice(0, 3);
       var pod = top.length ? '<div class="pod9">' + [1, 0, 2].map(function (k) { var x = top[k]; if (!x) return '<div class="pc"></div>'; return '<div class="pc r' + x.rank + (x.uid === d.me ? ' me' : '') + '">' + LZ.avatar({ nick: x.nick, img: x.img }) + '<em>' + x.rank + '위</em><b>' + esc(x.nick) + '</b><span>' + (d.by === 'score' ? '평균 ' : '') + esc(rkVal(d.by, x.v)) + '</span><i></i></div>'; }).join('') + '</div>' : '';
       var rest = L.slice(3).map(function (x) { return '<div class="rk9' + (x.uid === d.me ? ' me' : '') + '"><em>' + x.rank + '</em>' + LZ.avatar({ nick: x.nick, img: x.img }) + '<b>' + (x.uid === d.me ? '나 · ' : '') + esc(x.nick) + '</b><span>' + esc(rkVal(d.by, x.v)) + '</span></div>'; }).join('');
@@ -806,7 +833,7 @@
     }
   };
   LZ.act.rkBy = function (el, v) { RK.by = v; LZ.redraw(); };
-  LZ.act.rkMonth = function (el, v) { RK.ym = ymAdd(RK.ym || RK.d.ym, +v); LZ.redraw(); };
+  LZ.act.rkMonth = function (el, v) { var n = new Date(), cur = n.getFullYear() + '-' + ('0' + (n.getMonth() + 1)).slice(-2); RK.ym = ymAdd(RK.ym || RK.d.ym, +v); if (RK.ym >= cur) RK.ym = ''; LZ.redraw(); };
   LZ.act.rkOff = async function () { try { await LZ.api('uopt', { k: 'rankOff', v: RK.d && RK.d.off ? 0 : 1 }); LZ.redraw(); } catch (e) { LZ.toast(LZ.errText(e), 4000); } };
 
   /* ───────────── v9.3 홀별 클럽 팁(플레이 화면 위에 시트) ───────────── */
@@ -846,7 +873,8 @@
     tab: 'me',
     show: async function (p, root, alive) {
       root.innerHTML = LZ.hdr('출석 도장', { back: true }) + LZ.skeleton(6);
-      var d = await LZ.api('stamps', { ym: SP.ym || '' }); if (!alive()) return; SP.d = d; SP.ym = d.ym;
+      if (!SP.nav) SP.ym = ''; SP.nav = 0;
+      var d = await LZ.api('stamps', { ym: SP.ym || '' }); if (!alive()) return; SP.d = d;
       var y = +d.ym.slice(0, 4), m = +d.ym.slice(5), first = new Date(y, m - 1, 1).getDay(), last = new Date(y, m, 0).getDate(), cells = '';
       for (var i = 0; i < first; i++) cells += '<span></span>';
       for (var dd = 1; dd <= last; dd++) { var k = d.ym + '-' + ('0' + dd).slice(-2), v = d.month[k] || '', cls = v.indexOf('m') >= 0 ? 'm' : v ? 'r' : ''; cells += '<span class="' + cls + (k === d.today ? ' td' : '') + '">' + (cls ? '<i>' + (cls === 'm' ? LZ.ic('club') : LZ.ic(v.indexOf('f') >= 0 ? 'flag' : 'screen')) + '</i>' : '') + '<em>' + dd + '</em></span>'; }
@@ -860,7 +888,7 @@
         '<p class="hint">모임에 참석하거나 스크린 기록 · 필드 라운드를 한 날에 도장이 찍혀요. 새 배지를 받으면 클럽 채팅에 자동으로 알려요.</p></div>';
     }
   };
-  LZ.act.spMonth = function (el, v) { SP.ym = ymAdd(SP.ym, +v); LZ.redraw(); };
+  LZ.act.spMonth = function (el, v) { var n = new Date(), cur = n.getFullYear() + '-' + ('0' + (n.getMonth() + 1)).slice(-2); SP.ym = ymAdd(SP.ym || SP.d.ym, +v); if (SP.ym >= cur) SP.ym = ''; SP.nav = 1; LZ.redraw(); };
 
   /* ───────────── v9.3 클럽 사진첩 ───────────── */
   var AL = {};
