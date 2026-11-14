@@ -408,7 +408,7 @@
   function plReset(cid) { PL = { cid: cid, orig: {}, pts: 0, at: Date.now() }; plKeep(); }
   function sayOn() { return store.get('lz.say') === '1'; }
   function sayBtns() { var on = sayOn(); return '<span class="sndw"><button type="button" class="tb snd' + (on ? ' on' : '') + '" data-act="say" aria-pressed="' + on + '" aria-label="홀 안내 ' + (on ? '켜짐 · 누르면 끔' : '꺼짐 · 누르면 켬') + '" title="홀 안내">' + LZ.ic(on ? 'sound' : 'mute') + '</button><button type="button" class="tb sagain" data-act="sayNow" aria-label="홀 안내 다시 듣기" title="다시 듣기"' + (on ? '' : ' disabled') + '>' + LZ.ic('again') + '</button></span>'; }
-  function playHdr() { return LZ.hdr('플레이', { back: true, nosub: 1, sound: sayBtns(), btns: '<button type="button" class="hard9" data-act="plHard">어려워요</button>' }); }
+  function playHdr() { return LZ.hdr('플레이', { back: true, nosub: 1, sound: sayBtns(), noRf: 1 }); }
   /** v9.1.3 쉬운 기록: 좌우 · 볼스피드만 크게(처음엔 켜짐 — 기록이 아직 없는 분) */
   function easyOn() { var v = store.get('lz.easy'); return v === null || v === undefined || v === '' ? !(S.me && S.me.last) : v === '1'; }
   var EASYX = false;

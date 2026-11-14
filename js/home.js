@@ -51,7 +51,7 @@
       root.innerHTML = LZ.hdr('홈') + '<div id="syncbar" class="sync wait" hidden></div><div class="wrap v8">' +
         '<div class="hme"><button type="button" class="hav" data-go="me" aria-label="내 정보 · 프로필 사진">' + LZ.avatar(me, 'lg') + '</button><div class="t"><h1 class="vt hi hname">' + (adm ? '관리자님, 안녕하세요' : esc(LZ.nim(me.nick)) + ', 안녕하세요') + '</h1><span class="su">' + (adm ? '관리자' : esc(({ blue: '블루회원', red: '레드회원', gold: '골드회원', black: '블랙' })[me.tier] || '')) + (me.created ? ' · 함께한 지 ' + LZ.daysSince(me.created) + '일' : '') + '</span></div></div>' +
         (!adm && m.own ? (function (o) { var n = (o.pay || 0) + (o.refund || 0) + (o.qna || 0) + (o.pw || 0) + (o.gold || 0); return n ? '<button type="button" class="admtodo9" data-act="admEnter">' + LZ.ic('shield') + '<span><b>관리 · 처리할 일 ' + n + '건</b><small>' + [['결제', o.pay], ['환불', o.refund], ['문의', o.qna], ['비밀번호', o.pw], ['골드 만기', o.gold]].filter(function (x) { return x[1]; }).map(function (x) { return x[0] + ' ' + x[1]; }).join(' · ') + '</small></span>' + LZ.ic('chev') + '</button>' : ''; })(m.own) : '') +
-        homeAlerts(me, m) + (adm ? '' : resumeCard(m) + banner(me, m, book) + a2hsRow()) +
+        homeAlerts(me, m) + (adm ? '' : resumeCard(m) + banner(me, m, book)) +
         (adm ? LZ.admNote() + '<button type="button" class="btn o" data-go="dash">' + LZ.ic('gear') + '관리 현황판</button>'
           : '') +
         (m.round ? '<div class="sec">진행 중</div><div class="list">' + li('flag', '라운드 ' + esc(m.round.code), esc(m.round.fname), 'data-go="round" data-p=\'' + esc(JSON.stringify({ id: m.round.id })) + '\'') + '</div>' : '') +
@@ -59,7 +59,7 @@
         '<div class="mk9 mk9t"><button type="button" data-go="find">' + LZ.ic('search') + '클럽 찾기</button><button type="button" data-go="make">' + LZ.ic('plus') + '클럽 만들기</button></div>' +
         '<div class="hdrr9"><span>내 클럽' + (moims.length ? ' ' + moims.length : '') + '</span>' + (moims.length ? '<button type="button" data-go="myclubs">모두 보기' + LZ.ic('chev') + '</button>' : '') + '</div>' +
         (moims.length ? '<div class="list clubs clubs9">' + moims.slice(0, 2).map(clubRow).join('') + '</div>' + (moims.length > 2 ? '<button type="button" class="lnk more9" data-go="myclubs">' + (moims.length - 2) + '개 더 보기</button>' : '')
-          : '<div class="list clubs clubs9"><p class="muted" style="margin:0;padding:16px">아직 함께하는 클럽이 없어요. 위에서 클럽을 찾거나 만들어 보세요.</p></div>')) + (adm ? '' : (LZ.inviteCard ? LZ.inviteCard() : '')) + '</div>';
+          : '<div class="list clubs clubs9"><p class="muted" style="margin:0;padding:16px">아직 함께하는 클럽이 없어요. 위에서 클럽을 찾거나 만들어 보세요.</p></div>')) + (adm ? '' : '<button type="button" class="inv9s" data-act="inviteKakao">' + LZ.ic('club') + '<span><b>친구 초대</b><small>링크로 내 클럽에 바로 들어와요</small></span>' + LZ.ic('chev') + '</button>') + '</div>';
       LZ.paintSync(); LZ.fillImgs && LZ.fillImgs(root); bannerRun();
       setTimeout(function () { if (!LZ.cacheGet('courses:' + S.br)) LZ.api('courses', {}).then(function (r) { LZ.cacheSet('courses:' + S.br, r); }).catch(function () {}); }, 600);
       if ((adm || m.own) && !LZ.warmedA && LZ.need) { LZ.warmedA = 1; setTimeout(function () { LZ.need('admin').catch(function () {}); }, 1800); }
@@ -69,13 +69,8 @@
   };
   /* ───── v9 색이 흐르는 배너: 첫 장 사용법 · 5초마다 넘어가고 밀어서 넘겨요 ───── */
   function banner(me, m, book) {
-    var P = LZ.pwa, sl = [];
-    sl.push({ c: 'b1', k: '사용법', t: '처음이세요? 3분이면 돼요', s: '코스 등록 · 플레이 · 기록 보기', a: 'data-go="guide"' });
-    sl.push({ c: 'b2', k: '내 수첩', t: book, s: '코스를 열고 홀마다 적어요', a: 'data-act="openMyBook"' });
-    sl.push({ c: 'b3', k: '코스', t: '새 코스 등록 · 가져오기', s: '이름만 넣으면 18홀이 만들어져요', a: 'data-go="reg"' });
-    if (me.tier === 'blue') sl.push({ c: 'b4', k: '회원권', t: '골드회원권 알아보기', s: '클럽 만들기 · 더 많은 기능', a: 'data-go="meTier"' });
-    return '<div class="hbn" role="region" aria-roledescription="배너" aria-label="안내 배너"><div class="hbn-t">' + sl.map(function (x, i) { return '<button type="button" class="hbn-s ' + x.c + '" ' + x.a + ' aria-label="' + esc(x.k + ' · ' + x.t) + '"><span class="k">' + esc(x.k) + '</span><b class="v9one">' + esc(x.t) + '</b><span class="s v9one">' + esc(x.s) + '</span></button>'; }).join('') + '</div>' +
-      '<div class="hbn-d" aria-hidden="true">' + sl.map(function (x, i) { return '<i class="' + (i ? '' : 'on') + '"></i>'; }).join('') + '</div></div>';
+    if (m.last) return '';                                                      // 기록을 시작한 분은 "이어서 플레이"만
+    return '<button type="button" class="start9 hbn" data-go="howto"><span class="k">처음이세요?</span><b>그림 3장으로 바로 시작</b><span class="s">코스 만들기 · 가져오기 · 홀 적기</span><i>' + LZ.ic('chev') + '</i></button>';
   }
   /** 이어서 플레이: 코스 이름 · 진행 막대 · “7홀 ›” */
   function resumeCard(m) {
@@ -146,7 +141,7 @@
         (!d.me ? '<div class="card"><p style="margin:0 0 6px">이 클럽의 회원님이 아니에요.</p><button type="button" class="btn" data-act="applyClub" data-v="' + esc(m.id) + '">가입 신청</button></div>' : '') +
         (d.me ? LZ.meetCard(d.meetNow, m.id, staff) + '<div class="cact9 c3"><button type="button" class="cab9" data-go="chat" data-p=\'' + esc(JSON.stringify({ mid: m.id })) + '\'>' + LZ.ic('chat') + '<b>클럽 채팅</b>' + (d.chatNew ? '<span class="cnt">' + (d.chatNew > 99 ? '99+' : d.chatNew) + '</span>' : '') + '</button>' +
           '<button type="button" class="cab9" data-act="openClubCourses" data-v="' + esc(m.id) + '">' + LZ.ic('screen') + '<b>스크린 공략</b></button>' +
-          '<button type="button" class="cab9" data-go="notices" data-p=\'' + esc(JSON.stringify({ mid: m.id })) + '\'>' + LZ.ic('note') + '<b>클럽 소식</b>' + ((d.news || []).length ? '<span class="cnt">' + d.news.length + '</span>' : '') + '</button></div>' +
+          '<button type="button" class="cab9" data-go="notices" data-p=\'' + esc(JSON.stringify({ mid: m.id })) + '\'>' + LZ.ic('note') + '<b>클럽 소식</b>' + (newsNew(m.id, d.news) ? '<span class="cnt">' + newsNew(m.id, d.news) + '</span>' : '') + '</button></div>' +
           (d.chatLast ? '<button type="button" class="clast9" data-go="chat" data-p=\'' + esc(JSON.stringify({ mid: m.id })) + '\'><span class="h"><span>채팅 최근</span><span>' + LZ.ago(d.chatLast.at) + '</span></span><span class="b">' + (d.chatLast.nick ? '<b>' + esc(d.chatLast.nick) + '</b> ' : '') + esc(d.chatLast.text || '(가린 글)') + '</span></button>' : '') + clubMore93(m) : '') +
         (staff ? '<div class="list cstaff">' + li('trophy', '캡틴 대시보드', '이달 활동 · 안 오신 분 · 이달의 시상식', 'data-go="capDash" data-p=\'' + esc(JSON.stringify({ id: m.id })) + '\'') +
           li('user', '가입 신청', nReq ? (m.staffClub ? '승인 / 보류' : (s.n || 0) >= (s.eff || 0) ? '자리가 다 찼어요 · 회원권을 넣어 ' + (s.size || 10) + '자리를 늘려 주세요' : '승인 / 보류 · 빈자리 ' + ((s.eff || 0) - (s.n || 0)) + '자리') : '새 신청이 없어요', 'data-act="clubReqs"', nReq ? '<span class="cnt" aria-label="가입 신청 ' + nReq + '건">' + nReq + '</span>' : '') +
@@ -521,14 +516,14 @@
       var hlRow = function (g) { return '<tr><td><b>' + LZ.MODE[g] + (g === 'p' ? '(기본)' : '') + '</b></td><td>' + LZ.fmtP(pw[g].base) + '</td><td>' + pw[g].step + 'm</td><td>' + LZ.r1(LZ.sugOf(80, g, 'h')).toFixed(1) + '</td><td>' + LZ.r1(LZ.sugOf(80, g, 'm')).toFixed(1) + '</td><td>' + LZ.r1(LZ.sugOf(80, g, 'l')).toFixed(1) + '</td></tr>'; };
       var D = function (t, html, open) { return '<details class="card acc"' + (open ? ' open' : '') + '><summary><h3>' + t + '</h3></summary><div class="accb">' + html + '</div></details>'; };
       root.innerHTML = LZ.hdr('사용 안내', { back: true, noBell: 1 }) + '<div class="wrap"><div class="card tight groups"><button type="button" class="li" data-go="firstSteps">' + LZ.ic('ball', 'gi') + '<span class="t"><b>파크골프 첫걸음</b><span class="su">처음이시면 여기부터 · 규칙 · 점수 세는 법 · 매너</span></span>' + LZ.ic('chev') + '</button></div><p class="muted" style="margin:0 0 8px">제목을 누르면 펼쳐져요.</p>' +
-        D('회원권 · 등급 · 요금', '<div class="seatguide">' + LZ.cleanHtml((cfg.seat && cfg.seat.guide) || '') + '</div><p class="muted" style="margin:8px 0 0">등급은 가진 회원권으로 저절로 정해져요: 기간 남은 <b>골드회원권</b>이 있으면 골드회원, 아니고 <b>레드회원권</b>이 있으면 레드회원, 둘 다 없으면 블루회원 · <b>블랙</b>은 이용 정지. 회원권이 끝나기 ' + LZ.remindTxt(cfg.seat && cfg.seat.remind) + '에 주인과 캡틴에게 알려 드리고, 끝나면 바로 그 자리가 빠져요. 자리가 모자라면 늦게 들어온 분부터 보기만 해요(캡틴은 자리 밖, 매니저는 그대로). 적립 포인트는 ' + ((cfg.seat && cfg.seat.point_unit) || 10) + 'P 단위로 결제에 섞어 쓸 수 있어요.</p>') +
         D('비밀번호 · 카카오 확인', '<p style="margin:0">가입할 때 <b>카카오로 본인 확인</b>을 한 번 해요(카카오 계정 하나에 회원 한 분, 카카오에서는 회원번호만 받아요). 로그인은 닉네임과 비밀번호 4자리로 해요. 잊으면 ① 로그인 화면 "비밀번호를 잊었어요" → <b>카카오로 확인</b>하고 새 4자리 정하기 ② 관리자가 만들어 준 계정은 관리자에게 찾기 신청(임시 번호 ' + R.tmpHours + '시간). 캡틴은 비밀번호를 볼 수도 바꿀 수도 없어요.</p>') +
         D('적립 포인트 · 레벨', (function () { var r = cfg.pt; if (!r) return '<p style="margin:0">내 정보 → 적립 포인트에서 봐요.</p>'; return '<p style="margin:0 0 6px">홀 기록 새로 적기 +' + r.hole_new + 'P(홀마다) · 다듬기 +' + r.hole_fix + 'P · 새 코스 등록 +' + r.course_reg + 'P · 코스 정보 고치기 +' + r.course_fix + 'P · 내 기록을 가져감 +' + r.import + 'P × 레벨 배수 · 회원권 구매 ' + r.earn_pct + '%. 하루 최대 ' + r.day_cap + 'P(결제 적립 빼고), 1P = 1원, ' + r.unit + 'P 단위로 쓰고 ' + r.years + '년 뒤 사라져요.</p><p style="margin:0">레벨(레벨 점수 — 구매 적립은 빼고, 써도 그대로): ' + r.names.map(function (n, k) { return LZ.LVN[k][0] + ' ' + n + ' ' + Number(r.th[k]).toLocaleString('ko-KR') + ' (×' + r.mul[k] + ')'; }).join(' · ') + '</p>'; })()) +
         D('볼스피드 기준', '<p style="margin:0 0 6px"><b>볼스피드</b>는 공이 출발하는 속도예요. <b>8~40</b>, 0.5씩 적어요. 8보다 약하면 <b>Min</b>, 40보다 세면 <b>Max</b>로 적어요. <b>센서 탄도</b>는 그 매장 센서 설정(더높게·높게·보통·낮게·더낮게)이고, 스크린은 굴러가는 마찰이 거의 없어 탄도가 높을수록 멀리 가요(캐리 = 날아간 거리, 런 = 떨어진 뒤 굴러간 거리).</p><p style="margin:0 0 6px">총 비거리 = (기준 거리 <b>' + LZ.fmtM(pw.d0) + 'm</b> + (볼스피드 − 모드 기준) × 1당 비거리) × (1 + 탄도 %) · 탄도 간격 <b>' + pw.gap + '%</b>(높게 +' + pw.gap + '% · 더높게 +' + LZ.r1(pw.gap * 2) + '%).</p><div class="tblwrap"><table class="tbl" style="font-size:var(--t0)"><tr><th>모드</th><th>모드<br>기준</th><th>1당<br>비거리</th><th>80m<br>높게</th><th>80m<br>보통</th><th>80m<br>낮게</th></tr>' + ['b', 'p', 'm'].map(hlRow).join('') + '</table></div><p class="muted" style="margin:6px 0 0">표시: <b>~17</b> = 17까지, <b>16~</b> = 16 넘게 17 전까지(아래 막대의 점이 정확한 자리). 기준과 1 이내면 초록 ●, 1 넘게 크면 ▲ · 작으면 ▼. 다른 모드·매장에서 칠 때는 <b>같은 거리</b>가 나오는 볼스피드로 바꿔 보여요. 그렇게 보면서 플레이 화면에서 고쳐 저장하면 그 코스의 <b>기록 기준</b>이 그 기준으로 바뀌고 다른 홀도 함께 바뀌어요. 관리자가 설정에서 바꾸면 여기도 같이 바뀌어요.</p>') +
         D('기록 규칙', '<ul style="margin:0;padding-left:18px"><li>위치 기준: <b>첫화면</b>(기본) · 홀컵 · 직접</li><li>좌우: <b>그대로</b> 또는 <span style="color:var(--red);font-weight:700">좌 1~10</span>·<span style="color:var(--blue);font-weight:700">우 1~10</span>칸, 볼스피드는 0.5씩. 단추를 꾹 누르면 빨리 움직여요</li><li>참고사항은 ' + R.noteMax + '자(사진은 없어요)</li><li>기록은 회원·코스마다 <b>하나</b>. 어느 클럽에서 적어도 같은 기록이고, 클럽을 나가도 그대로예요</li><li>회원님 기록은 같은 클럽 분 것만 보여요. 공개·비공개는 <b>코스마다</b> 자물쇠로 정해요(새 코스는 공개). <b>클럽 평균</b>은 이 코스를 공개한 회원님이 3명 이상일 때 보여요</li><li>코스 정보는 누구나 고치고 이력이 남아요</li></ul>') +
         D('클럽', '<ul style="margin:0;padding-left:18px"><li>가입: 초대 링크 · 클럽 코드 6자리 · 클럽 찾기 → 캡틴이 <b>승인</b>(또는 보류). ' + R.reqDays + '일 지나면 신청 정리</li><li>클럽을 만들 때 <b>회원권</b>을 넣어요(블루 1장까지 · 보관 중인 레드·골드 · 사서 넣기). 자리 = 회원권 장수 × 10, <b>캡틴은 자리에 안 들어가요</b></li><li>자리가 다 차면 승인이 안 돼요 → 캡틴·매니저가 <b>자리 늘리기</b>(레드·골드회원권 사기 또는 보관 회원권 넣기)</li><li>캡틴 바꾸기: 블루로 연 클럽은 받는 분의 블루회원권으로 바꿔 넣어요. 받는 분께 블루가 없으면 블루를 확보하거나 레드회원권을 사서 인수할 때 넘어가요. 전 캡틴은 매니저로 남아요</li><li>회원권을 넣은 분이 나갈 때 자리가 모자라면 레드는 캡틴에게 양도하고, 골드는 캡틴이 채우거나 레드를 사서 양도한 뒤 가지고 나가요</li><li>클럽을 닫으면 블루회원권은 캡틴에게, 레드·골드회원권은 각 주인의 보관함으로 돌아가요</li><li>회원 <b>내보내기</b>는 캡틴만. 내보내도 그분 기록은 그분 것</li><li>캡틴은 <b>매니저</b>를 회원권 1장의 자리 수만큼(' + (((cfg.seat && cfg.seat.seat_size) || 10)) + '명) 정할 수 있어요. 매니저는 가입 승인·소식·모임·챌린지·회원권 넣기 등 캡틴 일을 함께 하고 자리가 모자라도 잠기지 않아요. 회원 내보내기·매니저 정하기·캡틴 바꾸기·클럽 닫기는 캡틴만 해요</li><li>앱이 없는 분께는 <b>가입 안내 보내기</b>(카카오톡·문자)로 알려요</li></ul>') +
         D('필드 라운드 · 시상식 · 단체', '<div class="awlinks"><button type="button" class="sm2" data-go="awGuide">' + LZ.ic('book') + ' 시상식 안내</button><button type="button" class="sm2 o" data-act="awDemo">' + LZ.ic('trophy') + ' 미리보기</button></div><ul style="margin:0;padding-left:18px"><li><b>파크골프도, 일반골프도</b> 스코어를 기록해요: 파크골프(9홀 33 · 18홀 66)는 물론 일반골프(9홀 36 · 18홀 72)도. 개인·단체 모두 9·18·27·36홀</li><li>개별 라운드: 한 조 2~5명, 손님은 이름만. 끝내면 결과 화면에서 <b>시상식</b>을 열어 우승·준우승·장려·행운상(추첨) 등을 뽑고 결과 그림을 카카오톡으로 보내요</li><li>안 적은 홀은 파. ＋는 보기, −는 버디. 파를 고치면 ±는 그대로 두고 타수만 바뀌어요</li><li>끝낸 뒤 ' + (R.editHours || 2) + '시간까지 고칠 수 있고 고친 이력이 남아요. 주최자가 최종 확정하면 잠겨요</li><li>' + R.roundHours + '시간 지나면 저절로 끝나요</li><li><b>단체 라운드</b>: 누구나 주최. 조 1~' + (R.teamsMax || 50) + ' 사전 편성(자동 편성·대기 명단), 9/18/27/36홀(9홀 코스 1~4개), 구장 선택·새 등록, 조별 도는 순서 자동 배치</li><li>카카오톡 초대장(편성표 글+그림)을 받으면 앱에서 내 조로 바로 들어가요. 앱이 없던 분은 가입하면 손님 자리와 점수를 그대로 이어받아요</li><li>상황판 3탭(조별·개인·편성표), 집계 범위(코스·조), 시상식 1부 조별(행운상→다음에 잘 치자상→단합상→장려상→준우승→우승) · 2부 개인, 중복 수상 가능/불가, 결과 그림 공유, 도우미 2명</li></ul>') +
-        D('알림·화면', '<p style="margin:0">휴대폰 알림은 앱을 <b>홈 화면에 추가</b>한 뒤에 돼요(아이폰은 꼭 추가해야 해요). 밤 ' + R.quietFrom + '시~아침 ' + R.quietTo + '시 알림은 아침에 모아서 보내요. 기록·라운드 화면에서는 화면이 꺼지지 않아요.</p>') + '</div>';
+        D('알림·화면', '<p style="margin:0">휴대폰 알림은 앱을 <b>홈 화면에 추가</b>한 뒤에 돼요(아이폰은 꼭 추가해야 해요). 밤 ' + R.quietFrom + '시~아침 ' + R.quietTo + '시 알림은 아침에 모아서 보내요. 기록·라운드 화면에서는 화면이 꺼지지 않아요.</p>') +
+        D('회원권 · 등급 · 요금', '<div class="seatguide">' + LZ.cleanHtml((cfg.seat && cfg.seat.guide) || '') + '</div><p class="muted" style="margin:8px 0 0">등급은 가진 회원권으로 저절로 정해져요: 기간 남은 <b>골드회원권</b>이 있으면 골드회원, 아니고 <b>레드회원권</b>이 있으면 레드회원, 둘 다 없으면 블루회원 · <b>블랙</b>은 이용 정지. 회원권이 끝나기 ' + LZ.remindTxt(cfg.seat && cfg.seat.remind) + '에 주인과 캡틴에게 알려 드리고, 끝나면 바로 그 자리가 빠져요. 자리가 모자라면 늦게 들어온 분부터 보기만 해요(캡틴은 자리 밖, 매니저는 그대로). 적립 포인트는 ' + ((cfg.seat && cfg.seat.point_unit) || 10) + 'P 단위로 결제에 섞어 쓸 수 있어요.</p>') + '</div>';
     }
   };
 
@@ -555,7 +550,9 @@
 
   /* ═════════ v9.2 클럽 채팅 · 모임 참석 투표 ═════════ */
   /* v9.3 클럽 화면 둘째 줄: 이달 순위 · 사진첩 · 출석 도장 */
-  function clubMore93(m) { var p = esc(JSON.stringify({ mid: m.id })); return '<div class="cact9 c3 c3s"><button type="button" class="cab9" data-go="rank" data-p=\'' + p + '\'>' + LZ.ic('trophy') + '<b>이달 순위</b></button><button type="button" class="cab9" data-go="album" data-p=\'' + p + '\'>' + LZ.ic('heart') + '<b>사진첩</b></button><button type="button" class="cab9" data-go="stamps">' + LZ.ic('medal') + '<b>출석 도장</b></button></div>'; }
+  function clubMore93(m) { var p = esc(JSON.stringify({ mid: m.id })); return '<div class="pill9r"><button type="button" class="cab9" data-go="rank" data-p=\'' + p + '\'>' + LZ.ic('trophy') + '<b>이달 순위</b></button><button type="button" class="cab9" data-go="album" data-p=\'' + p + '\'>' + LZ.ic('heart') + '<b>사진첩</b></button><button type="button" class="cab9" data-go="stamps">' + LZ.ic('medal') + '<b>출석 도장</b></button></div>'; }
+  function newsNew(mid, list) { var seen = +store.get('lz.newsSeen.' + mid) || 0; return (list || []).filter(function (n) { return Math.max(+n.upd || 0, +n.created || 0) > seen; }).length; }
+  LZ.newsSeen = function (mid, list) { var mx = 0; (list || []).forEach(function (n) { mx = Math.max(mx, +n.upd || 0, +n.created || 0); }); if (mx > (+store.get('lz.newsSeen.' + mid) || 0)) store.set('lz.newsSeen.' + mid, String(mx)); };
   LZ.ago = function (t) { var s = (Date.now() - t) / 1000; return s < 60 ? '방금' : s < 3600 ? Math.floor(s / 60) + '분 전' : s < 86400 ? Math.floor(s / 3600) + '시간 전' : LZ.fmtDate(t); };
   function hm(t) { var d = new Date(t), h = d.getHours(), m = d.getMinutes(); return (h < 12 ? '오전 ' : '오후 ') + ((h + 11) % 12 + 1) + ':' + (m < 10 ? '0' : '') + m; }
   function dayLbl(t) { var d = new Date(t); return d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + '일월화수목금토'.charAt(d.getDay()) + '요일'; }
@@ -632,7 +629,9 @@
   function chatFit() {
     var box = $('.chat9'); if (!box) return; var top = $('#app > .top'), vv = window.visualViewport;
     var t = top ? Math.round(top.getBoundingClientRect().height) : 56, off = vv ? Math.max(0, vv.offsetTop || 0) : 0, vh = vv ? vv.height : window.innerHeight;
-    box.style.top = (t + off) + 'px'; box.style.height = Math.max(160, Math.round(vh - t)) + 'px';
+    var kbUp = vv && window.innerHeight - vv.height > 120;                     // 아이폰 홈 화면 앱은 보이는 높이가 실제보다 작게 나올 때가 있어, 글자판이 없을 때는 계산하지 않고 화면 끝에 붙여요
+    box.style.top = (t + off) + 'px';
+    if (kbUp) { box.style.bottom = 'auto'; box.style.height = Math.max(160, Math.round(vh - t)) + 'px'; } else { box.style.height = 'auto'; box.style.bottom = '0px'; }
     if (off && window.scrollY) window.scrollTo(0, 0);
   }
   if (window.visualViewport) ['resize', 'scroll'].forEach(function (ev) { window.visualViewport.addEventListener(ev, function () { if (LZ.cur().name !== 'chat') return; var l = $('#chList'), end = l && l.scrollHeight - l.scrollTop - l.clientHeight < 80; chatFit(); if (l && end) l.scrollTop = l.scrollHeight; }); });
@@ -695,15 +694,17 @@
   LZ.act.chatMenu = function () { LZ.sheet('<h2>' + esc(CH.d.name) + ' 채팅</h2><button type="button" class="opt" data-go="club" data-p=\'' + esc(JSON.stringify({ id: CH.mid })) + '\'><b>클럽 화면</b></button><button type="button" class="opt" data-go="meet" data-p=\'' + esc(JSON.stringify({ mid: CH.mid })) + '\'><b>이번 모임 · 참석 투표</b></button><button type="button" class="opt" data-go="notiCfg"><b>알림 설정</b><span>클럽 채팅 알림 켜고 끄기 · 같은 클럽은 10분에 한 번만 울려요</span></button><p class="hint">대화는 90일 동안 보관해요. 길게 쓴 글을 누르면 답장 · 복사 · 신고를 할 수 있어요.</p>'); };
   LZ.screens.firstSteps = { show: guideShow('first') };
   /* v9.1.3 1분 사용법: 기록은 세 가지만 · 인쇄(A4 · QR) */
+  function dgStep(ic, label, hi) { return '<div class="dg9s' + (hi ? ' hi' : '') + '"><span class="ph"><i></i><em>' + (ic.length <= 3 ? '<b>' + ic + '</b>' : LZ.ic(ic)) + '</em><u></u><u class="s"></u></span><small>' + label + '</small></div>'; }
+  function dgFlow(n, title, sub, steps, btn) { return '<section class="dg9"><div class="dh"><span class="n">' + n + '</span><div><b>' + title + '</b><span>' + sub + '</span></div></div><div class="dr">' + steps.map(function (s, i) { return (i ? '<span class="ar" aria-hidden="true">›</span>' : '') + dgStep(s[0], s[1], i === steps.length - 1); }).join('') + '</div>' + btn + '</section>'; }
   LZ.screens.howto = {
     tab: 'me',
     show: function (p, root) {
-      var st = [['1', '스크린에서 친 방향', '공이 왼쪽으로 갔으면 <b>◀</b>, 오른쪽이면 <b>▶</b>. 똑바로 갔으면 그대로 두세요.'], ['2', '볼스피드 숫자', '스크린에 나온 볼스피드를 <b>▼▲</b>로 맞춰요. 0.5씩 움직여요.'], ['3', '[다음]', '다 맞췄으면 <b>[다음]</b>. 수첩에 저장되고 다음 홀로 가요. 다음에 같은 홀에서는 이 값이 먼저 보여요.']];
-      root.innerHTML = LZ.hdr('1분 사용법', { back: true }) + '<div class="wrap howto9">' +
-        '<div class="hw9h"><img src="icons/icon-192.png" alt="" width="44" height="44"><div><b>파크골프 공략수첩</b><span>홀마다 내 공략을 적어 두는 수첩</span></div></div>' +
-        '<p class="hw9l">기록은 이 세 가지만 하면 돼요</p>' + st.map(function (x) { return '<div class="hw9s"><span class="n">' + x[0] + '</span><div><b>' + x[1] + '</b><p>' + x[2] + '</p></div></div>'; }).join('') +
-        '<div class="hw9q"><div id="hwQr" class="qr"></div><div><b>휴대폰 카메라로 찍으면 바로 열려요</b><span>' + esc(LZ.APP_URL) + '</span><span>처음이면 [가입하기] → 닉네임 · 비밀번호 4자리</span></div></div>' +
-        '<div class="hw9b noprint"><button type="button" class="btn" data-act="howCoach">플레이 화면에서 따라 하기</button><button type="button" class="btn g" data-act="howPrint">' + LZ.ic('note') + 'A4로 인쇄하기</button></div></div>';
+      root.innerHTML = LZ.hdr('처음 시작하기', { back: true, noRf: 1 }) + '<div class="wrap howto9">' +
+        '<h1 class="hw9t">세 가지만 하면 돼요</h1><p class="hw9d">그림을 따라 눌러 보세요</p>' +
+        dgFlow(1, '코스 만들기', '이름만 넣으면 18홀이 생겨요', [['screen', '스크린 탭'], ['plus', '새 코스 등록'], ['edit', '이름 넣기']], '<button type="button" class="btn noprint" data-go="reg">새 코스 등록하기</button>') +
+        dgFlow(2, '코스 가져오기', '다른 분이 만든 코스를 내 수첩에 담고, 내 기록으로 고쳐요', [['search', '코스 가져오기'], ['book', '내 수첩에 담기'], ['check', '내 기록으로']], '<button type="button" class="btn g noprint" data-go="cImport">코스 가져오기</button>') +
+        dgFlow(3, '홀마다 적기', '스크린에서 친 그대로 · [다음]을 누르면 저장', [['◀▶', '방향 · 좌우'], ['▼▲', '볼스피드'], ['다음', '저장']], '<button type="button" class="btn g noprint" data-act="howCoach">플레이 화면에서 따라 하기</button>') +
+        '<details class="card acc noprint hwq9"><summary><h3>클럽 분들께 나눠 주기 · QR · 인쇄</h3></summary><div class="accb"><div class="hw9q"><div id="hwQr" class="qr"></div><div><b>휴대폰 카메라로 찍으면 바로 열려요</b><span>' + esc(LZ.APP_URL) + '</span><span>처음이면 [가입하기] → 닉네임 · 비밀번호 4자리</span></div></div><button type="button" class="btn g" data-act="howPrint">' + LZ.ic('note') + 'A4로 인쇄하기</button></div></details></div>';
       LZ.qr($('#hwQr'), LZ.APP_URL);
     }
   };
@@ -731,6 +732,7 @@
     show: async function (p, root, alive) {
       root.innerHTML = LZ.hdr('공지·소식', { back: true }) + LZ.skeleton(4);
       var r = await LZ.api('noticeList', p.manage ? { manage: 1 } : (p.mid ? { mid: p.mid } : {})); if (!alive()) return;
+      if (p.mid) LZ.newsSeen(p.mid, r.list); else (r.list || []).forEach(function (n) { if (n.br) LZ.newsSeen(n.br, [n]); });
       LZ.noticeMarkSeen(r.list);
       root.innerHTML = LZ.hdr(p.manage ? '공지 관리' : '공지·소식', { back: true }) + '<div class="wrap">' +
         (r.canWrite ? '<button type="button" class="btn o mk1" data-go="noticeEdit" data-p=\'' + esc(JSON.stringify({ br: p.mid || (S.user.kind === 'admin' ? '' : (r.moims[0] || {}).id) })) + '\'>' + LZ.ic('edit') + (S.user.kind === 'admin' && !p.mid ? '공지 쓰기' : '소식 쓰기') + '</button>' : '') +

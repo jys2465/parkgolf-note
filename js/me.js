@@ -37,17 +37,17 @@
       root.innerHTML = LZ.hdr('내 정보', { btns: '<button type="button" class="tb" data-act="logout" aria-label="로그아웃" title="로그아웃">' + LZ.ic('logout') + '</button>' }) + '<div class="wrap v8">' +
         '<div class="me9"><div class="prof"><button type="button" class="avbtn" data-act="avatarMenu" aria-label="프로필 사진 바꾸기">' + LZ.avatar(u, 'big') + '</button><div class="pt"><div class="nm">' + esc(adm ? '관리자' : u.nick) + '</div><div class="su tier">' + esc(tierShort(u)) + (pi.lvName && !adm ? ' · ' + esc(pi.lvName) : '') + '</div>' + (u.created ? '<div class="su">가입 ' + LZ.fmtDate(u.created) + '</div>' : '') + ((u.tier === 'red' || u.tier === 'gold') && u.end ? '<div class="su">' + (u.tier === 'red' ? '레드' : '골드') + ' ~' + LZ.fmtYmd(u.end) + '</div>' : '') + '</div></div>' +
         (adm ? '</div><div class="list"><button type="button" class="li cont" data-go="dash">' + LZ.ic('gear', 'gi') + '<div class="t"><b>관리자</b><span class="su">결제 ' + (ad.pay || 0) + ' · 환불 ' + (ad.refund || 0) + ' · 비밀번호 ' + (ad.pw || 0) + ' · 문의 ' + (ad.qna || 0) + (ad.gold ? ' · 골드 만기 ' + ad.gold : '') + '</span></div>' + LZ.ic('chev') + '</button></div>'
-          : '<button type="button" class="pts ptwo" data-go="mePoints"><span><em>적립 포인트</em><b>' + nf(pi.bal) + 'P</b><small>' + (so && so.amt && so.left <= 30 ? '곧 사라질 ' + nf(so.amt) + 'P' + (so.date ? ' · ' + LZ.fmtYmd(so.date) : '') : '회원권 살 때 써요') + '</small></span>' +
+          : '<button type="button" class="pts ptwo" data-go="mePoints"><span><em>적립 포인트</em><b>' + nf(pi.bal) + 'P</b><small>' + (so && so.amt && so.left <= 30 ? '곧 사라질 ' + nf(so.amt) + 'P' + (so.date ? ' · ' + LZ.fmtYmd(so.date) : '') : '기록하면 쌓여요') + '</small></span>' +
             '<span><em>레벨 점수</em><b>' + nf(pi.lvp) + '점</b><small>' + (nx ? esc(nx.name) + '까지 ' + nf(nx.need) + '점' : '가장 높은 레벨') + '</small></span></button>' +
             '</div><div class="kwrow">' + LZ.kw('P와 점은 달라요', '<b>적립 포인트(P)</b>는 회원권 살 때 쓰는 돈이에요. <b>레벨 점수(점)</b>는 레벨을 정해요(새싹 · 버디 · 이글 · 봉황 · 지존).') + '</div>') +
         (!adm && m.own ? '<div class="list adm9l"><button type="button" class="li cont" data-act="admEnter">' + LZ.ic('shield', 'gi') + '<div class="t"><b>관리</b><span class="su">' + (function (o) { var n = (o.pay || 0) + (o.refund || 0) + (o.qna || 0) + (o.pw || 0) + (o.gold || 0); return n ? '처리할 일 ' + n + '건 · ' : ''; })(m.own) + '결제 ' + (m.own.pay || 0) + ' · 환불 ' + (m.own.refund || 0) + ' · 문의 ' + (m.own.qna || 0) + ' · 비밀번호 ' + (m.own.pw || 0) + '</span></div>' + LZ.ic('chev') + '</button></div>' : '') +
         '<div class="list">' +
-        grow('seat', '내 회원권', esc(tierShort(u)) + (passShort(u) ? ' · ' + esc(passShort(u)) + '장' : '') + (m.pending ? ' · 결제 ' + esc(m.pending.stName) : ''), 'data-go="meTier"') +
         grow('star', '포인트 내역', nf(pi.bal) + 'P · ' + esc(pi.lvName || '새싹') + ' ' + nf(pi.lvp) + '점', 'data-go="mePoints"') +
         (adm ? '' : grow('medal', '출석 도장 · 배지', '모임 · 기록한 날에 도장 · 연속 주 · 배지', 'data-go="stamps"')) +
         '</div><div class="list">' + grow('lock', '계정 · 안전', '프로필 사진 · 닉네임 · 비밀번호' + (adm ? '' : ' · 카카오 확인'), 'data-go="meAcct"') +
           grow('help', '도움말 · 문의', '파크골프 첫걸음 · 사용 안내 · 공지' + (m.qnaOn ? ' · 문의' : ''), 'data-go="helpHub"') +
-          grow('gear', '설정', '화면 밝기 · 글씨 · 소리 · 알림', 'data-go="settings"') + '</div>' +
+          grow('gear', '설정', '화면 밝기 · 글씨 · 소리 · 알림', 'data-go="settings"') +
+          grow('seat', '내 회원권', esc(tierShort(u)) + (passShort(u) ? ' · ' + esc(passShort(u)) + '장' : '') + (m.pending ? ' · 결제 ' + esc(m.pending.stName) : ''), 'data-go="meTier"') + '</div>' +
         (adm ? '' : '<button type="button" class="btn g inv9" data-act="inviteKakao">친구 초대</button><p class="fn9" style="text-align:center">초대 링크로 클럽에 바로 들어와요</p>') + '</div>';
     }
   };
@@ -255,9 +255,10 @@
     show: function (p, root) {
       var m = S.me || {};
       root.innerHTML = LZ.hdr('도움말', { back: true }) + '<div class="wrap"><div class="card tight groups">' +
-        grow('ball', '파크골프 첫걸음', '처음 오신 분께 · 규칙 · 점수 세는 법 · 매너', 'data-go="firstSteps"') +
+        grow('play', '처음 시작하기', '그림 3장 · 코스 만들기 · 가져오기 · 홀 적기', 'data-go="howto"') +
+        grow('ball', '파크골프 첫걸음', '규칙 · 점수 세는 법 · 매너', 'data-go="firstSteps"') +
         grow('trophy', '시상식 안내', '상 종류 · 발표 차례 · 결과 그림 보내기', 'data-go="awGuide"') +
-        grow('book', '사용 안내', '권한과 기준을 한눈에', 'data-go="guide"') +
+        grow('book', '자세한 사용 안내', '기준 · 규칙을 한눈에', 'data-go="guide"') +
         (m.qnaOn ? grow('chat', '문의하기', '관리자에게 1:1' + (m.qna ? ' · 답변 ' + m.qna + '건' : ''), 'data-go="qnaList"') : '') +
         grow('note', '공지·소식', '관리자 공지와 클럽 소식', 'data-go="notices" data-p=\'{"manage":0}\'') +
         grow('home', '홈 화면에 추가', '앱처럼 열고 알림도 받아요', 'data-act="homeAdd"') +

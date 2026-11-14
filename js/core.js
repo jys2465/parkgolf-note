@@ -140,18 +140,22 @@
   /* ───── 코치마크: 처음 몇 번만, 화면 요소를 동그랗게 비추고 한 줄 설명 ─────
      steps = [{ sel: CSS 선택자, text, pos: 'below'|'above' }] · 요소가 없으면 건너뜀 */
   LZ.coach = function (key, steps) {
-    if (store.get('lz.coach.' + key) === '1') return; var i = 0, ov;
-    function end() { store.set('lz.coach.' + key, '1'); if (ov) ov.remove(); ov = null; }
+    if (store.get('lz.coach.' + key) === '1' || document.querySelector('.coach')) return; var i = 0, ov = null, dead = false, tmr = 0;
+    function end() { dead = true; store.set('lz.coach.' + key, '1'); if (ov) ov.remove(); ov = null; clearTimeout(tmr); document.removeEventListener('click', h, true); window.removeEventListener('resize', show); window.removeEventListener('popstate', end); }
     function show() {
+      if (dead) return;
       while (i < steps.length && !document.querySelector(steps[i].sel)) i++;
       if (i >= steps.length) { end(); return; }
-      var st = steps[i], el = document.querySelector(st.sel), r = el.getBoundingClientRect(), pad = 8;
+      var st = steps[i], el = document.querySelector(st.sel), vv = window.visualViewport, vh = Math.min(window.innerHeight, vv ? vv.height : 1e9), r = el.getBoundingClientRect(), pad = 8;
+      if (r.bottom > vh - 8 || r.top < 60) { try { el.scrollIntoView({ block: 'center' }); } catch (e) { /* 무시 */ } r = el.getBoundingClientRect(); }
       if (!ov) { ov = document.createElement('div'); ov.className = 'coach'; document.body.appendChild(ov); }
-      var below = st.pos !== 'above' && r.bottom + 140 < window.innerHeight;
+      var up = r.top + r.height / 2 > vh / 2;                                    // 가리킬 곳이 아래쪽이면 설명은 위에, 위쪽이면 아래에 — 설명과 단추가 화면 밖으로 나가지 않아요
       ov.innerHTML = '<div class="coach-hole" style="left:' + (r.left - pad) + 'px;top:' + (r.top - pad) + 'px;width:' + (r.width + pad * 2) + 'px;height:' + (r.height + pad * 2) + 'px"></div>' +
-        '<div class="coach-tip" style="' + (below ? 'top:' + (r.bottom + pad + 12) + 'px' : 'bottom:' + (window.innerHeight - r.top + pad + 12) + 'px') + '"><div class="coach-n">' + (i + 1) + '/' + steps.length + '</div><p>' + st.text + '</p><div class="row"><button type="button" class="sm2 g" data-coach="skip">그만 보기</button><button type="button" class="sm2" data-coach="next">' + (i === steps.length - 1 ? '알겠어요' : '다음') + '</button></div></div>';
+        '<div class="coach-tip ' + (up ? 'ct-t' : 'ct-b') + '" role="dialog" aria-label="따라 하기"><button type="button" class="coach-x" data-coach="skip" aria-label="따라 하기 닫기">✕</button><div class="coach-n">' + (i + 1) + ' / ' + steps.length + '</div><p>' + st.text + '</p><div class="row"><button type="button" class="sm2 g" data-coach="skip">그만 보기</button><button type="button" class="sm2" data-coach="next">' + (i === steps.length - 1 ? '알겠어요' : '다음') + '</button></div></div>';
+      clearTimeout(tmr); tmr = setTimeout(end, 90000);                           // 그대로 두면 저절로 닫혀요(화면이 막힌 채 남지 않게)
     }
-    document.addEventListener('click', function h(e) { var b = e.target.closest('[data-coach]'); if (!b || !ov) return; e.preventDefault(); e.stopPropagation(); if (b.dataset.coach === 'skip') { end(); document.removeEventListener('click', h, true); return; } i++; if (i >= steps.length) { end(); document.removeEventListener('click', h, true); } else show(); }, true);
+    function h(e) { if (!ov) return; var b = e.target.closest('[data-coach]'), inside = e.target.closest('.coach'); if (!b && !inside) return; e.preventDefault(); e.stopPropagation(); if (b && b.dataset.coach === 'skip') { end(); return; } i++; if (i >= steps.length) end(); else show(); }
+    document.addEventListener('click', h, true); window.addEventListener('resize', show); window.addEventListener('popstate', end);
     setTimeout(show, 350);
   };
   /* 프로필: 사진이 있으면 사진, 없으면 닉네임 첫 글자(닉네임마다 색이 정해짐) */
@@ -371,21 +375,27 @@
   LZ.rqId = function () { var s = Date.now().toString(36); try { var b = new Uint8Array(9); crypto.getRandomValues(b); for (var i = 0; i < b.length; i++) s += (b[i] % 36).toString(36); } catch (e) { s += Math.random().toString(36).slice(2, 12); } return s.slice(0, 32); };
   /* v9.3.1 화면을 넘길 때 기다리지 않게: 방금 받은 답은 20초 동안 그대로 쓰고, 10분 안의 답은 먼저 보여 준 뒤 뒤에서 새로 받아 달라졌으면 다시 그려요.
      무엇이든 저장(쓰기)하면 모두 비워요. 적는 화면(플레이 · 등록 · 글쓰기 …)과 점수판 · 결제는 늘 새로 받아요 */
-  var MEM = {}, SWRX = /^(moimGet|moimAll|noticeList|fieldList|roundMine|eventMine|capDash|points|payList|qnaList|members|dash|meetGet|stamps|clubRank|albumList|tipList|vsGet|packList|goldList|goldCand|guideCards|firstSteps|refundList|pwReqList|feedbackList|log)$/, MEM_FRESH = 20000, MEM_STALE = 600000;
+  var MEM = {}, memLoaded = '', memT = 0, PERS = /^(moimGet|roundMine|noticeList|fieldList|capDash|points|meetGet|stamps|clubRank|albumList|eventMine)$/, SWRX = /^(moimGet|moimAll|noticeList|fieldList|roundMine|eventMine|capDash|points|payList|qnaList|members|dash|meetGet|stamps|clubRank|albumList|tipList|vsGet|packList|goldList|goldCand|guideCards|firstSteps|refundList|pwReqList|feedbackList|log)$/, MEM_FRESH = 20000, MEM_STALE = 86400000;
   function memKey(a, body) { var b = body || {}, ks = Object.keys(b).sort(), o2 = {}; ks.forEach(function (k) { o2[k] = b[k]; }); return a + '|' + JSON.stringify(o2) + '|' + (S.asAdm ? 1 : 0) + '|' + (S.br || '') + '|' + (S.user ? S.user.uid : ''); }
-  LZ.memDrop = function () { MEM = {}; };
+  function memFile() { return 'lz.mem.' + (S.user ? S.user.uid : ''); }
+  function memLoad() { var f = memFile(); if (memLoaded === f) return; memLoaded = f; try { var o = store.json(f) || {}; for (var k in o) if (!MEM[k] && o[k] && o[k].s && Date.now() - o[k].t < MEM_STALE) MEM[k] = { t: Math.min(o[k].t, Date.now() - MEM_FRESH - 1), s: o[k].s }; } catch (e) { /* 무시 */ } }
+  function memSave() { clearTimeout(memT); memT = setTimeout(function () { try { var o = {}, n = 0, ks = Object.keys(MEM).filter(function (k) { return PERS.test(k.split('|')[0]); }).sort(function (a, b) { return MEM[b].t - MEM[a].t; }); for (var i = 0; i < ks.length && i < 30; i++) { n += MEM[ks[i]].s.length; if (n > 350000) break; o[ks[i]] = { t: MEM[ks[i]].t, s: MEM[ks[i]].s }; } store.setJSON(memFile(), o); } catch (e) { try { store.del(memFile()); } catch (e2) { /* 무시 */ } } }, 1200); }
+  function memWipe() { MEM = {}; clearTimeout(memT); try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('lz.mem.') === 0) localStorage.removeItem(k); }); } catch (e) { /* 무시 */ } }
+  LZ.memDrop = memWipe;
+  /** 알림이 왔을 때: 지우지 않고 "오래됨"으로만 — 화면은 바로 뜨고 뒤에서 새로 받아요 */
+  LZ.memOld = function () { var t = Date.now() - MEM_FRESH - 1; for (var k in MEM) if (MEM[k].t > t) MEM[k].t = t; };
   function memRedrawOk() { var a = document.activeElement; return !document.querySelector('#layer .sheet, #layer .dlg, #layer .qwait, .coach') && !(a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) && !(LZ.guard && LZ.guard.dirty && LZ.guard.dirty()); }
   function memRefresh(ck, a, body, hit) {
     if (hit.busy) return; hit.busy = 1; var scr = LZ.cur();
-    post(a, body, {}).then(function (d) { var s = JSON.stringify(d), ch = s !== hit.s; if (MEM[ck] !== hit) return; MEM[ck] = { t: Date.now(), s: s }; if (ch && LZ.cur() === scr && !NORF[scr.name] && memRedrawOk()) LZ.redraw(); }, function () { hit.busy = 0; });
+    post(a, body, {}).then(function (d) { var s = JSON.stringify(d), ch = s !== hit.s; if (MEM[ck] !== hit) return; MEM[ck] = { t: Date.now(), s: s }; memSave(); if (ch && LZ.cur() === scr && !NORF[scr.name] && memRedrawOk()) LZ.redraw(); }, function () { hit.busy = 0; });
   }
   /** 미리 받아 두기(홈에서 내 클럽 · 필드 탭) */
   LZ.warm = function (a, body) { if (!S.user || !SWRX.test(a) || MEM[memKey(a, body)] || (navigator.connection && navigator.connection.saveData)) return; LZ.api(a, body, { quiet: 1 }).catch(function () {}); };
   LZ.api = async function (a, body, o) {
     var ck = (!o || (o.quiet && Object.keys(o).length === 1)) && S.user && SWRX.test(a) ? memKey(a, body) : '';
-    if (ck) { var hit = MEM[ck], age = hit ? Date.now() - hit.t : 1e12; if (age < MEM_FRESH) return JSON.parse(hit.s); if (age < MEM_STALE && !NORF[LZ.cur().name]) { memRefresh(ck, a, body, hit); return JSON.parse(hit.s); } }
+    if (ck) { memLoad(); var hit = MEM[ck], age = hit ? Date.now() - hit.t : 1e12; if (age < MEM_FRESH) return JSON.parse(hit.s); if (age < MEM_STALE && !NORF[LZ.cur().name]) { memRefresh(ck, a, body, hit); return JSON.parse(hit.s); } }
     var d0 = await apiNet(a, body, o);
-    if (ck) { try { if (Object.keys(MEM).length > 80) MEM = {}; MEM[ck] = { t: Date.now(), s: JSON.stringify(d0) }; } catch (e) { /* 무시 */ } } else if (!READS.test(a)) MEM = {};
+    if (ck) { try { if (Object.keys(MEM).length > 80) MEM = {}; MEM[ck] = { t: Date.now(), s: JSON.stringify(d0) }; memSave(); } catch (e) { /* 무시 */ } } else if (!READS.test(a)) memWipe();
     return d0;
   };
   async function apiNet(a, body, o) {
@@ -476,7 +486,7 @@
   /* ───── 마지막 응답 저장: 화면을 열 때 먼저 보여 주고 뒤에서 새로 받음 ───── */
   LZ.cacheGet = function (k) { try { var x = store.json('lz.k.' + (S.user ? S.user.uid : '') + '.' + k); return x && Date.now() - x.t < 7 * 86400000 ? x.d : null; } catch (e) { return null; } };
   LZ.cacheSet = function (k, d) { try { store.setJSON('lz.k.' + (S.user ? S.user.uid : '') + '.' + k, { t: Date.now(), d: d }); } catch (e) { /* 용량 */ } };
-  LZ.cacheDrop = function () { MEM = {}; try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('lz.k.') === 0) localStorage.removeItem(k); }); } catch (e) { /* 무시 */ } };
+  LZ.cacheDrop = function () { memWipe(); try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('lz.k.') === 0) localStorage.removeItem(k); }); } catch (e) { /* 무시 */ } };
   /* ───── 오프라인 큐: 신호가 약할 때 저장을 모아 두었다가 보냄 ───── */
   var Q = LZ.queue = {
     list: function () { return store.json('lz.q') || []; },
@@ -683,7 +693,7 @@
     try {
       await LZ.refreshMe(true); LZ.paintBell();
       if (toast) LZ.toast(toast, 4000);
-      if (meSig(S.me) !== before) LZ.memDrop();
+      if (meSig(S.me) !== before) LZ.memOld();
       if (meSig(S.me) !== before && /^(home|me)$/.test(LZ.cur().name) && !document.querySelector('#layer .sheet, #layer .dlg')) LZ.redraw();
     } catch (e) { /* 다음에 */ } finally { syncBusy = false; }
   };
@@ -697,7 +707,7 @@
     try {
       var ws = NR.ws = new WebSocket(url);
       ws.onopen = function () { NR.tries = 0; send('phx_join', { config: { broadcast: { self: false }, presence: { key: '' } } }); NR.hb = setInterval(function () { send('heartbeat', {}, 'phoenix'); }, 25000); };
-      ws.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.topic === topic && m.event === 'broadcast' && m.payload && m.payload.event === 'noti') { var x = m.payload.payload || {}; LZ.memDrop(); if (x.kind === 'chat') { var cm = String(x.to || '').replace(/^chat:/, ''); if (LZ.chatPing) LZ.chatPing(cm); if (LZ.cur().name !== 'chat') LZ.meSync(); return; } setTimeout(function () { LZ.reload({ soft: true }); }, 1500); if (x.kind === 'kick') { LZ.api('ping', {}).catch(function () { /* 끊긴 기기면 api 가 로그인 화면으로 */ }); return; } LZ.meSync(x.t || '새 알림이 왔어요'); } } catch (x2) { /* 무시 */ } };
+      ws.onmessage = function (e) { try { var m = JSON.parse(e.data); if (m.topic === topic && m.event === 'broadcast' && m.payload && m.payload.event === 'noti') { var x = m.payload.payload || {}; LZ.memOld(); if (x.kind === 'chat') { var cm = String(x.to || '').replace(/^chat:/, ''); if (LZ.chatPing) LZ.chatPing(cm); if (LZ.cur().name !== 'chat') LZ.meSync(); return; } setTimeout(function () { LZ.reload({ soft: true }); }, 1500); if (x.kind === 'kick') { LZ.api('ping', {}).catch(function () { /* 끊긴 기기면 api 가 로그인 화면으로 */ }); return; } LZ.meSync(x.t || '새 알림이 왔어요'); } } catch (x2) { /* 무시 */ } };
       ws.onclose = function () { if (ws !== NR.ws) return; clearInterval(NR.hb); NR.ws = null; if (S.user && NR.key === key) { NR.tries++; NR.again = setTimeout(function () { if (S.user && NR.key === key) { NR.key = ''; NR.start(key); } }, Math.min(60000, 3000 * NR.tries)); } };
       ws.onerror = function () { /* onclose 에서 다시 */ };
     } catch (e) { NR.ws = null; }
