@@ -624,3 +624,23 @@ body[data-scr="home"] .hdrr9{margin-top:26px}
 .dg9s small{font-size:calc(13px*var(--k,1));font-weight:600;line-height:1.3;word-break:keep-all}
 .hwq9{margin-top:8px}.hwq9 .hw9q{margin:0 0 10px;padding:0;background:none}
 .hwq9 .hw9q{flex-wrap:wrap}.hwq9 .hw9q>div{min-width:0;flex:1 1 160px}.hwq9 .hw9q span{overflow-wrap:anywhere}
+
+/* ───── v9.5 ───── */
+@media (display-mode:standalone){html{min-height:calc(100% + env(safe-area-inset-top,0px))}}   /* 아이폰 홈 화면 앱: 아래에 붙인 막대가 떠 보이는 것 */
+body.easy9:not(.easyx) .tip9c{display:none!important}
+.hbn{margin-bottom:16px}
+.help9 .hdr9,.gdw9 .hdr9{margin:22px 4px 10px}
+.hg9{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ht9{display:flex;flex-direction:column;align-items:flex-start;gap:4px;border:0;border-radius:20px;background:var(--v9-card);padding:18px 16px;min-height:128px;font:inherit;text-align:left;color:var(--v9-l1);cursor:pointer}
+.ht9 i{width:44px;height:44px;border-radius:14px;background:var(--v9-acc-t);color:var(--v9-acc);display:flex;align-items:center;justify-content:center;margin-bottom:8px}.ht9 i svg{width:24px;height:24px}
+.ht9 b{font-size:calc(17px*var(--k,1));line-height:1.25;word-break:keep-all}.ht9 small{font-size:calc(13px*var(--k,1));color:var(--v9-l2);line-height:1.35;word-break:keep-all}
+.dr9{display:flex;align-items:flex-start;justify-content:space-between;gap:2px;margin:14px 0 6px}.dr9 .ar{flex:0 0 auto;align-self:center;margin-top:-22px;color:var(--v9-l3);font-size:22px}
+.gd9{padding:20px 16px 12px!important;border-radius:22px!important;margin-bottom:14px}.gd9 h3{margin:0;font-size:calc(20px*var(--k,1))}.gd9 .gl{margin:4px 0 0;color:var(--v9-l2);font-size:calc(15px*var(--k,1))}
+.gdm{margin-top:8px;border-top:1px solid var(--v9-sep)}.gdm>summary{list-style:none;cursor:pointer;padding:12px 2px 6px;color:var(--v9-acc);font-weight:600;font-size:calc(15px*var(--k,1))}.gdm>summary::-webkit-details-marker{display:none}.gdm>summary::after{content:" ▾"}.gdm[open]>summary::after{content:" ▴"}
+.gdm .accb{padding:6px 0 8px;overflow-x:auto}
+.bs9{display:flex;align-items:center;gap:10px;margin:22px 4px 26px;font-size:calc(13px*var(--k,1));color:var(--v9-l2)}.bs9 i{position:relative;flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,#9AD9CF,#0F766E)}
+.bs9 i b{position:absolute;top:14px;transform:translateX(-50%);font-style:normal;font-size:calc(14px*var(--k,1));color:var(--v9-l1)}
+.par9{padding:18px 16px!important;border-radius:22px!important;margin-bottom:14px}.par9>b{display:block;font-size:calc(18px*var(--k,1));margin-bottom:4px}.par9 p{margin:12px 0 0;color:var(--v9-l2);font-size:calc(14px*var(--k,1))}
+.par9 .pr{display:flex;flex-direction:column;gap:10px;margin-top:12px}.par9 .pr span{display:grid;grid-template-columns:52px minmax(0,1fr);align-items:center;column-gap:10px}
+.par9 .pr em{font-style:normal;font-weight:700}.par9 .pr i{display:block;height:14px;border-radius:7px}.par9 .pr small{grid-column:2;color:var(--v9-l2);font-size:calc(13px*var(--k,1))}
+.par9 .p3 em{color:var(--v9-p3,#2563EB)}.par9 .p3 i{background:var(--v9-p3,#2563EB)}.par9 .p4 em{color:var(--v9-p4,#15803D)}.par9 .p4 i{background:var(--v9-p4,#15803D)}.par9 .p5 em{color:var(--v9-p5,#BE185D)}.par9 .p5 i{background:var(--v9-p5,#BE185D)}

@@ -410,9 +410,9 @@
   function sayBtns() { var on = sayOn(); return '<span class="sndw"><button type="button" class="tb snd' + (on ? ' on' : '') + '" data-act="say" aria-pressed="' + on + '" aria-label="홀 안내 ' + (on ? '켜짐 · 누르면 끔' : '꺼짐 · 누르면 켬') + '" title="홀 안내">' + LZ.ic(on ? 'sound' : 'mute') + '</button><button type="button" class="tb sagain" data-act="sayNow" aria-label="홀 안내 다시 듣기" title="다시 듣기"' + (on ? '' : ' disabled') + '>' + LZ.ic('again') + '</button></span>'; }
   function playHdr() { return LZ.hdr('플레이', { back: true, nosub: 1, sound: sayBtns(), noRf: 1 }); }
   /** v9.1.3 쉬운 기록: 좌우 · 볼스피드만 크게(처음엔 켜짐 — 기록이 아직 없는 분) */
-  function easyOn() { var v = store.get('lz.easy'); return v === null || v === undefined || v === '' ? !(S.me && S.me.last) : v === '1'; }
+  function easyOn() { return store.get('lz.easy') !== '0'; }   // v9.5 누구나 기본은 간단히(좌우 · 볼스피드 · 다음) — 설정에서 끌 수 있어요
   var EASYX = false;
-  LZ.act.plMore = function () { EASYX = !EASYX; document.body.classList.toggle('easyx', EASYX); var b = $('.more9e'); if (b) b.innerHTML = EASYX ? '− 접기' : '＋ 더 적기 <small>방향 기준 · 끊어치기 · 주의 · 메모</small>'; };
+  LZ.act.plMore = function () { EASYX = !EASYX; document.body.classList.toggle('easyx', EASYX); var b = $('.more9e'); if (b) b.innerHTML = EASYX ? '− 접기' : '＋ 더 보기 <small>끊어치기 · 주의 · 메모 · 클럽 팁 · 방향 기준</small>'; if (typeof fitPad === 'function') fitPad(); };
   var HARD = ['좌우가 뭔지', '볼스피드 숫자', '저장이 됐는지', '글씨가 작아요', '파 · 거리 넣기', '끊어치기 · 주의', '기타'];
   LZ.act.plHard = function () {
     LZ.sheet('<h2>어디가 어려우세요?</h2><p class="muted">누르면 우리 클럽 캡틴이 도와드려요(관리자에게는 이름 없이)</p><div class="chips9">' + HARD.map(function (w) { return '<button type="button" data-act="plHardGo" data-v="' + esc(w) + '">' + esc(w) + '</button>'; }).join('') + '</div>' +
@@ -536,7 +536,7 @@
     root = root || $('#app');
     root.innerHTML = playHdr() + '<div class="wrap play3 play2 v9play">' + playBody() + '</div>' + playFix();
     var ez = easyOn() && !ED.empty; document.body.classList.toggle('easy9', ez); document.body.classList.toggle('easyx', ez && EASYX);
-    if (ez) { var am = root.querySelector('.v9play .aim'); if (am) am.insertAdjacentHTML('afterend', '<button type="button" class="more9e" data-act="plMore">' + (EASYX ? '− 접기' : '＋ 더 적기 <small>방향 기준 · 끊어치기 · 주의 · 메모</small>') + '</button>'); }
+    if (ez) { var am = root.querySelector('.v9play .aim'); if (am) am.insertAdjacentHTML('afterend', '<button type="button" class="more9e" data-act="plMore">' + (EASYX ? '− 접기' : '＋ 더 보기 <small>끊어치기 · 주의 · 메모 · 클럽 팁 · 방향 기준</small>') + '</button>'); }
     var tp = ED.d && ED.d.tips; if (tp && !ED.empty) { var tw = root.querySelector('.v9play'); if (tw) tw.insertAdjacentHTML('afterbegin', '<button type="button" class="tip9c" data-act="plTips">' + LZ.ic('bulb') + '<b>클럽 팁</b>' + (tp[ED.i] ? '<span>' + tp[ED.i] + '</span>' : '<small>첫 팁 남기기</small>') + '</button>'); }   // v9.3
     fitPad();
     if (!ED.empty) setTimeout(playCoach, 450);

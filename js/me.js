@@ -35,7 +35,7 @@
       var u = S.user, m = S.me, ad = m.admin || {}, pi = m.points || {}, adm = u.kind === 'admin', nx = pi.next, so = pi.soon;
       var nf = function (n) { return Number(n || 0).toLocaleString('ko-KR'); };
       root.innerHTML = LZ.hdr('내 정보', { btns: '<button type="button" class="tb" data-act="logout" aria-label="로그아웃" title="로그아웃">' + LZ.ic('logout') + '</button>' }) + '<div class="wrap v8">' +
-        '<div class="me9"><div class="prof"><button type="button" class="avbtn" data-act="avatarMenu" aria-label="프로필 사진 바꾸기">' + LZ.avatar(u, 'big') + '</button><div class="pt"><div class="nm">' + esc(adm ? '관리자' : u.nick) + '</div><div class="su tier">' + esc(tierShort(u)) + (pi.lvName && !adm ? ' · ' + esc(pi.lvName) : '') + '</div>' + (u.created ? '<div class="su">가입 ' + LZ.fmtDate(u.created) + '</div>' : '') + ((u.tier === 'red' || u.tier === 'gold') && u.end ? '<div class="su">' + (u.tier === 'red' ? '레드' : '골드') + ' ~' + LZ.fmtYmd(u.end) + '</div>' : '') + '</div></div>' +
+        '<div class="me9"><div class="prof"><button type="button" class="avbtn" data-act="avatarMenu" aria-label="프로필 사진 바꾸기">' + LZ.avatar(u, 'big') + '</button><div class="pt"><div class="nm">' + esc(adm ? '관리자' : u.nick) + '</div>' + (u.created ? '<div class="su">가입 ' + LZ.fmtDate(u.created) + '</div>' : '') + ((u.tier === 'red' || u.tier === 'gold') && u.end ? '<div class="su">' + (u.tier === 'red' ? '레드' : '골드') + ' ~' + LZ.fmtYmd(u.end) + '</div>' : '') + '</div></div>' +
         (adm ? '</div><div class="list"><button type="button" class="li cont" data-go="dash">' + LZ.ic('gear', 'gi') + '<div class="t"><b>관리자</b><span class="su">결제 ' + (ad.pay || 0) + ' · 환불 ' + (ad.refund || 0) + ' · 비밀번호 ' + (ad.pw || 0) + ' · 문의 ' + (ad.qna || 0) + (ad.gold ? ' · 골드 만기 ' + ad.gold : '') + '</span></div>' + LZ.ic('chev') + '</button></div>'
           : '<button type="button" class="pts ptwo" data-go="mePoints"><span><em>적립 포인트</em><b>' + nf(pi.bal) + 'P</b><small>' + (so && so.amt && so.left <= 30 ? '곧 사라질 ' + nf(so.amt) + 'P' + (so.date ? ' · ' + LZ.fmtYmd(so.date) : '') : '기록하면 쌓여요') + '</small></span>' +
             '<span><em>레벨 점수</em><b>' + nf(pi.lvp) + '점</b><small>' + (nx ? esc(nx.name) + '까지 ' + nf(nx.need) + '점' : '가장 높은 레벨') + '</small></span></button>' +
@@ -68,7 +68,7 @@
       var tg = function (t, sub, sw) { return '<div class="tgl"><span>' + t + (sub ? '<span class="muted">' + sub + '</span>' : '') + '</span>' + sw + '</div>'; };
       var sg = function (t) { return '<div class="sgh">' + t + '</div>'; };
       root.innerHTML = LZ.hdr('설정', { back: true }) + '<div class="wrap v8 sett">' +
-        sg('화면') + '<div class="list"><div class="tgl seg9w">' + LZ.seg([['auto', '기기 따라'], ['light', '밝게'], ['dark', '어둡게']], LZ.v9 ? LZ.v9.themeMode() : 'auto', 'themeSet', 's') + '</div>' + tg('글씨 크게', '보통 · 크게 두 단계 · 위 막대 가 단추와 같아요', LZ.sw(LZ.big.get(), 'big')) + tg('쉬운 기록', '플레이 화면에 좌우 · 볼스피드만 크게 · 나머지는 [더 적기]', LZ.sw(store.get('lz.easy') === '1' || (!store.get('lz.easy') && !(m && m.last)), 'easySet')) + '</div>' +
+        sg('화면') + '<div class="list"><div class="tgl seg9w">' + LZ.seg([['auto', '기기 따라'], ['light', '밝게'], ['dark', '어둡게']], LZ.v9 ? LZ.v9.themeMode() : 'auto', 'themeSet', 's') + '</div>' + tg('글씨 크게', '보통 · 크게 두 단계 · 위 막대 가 단추와 같아요', LZ.sw(LZ.big.get(), 'big')) + tg('쉬운 기록', '플레이 화면에 좌우 · 볼스피드만 크게 · 나머지는 [더 적기]', LZ.sw(store.get('lz.easy') !== '0', 'easySet')) + '</div>' +
         sg('소리·진동') + '<div class="list">' + tg('단추 진동', '누르면 짧게 떨려요(아이폰은 눌림 움직임으로)', LZ.sw(store.get('lz.buzz') !== '0', 'buzz')) +
           grow('sound', '홀 안내 목소리', esc(v ? v.name : '휴대폰 기본') + ' · 켬·끔은 플레이 화면에서', 'data-act="voicePick"') + '</div>' +
         sg('알림') + '<div class="list" id="setNoti">' + setNotiRows(tg) + '</div>' +
@@ -248,22 +248,24 @@
       });
     }
   };
-  LZ.act.easySet = function () { var on = store.get('lz.easy') === '1' || (!store.get('lz.easy') && !(S.me && S.me.last)); store.set('lz.easy', on ? '0' : '1'); LZ.redraw(); };
+  LZ.act.easySet = function () { var on = store.get('lz.easy') !== '0'; store.set('lz.easy', on ? '0' : '1'); LZ.redraw(); };
   /* 도움 */
   LZ.screens.helpHub = {
     tab: 'me',
     show: function (p, root) {
       var m = S.me || {};
-      root.innerHTML = LZ.hdr('도움말', { back: true }) + '<div class="wrap"><div class="card tight groups">' +
-        grow('play', '처음 시작하기', '그림 3장 · 코스 만들기 · 가져오기 · 홀 적기', 'data-go="howto"') +
-        grow('ball', '파크골프 첫걸음', '규칙 · 점수 세는 법 · 매너', 'data-go="firstSteps"') +
-        grow('trophy', '시상식 안내', '상 종류 · 발표 차례 · 결과 그림 보내기', 'data-go="awGuide"') +
-        grow('book', '자세한 사용 안내', '기준 · 규칙을 한눈에', 'data-go="guide"') +
-        (m.qnaOn ? grow('chat', '문의하기', '관리자에게 1:1' + (m.qna ? ' · 답변 ' + m.qna + '건' : ''), 'data-go="qnaList"') : '') +
-        grow('note', '공지·소식', '관리자 공지와 클럽 소식', 'data-go="notices" data-p=\'{"manage":0}\'') +
-        grow('home', '홈 화면에 추가', '앱처럼 열고 알림도 받아요', 'data-act="homeAdd"') +
-        grow('help', '처음 안내 다시 보기', '홈에서 코치 말풍선을 다시 보여 드려요', 'data-act="coachAgain"') +
-        '</div></div>';
+      var tile = function (ic, t, s, attrs) { return '<button type="button" class="ht9" ' + attrs + '><i>' + LZ.ic(ic) + '</i><b>' + t + '</b><small>' + s + '</small></button>'; };
+      root.innerHTML = LZ.hdr('도움말', { back: true }) + '<div class="wrap help9">' +
+        '<button type="button" class="start9" data-go="howto"><span class="k">처음이세요?</span><b>그림 3장으로 바로 시작</b><span class="s">코스 만들기 · 가져오기 · 홀 적기</span><i>' + LZ.ic('chev') + '</i></button>' +
+        '<div class="hdr9">배우기</div><div class="hg9">' +
+          tile('ball', '파크골프 첫걸음', '규칙 · 점수 · 매너', 'data-go="firstSteps"') +
+          tile('book', '사용 안내', '그림으로 보는 기준', 'data-go="guide"') +
+          tile('trophy', '시상식 안내', '상 · 발표 · 결과 그림', 'data-go="awGuide"') +
+          tile('help', '따라 하기 다시', '홈 · 플레이 말풍선', 'data-act="coachAgain"') + '</div>' +
+        '<div class="hdr9">도움 받기</div><div class="hg9">' +
+          (m.qnaOn ? tile('chat', '문의하기', '관리자에게 1:1' + (m.qna ? ' · 답변 ' + m.qna : ''), 'data-go="qnaList"') : '') +
+          tile('note', '공지 · 소식', '공지와 클럽 소식', 'data-go="notices" data-p=\'{"manage":0}\'') +
+          tile('home', '홈 화면에 추가', '앱처럼 열고 알림 받기', 'data-act="homeAdd"') + '</div></div>';
     }
   };
   /* 닉네임 바꾸기 3단계(#17): ① 새 이름 → 중복 검사 ② "홍길동 → 김영희" 확인 ③ "정말 바꿀까요?" */
