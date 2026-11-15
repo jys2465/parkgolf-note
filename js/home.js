@@ -552,6 +552,24 @@
     awards: { title: '시상식 안내', api: ['guideCards', { g: 'awards' }], lead: '라운드 끝, 시상식은 이렇게 해요', sub: '여섯 가지만 보면 돼요. 아래 칸을 누르면 그 설명으로 가요. 맨 아래에서 샘플 조로 미리 해 볼 수 있어요.',
       foot: '<div class="card awdemo"><b>직접 눌러 보세요</b><span>샘플 조 4명(18홀)으로 꾸민 시상식이에요. 상을 켜고 끄거나 차례를 바꿔도 내 기록에는 남지 않아요.</span><button type="button" class="btn gold" data-act="awDemo">' + LZ.ic('trophy') + '시상식 미리보기 시작</button></div>' }
   };
+  /** 안내 카드 제목에 맞는 그림(관리자가 제목을 바꾸면 그림 없이 글만) */
+  function chips9(list) { return '<div class="sc9">' + list.map(function (x) { return '<span class="' + (x[2] || '') + '"><b>' + x[0] + '</b>' + (x[1] ? '<small>' + x[1] + '</small>' : '') + '</span>'; }).join('') + '</div>'; }
+  function cardPic(t) {
+    t = String(t || '');
+    if (/파크골프란/.test(t)) return LZ.dgRow([['ball', '공 하나 · 클럽 하나'], ['flag', '홀컵에 넣기'], ['33', '9홀 기준 33타']]);
+    if (/기본 규칙/.test(t)) return LZ.dgRow([['1', '티에서 첫 타'], ['2', '홀컵에서 먼 공부터'], ['flag', '홀컵에 넣으면 끝']]) + chips9([['OB', '+2타', 'r'], ['공 잃어버림', '+2타', 'r'], ['헛스윙', '안 셈', '']]);
+    if (/점수 용어/.test(t)) return chips9([['홀인원', '1타', 'g'], ['이글', '−2', 'g'], ['버디', '−1', 'g'], ['파', '0', ''], ['보기', '+1', 'r'], ['더블보기', '+2', 'r']]);
+    if (/스크린 용어/.test(t)) return LZ.dgRow([['첫화면', '어디서 봤는지'], ['◀▶', '좌우 몇 칸'], ['24', '볼스피드']]);
+    if (/매너|안전/.test(t)) return LZ.dgRow([['search', '앞 · 옆 살피기'], ['mute', '칠 때는 조용히'], ['sound', '“포어!” 알리기']]);
+    if (/앱 용어/.test(t)) return LZ.dgRow([['book', '내 수첩'], ['club', '클럽'], ['field', '필드 라운드']]);
+    if (/시상식이란/.test(t)) return LZ.dgRow([['flag', '라운드 끝'], ['trophy', '상 하나씩 발표'], ['note', '결과 그림']]);
+    if (/개별 라운드/.test(t)) return chips9([['행운상', ''], ['파 지킴이', ''], ['버디 사냥꾼', ''], ['이글', ''], ['홀인원', ''], ['장려', '3위'], ['준우승', '2위'], ['우승', '1위', 'g']]);
+    if (/1부|조별/.test(t)) return LZ.dgRow([['club', '조 순위'], ['medal', '조 시상'], ['trophy', '우승 조']]);
+    if (/2부|개인/.test(t)) return LZ.dgRow([['user', '개인 순위'], ['medal', '개인 시상'], ['trophy', '우승']]);
+    if (/상 고르기|순서/.test(t)) return LZ.dgRow([['check', '상 켜고 끄기'], ['sort', '차례 바꾸기'], ['star', '겹쳐 받기 정하기']]);
+    if (/결과 그림/.test(t)) return LZ.dgRow([['note', '결과 그림'], ['kakao', '카카오톡으로'], ['down', '사진으로 저장']]);
+    return '';
+  }
   function guideShow(g) {
     var G = GUIDE[g];
     return async function (p, root, alive) {
@@ -563,7 +581,10 @@
         : '<div class="card par9"><b>시상식은 네 걸음</b>' + LZ.dgRow([['flag', '라운드 끝'], ['star', '상 고르기'], ['trophy', '발표'], ['note', '결과 그림']]) + '</div>';
       root.innerHTML = H + '<div class="wrap fsw"><div class="fsin"><b>' + G.lead + '</b><span>' + G.sub + '</span></div>' + pic +
         '<div class="fsx">' + r.cards.map(function (c, i) { return '<button type="button" class="fst" data-act="fsJump" data-v="' + (i + 1) + '">' + LZ.ic(c.ic) + '<b>' + esc(c.t) + '</b></button>'; }).join('') + '</div>' +
-        r.cards.map(function (c, i) { return '<section class="card fsc" id="fs' + (i + 1) + '"><div class="fsh"><span class="fsi">' + LZ.ic(c.ic) + '</span><span class="fsn">' + (i + 1) + '</span><h3>' + esc(c.t) + '</h3></div><ul class="fsb ntbody">' + LZ.cleanHtml(c.b).split(/<br\s*\/?>/i).filter(function (x) { return x.trim(); }).map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></section>'; }).join('') +
+        r.cards.map(function (c, i) {
+          var li = LZ.cleanHtml(c.b).split(/<br\s*\/?>/i).filter(function (x) { return x.trim(); }), pic = cardPic(c.t);
+          return '<section class="card fsc" id="fs' + (i + 1) + '"><div class="fsh"><span class="fsi">' + LZ.ic(c.ic) + '</span><span class="fsn">' + (i + 1) + '</span><h3>' + esc(c.t) + '</h3></div>' + pic +
+            '<ul class="fsb ntbody">' + (li[0] ? '<li>' + li[0] + '</li>' : '') + '</ul>' + (li.length > 1 ? '<details class="gdm"><summary>자세히 보기</summary><ul class="fsb ntbody">' + li.slice(1).map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></details>' : '') + '</section>'; }).join('') +
         (G.foot || '') + '<p class="hint">' + esc(r.note || '') + '</p>' + (S.user && S.user.kind === 'admin' ? '<button type="button" class="btn g sm" data-go="firstAdmin"' + (g === 'first' ? '' : ' data-p=\'{"g":"' + g + '"}\'') + '>' + LZ.ic('edit') + '안내 글 고치기(관리자)</button>' : '') + '</div>';
     };
   }
