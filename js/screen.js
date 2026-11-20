@@ -68,13 +68,14 @@
   /** 진행 고리: 다 적으면 청록 ✓ · 적는 중이면 금색 고리 + 홀 수 · 안 적었으면 빈 고리 */
   function ring(c) {
     var st = cStat(c), p = Math.min(1, c.mine / c.n), C = 2 * Math.PI * 12;
+    if (SIMPLE) return '<span class="cnt9' + (st === 'done' ? ' done' : '') + '" aria-label="' + c.mine + '/' + c.n + '홀 기록"><b>' + c.mine + '</b><small>/' + c.n + '</small></span>';
     if (st === 'done') return '<span class="ring done" aria-label="기록 완료">' + LZ.ic('check') + '</span>';
     return '<span class="ring" aria-label="' + c.mine + '/' + c.n + '홀"><svg viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="12" class="rb"/>' + (p > 0 ? '<circle cx="15" cy="15" r="12" class="rf" stroke-dasharray="' + (C * p).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 15 15)"/>' : '') + '</svg>' + (c.mine ? '<b>' + c.mine + '</b>' : '') + '</span>';
   }
   function cRow(c) {
     var st = cStat(c), sub = c.n + '홀 · ' + (st === 'done' ? '기록 완료' : st === 'ing' ? c.mine + '홀 기록' : '미기록') + (c.filledH !== undefined && c.filledH < 18 && c.n === 18 ? ' · 파·거리 ' + c.filledH + '/18' : '');
     return '<div class="crow9" data-nm="' + esc(String(c.name).toLowerCase().replace(/\s+/g, '')) + '">' + ring(c) +
-      '<button type="button" class="l" data-act="openC" data-v="' + esc(c.id) + '"><b class="v9one">' + esc(c.name) + '</b><small>' + sub + '</small><small class="meta9"><span class="st9" aria-label="난이도 ' + c.stars + '">' + LZ.stars(c.stars) + '</span>' + (c.mode ? ' · ' + LZ.MODE[c.mode.g] + ' · ' + LZ.HL[c.mode.h] : '') + ' · 등록 ' + esc(c.reg || '–') + ' · ' + LZ.fmtDate(c.created) + '</small></button>' +
+      '<button type="button" class="l" data-act="openC" data-v="' + esc(c.id) + '"><b class="v9one">' + esc(c.name) + '</b><small>' + sub + '</small><small class="meta9"><span class="st9" aria-label="난이도 ' + c.stars + '">' + LZ.stars(c.stars) + '</span>' + (SIMPLE ? '' : (c.mode ? ' · ' + LZ.MODE[c.mode.g] + ' · ' + LZ.HL[c.mode.h] : '')) + ' · 등록 ' + esc(c.reg || '–') + (SIMPLE ? '' : ' · ' + LZ.fmtDate(c.created)) + '</small></button>' +
       '<button type="button" class="lk' + (c.pub ? '' : ' off') + '" data-act="cPub" data-v="' + esc(c.id) + '" aria-label="' + (c.pub ? '공개 중 · 누르면 비공개' : '비공개 · 누르면 공개') + '">' + LZ.ic(c.pub ? 'unlock' : 'lock') + '</button></div>';
   }
   /* 정렬 창: 보기(전체 · 완료 · 기록 중 · 안 함) + 정렬 하나로 */
@@ -107,6 +108,7 @@
   LZ.act.cPub = async function (el, cid) { var c = CL && CL.courses.filter(function (x) { return x.id === cid; })[0]; await setPub(cid, !(c ? c.pub : 1)); if (CL) LZ.cacheSet('courses2', CL); LZ.redraw(); };
 
   /* ═════════ v8 공통: 끊어가기·주의(코스에 하나) · 한 격자 줄 ═════════ */
+  var SIMPLE = true;   // v9.8 코스 전체 · 홀별 특이사항만 남기고 끊어치기 · 주의하기 · 막대 그림은 쉬어요
   function layAt(c, i) { var L = +((c.lay || [])[i]) || 0, hm = +(c.holes[i] && c.holes[i][1]) || 0; return L > 0 && L < hm ? L : 0; }
   /** v9 두 번째 끊는 거리(세 번에 나눠 칠 때만) */
   function lay2At(c, i) { var L = layAt(c, i), M = +((c.lay2 || [])[i]) || 0, hm = +(c.holes[i] && c.holes[i][1]) || 0; return L && M > 0 && L + M < hm ? M : 0; }
@@ -115,9 +117,9 @@
   var SHN = ['1st', '2nd', '3rd'];
   function shotOf(r, k) { return k === 2 ? r.s3 : k === 1 ? r.s2 : r; }
   function hasDist(c, i) { return +(c.holes[i] && c.holes[i][1]) > 0; }
-  function slAt(c, i) { var s = (c.slope || [])[i]; return s === 'up' || s === 'down' ? s : ''; }
+  function slAt(c, i) { if (SIMPLE) return ''; var s = (c.slope || [])[i]; return s === 'up' || s === 'down' ? s : ''; }
   /** v9 주의하기 · 조심하기(코스에 하나, 홀마다) */
-  function caAt(c, i) { var x = (c.ca || [])[i]; if (!x || typeof x !== 'object') { var sl = slAt(c, i); x = { u: sl === 'up' ? ['오르막'] : [], d: sl === 'down' ? ['내리막'] : [], z: [], ut: '', dt: '', zt: '' }; } x.u = x.u || []; x.d = x.d || []; x.z = x.z || []; return x; }
+  function caAt(c, i) { var x = SIMPLE ? { u: [], d: [], z: [], ut: '', dt: '', zt: '' } : (c.ca || [])[i]; if (!x || typeof x !== 'object') { var sl = slAt(c, i); x = { u: sl === 'up' ? ['오르막'] : [], d: sl === 'down' ? ['내리막'] : [], z: [], ut: '', dt: '', zt: '' }; } x.u = x.u || []; x.d = x.d || []; x.z = x.z || []; return x; }
   function caParts(c, i) { var x = caAt(c, i); return { u: x.u.concat(x.ut ? [x.ut] : []), d: x.d.concat(x.dt ? [x.dt] : []), z: x.z.concat(x.zt ? [x.zt] : []) }; }
   function caN(c, i) { var p = caParts(c, i); return p.u.length + p.d.length + p.z.length; }
   /** 주의 · 조심 낱말을 모두 한 번에(“외 2” 없이) — 바로 아래에 기록이 붙어요 */
@@ -126,9 +128,9 @@
   function shotDist(c, i, k) { var hm = +c.holes[i][1], L = layAt(c, i), M = lay2At(c, i); if (!L) return hm; if (!k) return L; if (M) return k === 1 ? M : LZ.r1(hm - L - M); return LZ.r1(hm - L); }
   function baseOf(c, i, k, v) { return LZ.sugOf(shotDist(c, i, k), v.g, v.h); }
   LZ.layAt = layAt; LZ.slAt = slAt;
-  function bar9(v, cls) { var b = LZ.bsParts(v); return '<span class="bar9 ' + (cls || '') + '" aria-hidden="true"><span class="bl">' + b.lo + '</span><span class="bt"><i style="left:' + b.pos + '%"></i></span><span class="bh">' + b.hi + '</span></span>'; }
+  function bar9(v, cls) { if (SIMPLE) return ''; var b = LZ.bsParts(v); return '<span class="bar9 ' + (cls || '') + '" aria-hidden="true"><span class="bl">' + b.lo + '</span><span class="bt"><i style="left:' + b.pos + '%"></i></span><span class="bh">' + b.hi + '</span></span>'; }
   /** 기준과 차이: 1 이내 ● · 주의가 있으면 "크게 +1.5"(설명된 차이) · 없으면 ▲▼ */
-  function dTxt(p, s, sl) { var d = LZ.dvOf(p, s); if (!d) return '<span class="okd" aria-label="기준과 1 이내">●</span>'; return '<span class="dvt">' + (sl ? (sl === 'up' ? '크게 ' : '작게 ') + (d > 0 ? '+' : '−') : (d > 0 ? '▲' : '▼')) + LZ.fmtP(Math.abs(d)) + '</span>'; }
+  function dTxt(p, s, sl) { if (SIMPLE) return ''; var d = LZ.dvOf(p, s); if (!d) return '<span class="okd" aria-label="기준과 1 이내">●</span>'; return '<span class="dvt">' + (sl ? (sl === 'up' ? '크게 ' : '작게 ') + (d > 0 ? '+' : '−') : (d > 0 ? '▲' : '▼')) + LZ.fmtP(Math.abs(d)) + '</span>'; }
   function slTag(sl) { return sl === 'up' ? '↑ 강하게' : sl === 'down' ? '↓ 약하게' : '없음'; }
   function distH(c, i) { if (!hasDist(c, i)) return '<span class="dm none">거리 –</span>'; var sl = slAt(c, i); return '<span class="dm' + (sl ? ' ' + (sl === 'up' ? 'up' : 'dn') : '') + '">' + LZ.fmtM(c.holes[i][1]) + 'm' + (sl ? (sl === 'up' ? '↑' : '↓') : '') + '</span>'; }
   /** 참고 글: **낱말** 은 굵게, 자주 쓰는 낱말은 저절로 굵게 */
@@ -167,18 +169,18 @@
   /** 홀 한 칸(코스·쉬는/끝 화면 같은 모양): 홀 | 거리·파 | 방향·좌우 / 기준 | 볼스피드 / 막대, 끊어 홀은 1st(모래)·2nd(민트) 줄 */
   function recBox(c, i, k, r, x, v, sl, cm, lay) {
     var base = baseOf(c, i, k, v), lab = lay ? '<span class="shb">' + SHN[k] + '</span> ' + LZ.fmtM(shotDist(c, i, k)) + 'm · ' : '';
-    if (!x) return '<div class="rec9' + (lay ? ' s' + (k + 1) : '') + ' e"><div class="l"><small>' + lab + '아직 없음</small><span class="lr0">–</span><small>기준 ' + LZ.bsTxt(base) + '</small></div><b class="bs">' + LZ.bsTxt(base) + '</b>' + (cm ? '<div class="cm">' + cm + '</div>' : '') + '</div>';
+    if (!x) return '<div class="rec9' + (lay ? ' s' + (k + 1) : '') + ' e"><div class="l"><small>' + lab + '아직 없음</small><span class="lr0">–</span>' + (SIMPLE ? '' : '<small>기준 ' + LZ.bsTxt(base) + '</small>') + '</div><b class="bs">' + LZ.bsTxt(base) + '</b>' + (cm ? '<div class="cm">' + cm + '</div>' : '') + '</div>';
     var mv = LZ.conv(x.p, r.g, r.h, v.g, v.h);
-    return '<div class="rec9' + (lay ? ' s' + (k + 1) : '') + '"><div class="l"><small>' + lab + esc(LZ.refTxt(x)) + '</small><span class="lr">' + LZ.lrTxt(x) + '</span><small>기준 ' + LZ.bsTxt(base) + ' ' + dTxt(mv, base, sl) + '</small></div><b class="bs" data-bs="' + mv + '">' + LZ.bsTxt(mv) + '</b>' + (cm ? '<div class="cm">' + cm + '</div>' : '') + '</div>';
+    return '<div class="rec9' + (lay ? ' s' + (k + 1) : '') + '"><div class="l"><small>' + lab + esc(LZ.refTxt(x)) + '</small><span class="lr">' + LZ.lrTxt(x) + '</span>' + (SIMPLE ? '' : '<small>기준 ' + LZ.bsTxt(base) + ' ' + dTxt(mv, base, sl) + '</small>') + '</div><b class="bs" data-bs="' + mv + '">' + LZ.bsTxt(mv) + '</b>' + (cm ? '<div class="cm">' + cm + '</div>' : '') + '</div>';
   }
   function holeRow(d, i, v, mode, o) {
     o = o || {};
     var c = d.course, h = c.holes[i], r = d.mine[i], L = layAt(c, i), ns = nSh(c, i), sl = slAt(c, i), ed = !o.ro && EDIT === c.id, cm = cmpOf(d, i, v, mode) || {};
     var act = ' data-act="' + (o.act || 'hHole') + '" data-v="' + i + '" role="button" tabindex="0"';
-    var nt = r.r && r.o ? '<span class="ntb" role="button" tabindex="0" data-act="cNote" data-v="' + i + '" aria-expanded="' + (NOTE === i) + '" aria-label="' + (i + 1) + '홀 메모 ' + (NOTE === i ? '닫기' : '보기') + '">' + LZ.ic('notef', 'nt') + '</span>' : '';
+    var nt = SIMPLE ? '' : r.r && r.o ? '<span class="ntb" role="button" tabindex="0" data-act="cNote" data-v="' + i + '" aria-expanded="' + (NOTE === i) + '" aria-label="' + (i + 1) + '홀 메모 ' + (NOTE === i ? '닫기' : '보기') + '">' + LZ.ic('notef', 'nt') + '</span>' : '';
     var head = '<div class="hh9"' + act + ' aria-label="' + (i + 1) + '홀 플레이">' + LZ.hn9(i + 1) + '<span class="hm">' + LZ.parMk(h[0]) + ' · ' + distH(c, i) + (L ? ' · <span class="cutn">끊어치기 ' + ns + '번</span>' : '') + '</span>' + nt + '</div>';
     var edr = ed ? '<div class="edch"><button type="button" class="lchip' + (L ? ' on' : '') + '" data-act="cLay" data-v="' + i + '">끊어치기 · ' + (L ? ns + '번' : '없음') + ' ▾</button><button type="button" class="lchip' + (caN(c, i) ? ' on' : '') + '" data-act="cSlope" data-v="' + i + '">주의 · ' + (caN(c, i) ? caN(c, i) + '개' : '없음') + ' ▾</button></div>' : '';
-    var extra = (o.note ? '<div class="cnote">' + o.note + '</div>' : '') + (r.chg && !o.ro ? '<div class="cnote chg">기준 바뀜 · 예전 값은 플레이 › 메모 ▾</div>' : '') + (NOTE === i && r.o ? '<div class="cnote open">메모 · ' + hiNote(r.o) + '</div>' : '');
+    var extra = (o.note ? '<div class="cnote">' + o.note + '</div>' : '') + (r.chg && !o.ro && !SIMPLE ? '<div class="cnote chg">기준 바뀜 · 예전 값은 플레이 › 메모 ▾</div>' : '') + ((SIMPLE || NOTE === i) && r.o ? '<div class="cnote open hn9t">' + hiNote(r.o) + '</div>' : '');
     var body;
     if (!hasDist(c, i)) body = '<div class="rec9 none"' + act + '>파 · 거리는 플레이하며 넣어요</div>';
     else if (!L) body = '<div' + act + '>' + recBox(c, i, 0, r, r.r ? r : null, v, sl, cm.one || '', false) + '</div>';
@@ -225,11 +227,11 @@
     var colh = '<div class="colh9"><span>홀</span><span>방향 · 좌우</span><span>볼스피드</span></div>';
     return LZ.hdr('코스', { back: true, btns: more }) + '<div class="wrap cpage cpage9">' +
       '<h1 class="ct9">' + esc(c.name) + '</h1>' +
-      '<div class="cap9">' + n + '홀 · ' + (function () { var hs = c.holes.slice(0, n), ps = hs.reduce(function (a, h) { return a + (+h[0] || 0); }, 0), ms = LZ.r1(hs.reduce(function (a, h) { return a + (+h[1] || 0); }, 0)); return (ps ? '파 ' + ps + ' · ' : '') + (ms ? ms.toLocaleString() + 'm · ' : ''); })() + LZ.stars(c.stars) + ' · ' + (filled >= n ? '기록 완료' : filled + '홀 기록') + ' · <button type="button" class="pubc9" data-act="hPubSheet">' + LZ.ic(d.pub ? 'unlock' : 'lock') + (d.pub ? '공개' : '비공개') + '</button></div>' +
+      '<div class="cap9">' + n + '홀 · 기록 ' + filled + '/' + n + (d.pub ? '' : ' · 비공개') + '</div>' +
+      '<button type="button" class="nr9 co cn9c' + (d.cnote ? ' on' : '') + '" data-act="plCnote"><span class="k">코스</span><span class="v">' + (d.cnote ? hiNote(d.cnote) : '<em>코스 전체 특이사항</em>') + '</span>' + LZ.ic(d.cnote ? 'edit' : 'plus') + '</button>' +
       '<div class="cbtn9"><button type="button" class="btn" data-act="hPlay" data-v="' + start + '">' + (start > 0 ? '이어서 · ' + (start > 8 ? (start - 8) + '홀 (' + (start + 1) + ')' : (start + 1) + '홀') : '플레이 시작') + '</button>' + (n === 18 ? '<button type="button" class="btn g" data-act="hPlay" data-v="9">후반부터</button>' : '') + '</div>' +
       (c.stage === 'front' && (c.mineReg || S.user.kind === 'admin') ? '<button type="button" class="btn g" data-go="reg" data-p=\'' + esc(JSON.stringify({ id: c.id, half: 1, name: c.name })) + '\'>후반 9홀 등록 마치기 ›</button>' : '') +
-      '<div class="pills9"><button type="button" class="pill9" data-act="hHl">' + (diff ? '<span class="dot" aria-label="기록 기준과 다름"></span>' : '') + '<span>' + LZ.MODE[v.g] + ' · ' + LZ.HL[v.h] + '</span>' + LZ.ic('down') + '</button>' +
-      '<button type="button" class="pill9' + (mode !== 'off' ? ' on' : '') + '" data-act="hCmpSheet"' + (!d.clubs.length ? ' aria-disabled="true"' : '') + '><span>' + (mode === 'off' ? '비교 끔' : esc(cmpName)) + '</span>' + LZ.ic('down') + '</button></div>' +
+      (d.clubs.length ? '<div class="pills9 one"><button type="button" class="pill9' + (mode !== 'off' ? ' on' : '') + '" data-act="hCmpSheet"><span>' + (mode === 'off' ? '다른 회원 기록과 비교' : '비교 · ' + esc(cmpName)) + '</span>' + LZ.ic('down') + '</button></div>' : '') +
       (diff ? '<p class="fn9">기록은 ' + LZ.modeTxt(bm) + '로 적었어요 · 지금은 ' + LZ.modeTxt(v) + '로 바꿔 보여요</p>' : '') +
       (empt ? '<div class="imp9"><div><small>클럽 회원 기록 가져오기</small><b>' + LZ.nimE(d.pick.nick) + ' · 빈 홀 ' + empt + '개</b></div><button type="button" class="btn" data-act="importAll">가져오기</button></div>' : '') +
       (ed ? '<div class="edbar"><div><b>끊어치기 · 주의 고치는 중</b><span>홀마다 [끊어치기 ▾] · [주의 ▾] · 코스에 하나 · 포인트 없음</span></div><button type="button" class="btn" data-act="cEdit" data-v="0">완료</button></div>' : '') +
@@ -237,7 +239,7 @@
       colh + (A ? '<div class="hdr9">전반 · 1–9홀</div><div class="grp9 holes9">' + A + '</div>' : '') +
       (B ? '<div class="hdr9">후반 · 1–9홀 (10–18홀)</div><div class="grp9 holes9">' + B + '</div>' : '') +
       (mode !== 'off' ? '<p class="fn9">' + esc(cmpName) + ' 기록도 ' + LZ.modeTxt(v) + LZ.ro(LZ.HL[v.h]) + ' 바꿔 보여요. 기록 칸 아래 글을 누르면 그 홀에 가져와요.' + (mode === 'avg' ? ' 평균은 공개한 회원 3명부터 보여요.' : '') + '</p>' : '') +
-      '<p class="fn9">↑ 강하게 · ↓ 약하게 · ⚠ 조심하기 · 끊어치는 홀은 1st · 2nd · 3rd 색 줄 · 홀을 누르면 그 홀부터 플레이 · 끊어치기 · 주의는 오른쪽 위 ⋯에서 고쳐요</p></div>';
+      '<p class="fn9">홀을 누르면 그 홀부터 플레이해요 · 끊어치는 홀은 1st · 2nd 줄로 보여요(플레이 화면 [끊어치기]에서 정해요)</p></div>';
   }
   LZ.screens.holes = {
     tab: 'courses',
@@ -262,7 +264,7 @@
   LZ.act.hPubSet = async function (el, v) { var d = CUR.d; LZ.closeSheet(); if (!!d.pub !== (v === '1')) await setPub(d.course.id, v === '1'); LZ.redraw(); };
   LZ.act.cMore = function () {
     var c = CUR.d.course;
-    LZ.sheet('<h2>' + esc(c.name) + '</h2>' + '<button type="button" class="opt" data-act="cEdit" data-v="1"><b>끊어치기 · 주의 고치기</b><span>홀마다 끊는 거리 · 강하게/약하게 · 조심하기 · 포인트 없음</span></button>' +
+    var v0 = viewOf(CUR.d); LZ.sheet('<h2>' + esc(c.name) + '</h2>' + '<button type="button" class="opt" data-act="hHl"><b>게임 모드 · 센서 탄도</b><span>지금 ' + LZ.MODE[v0.g] + ' · ' + LZ.HL[v0.h] + ' · 스크린 설정과 같게</span></button>' +
       (c.canEdit ? '<button type="button" class="opt" data-act="cInfoEdit"><b>코스 정보 고치기</b><span>이름 · 난이도 · 홀별 파·거리 · 기록 기준</span></button>' : '') +
       '<button type="button" class="opt" data-act="hPubSheet"><b>공개 · 비공개</b><span>지금 ' + (CUR.d.pub ? '공개' : '비공개') + '</span></button>' +
       '<button type="button" class="opt" data-act="cHide"><b>내 수첩에서 빼기</b><span>기록은 남아요 · 다시 가져오면 돌아와요</span></button>' +
@@ -412,7 +414,7 @@
   /** v9.1.3 쉬운 기록: 좌우 · 볼스피드만 크게(처음엔 켜짐 — 기록이 아직 없는 분) */
   function easyOn() { return store.get('lz.easy') !== '0'; }   // v9.5 누구나 기본은 간단히(좌우 · 볼스피드 · 다음) — 설정에서 끌 수 있어요
   var EASYX = false;
-  LZ.act.plMoreEz = function () { EASYX = !EASYX; document.body.classList.toggle('easyx', EASYX); var b = $('.more9e'); if (b) b.innerHTML = EASYX ? '− 접기' : '＋ 더 보기 <small>끊어치기 · 지난 값 · 클럽 팁 · 방향 기준</small>'; if (typeof fitPad === 'function') fitPad(); };
+  LZ.act.plMoreEz = function () { EASYX = !EASYX; document.body.classList.toggle('easyx', EASYX); var b = $('.more9e'); if (b) b.innerHTML = EASYX ? '− 접기' : '방향 기준 바꾸기 <small>첫화면 · 홀컵 · 직접</small>'; if (typeof fitPad === 'function') fitPad(); };
   var HARD = ['좌우가 뭔지', '볼스피드 숫자', '저장이 됐는지', '글씨가 작아요', '파 · 거리 넣기', '끊어치기 · 주의', '기타'];
   LZ.act.plHard = function () {
     LZ.sheet('<h2>어디가 어려우세요?</h2><p class="muted">누르면 우리 클럽 캡틴이 도와드려요(관리자에게는 이름 없이)</p><div class="chips9">' + HARD.map(function (w) { return '<button type="button" data-act="plHardGo" data-v="' + esc(w) + '">' + esc(w) + '</button>'; }).join('') + '</div>' +
@@ -507,11 +509,11 @@
     var noteTx = r.o ? hiNote(r.o) : '없음';
     var cutTx = L ? '끊어치기 <b>' + ns + '</b>' : '끊어치기';
     return playHead() + noteCard(d, c, i, r) +
-      '<div class="opts9"><button type="button" class="chip9' + (L ? ' on' : '') + '" data-act="plLaySheet">' + cutTx + LZ.ic('down') + '</button>' +
+      (SIMPLE ? '' : '<div class="opts9">' + '<button type="button" class="chip9' + (L ? ' on' : '') + '" data-act="plLaySheet">' + cutTx + LZ.ic('down') + '</button>' +
       '<button type="button" class="chip9' + (caN(c, i) ? ' on' : '') + '" data-act="plSlope">' + (caN(c, i) ? '주의 <b>' + caN(c, i) + '</b>' : '주의하기') + LZ.ic('down') + '</button>' +
-      '<button type="button" class="chip9 memo9' + (r.o ? ' on' : '') + (r.chg ? ' chg' : '') + '" data-act="plNoteTgl" aria-expanded="' + !!ED.note + '" aria-controls="notep">' + (r.chg ? '기준 바뀜' : '지난 값') + LZ.ic('down') + '</button></div>' +
-      aim +
-      '<div class="notep" id="notep"' + (ED.note ? '' : ' hidden') + '>' +
+      '<button type="button" class="chip9 memo9' + (r.o ? ' on' : '') + (r.chg ? ' chg' : '') + '" data-act="plNoteTgl" aria-expanded="' + !!ED.note + '" aria-controls="notep">' + (r.chg ? '기준 바뀜' : '지난 값') + LZ.ic('down') + '</button></div>') +
+      aim + '<div class="act9r"><button type="button" class="lay9b' + (L ? ' on' : '') + '" data-act="plLaySheet">' + (L ? '끊어치기 ' + ns + '번 · 고치기' : '끊어치기') + '</button></div>' +
+      '<div class="notep" id="notep"' + (ED.note && !SIMPLE ? '' : ' hidden') + '>' +
       (r.chg ? '<p class="chgn">다른 회원님이 끊는 거리 · 주의를 바꿔서 기준이 바뀌었어요. 확인하고 저장하면 표시가 없어져요.</p>' : '') +
       '<div class="hs"><span>' + (hs ? '지난 값 ' + hs : '지난 값 없음') + '</span>' + ((r.ohs && r.ohs.length) || (r.hs && r.hs.length) ? '<button type="button" data-act="plUndo">예전 값으로</button>' : '') + '</div></div>';
   }
@@ -529,15 +531,16 @@
     var sh = LZ.sheet('<h2>' + (i + 1) + '홀 특이사항</h2><p class="muted" style="margin-top:0">이 홀에 올 때마다 보여요 · [다음]을 누르면 저장돼요</p>' +
       '<input type="text" id="plO" class="in" maxlength="40" value="' + esc(r.o) + '" placeholder="예: 망치기 · 홀컵 바로 질러가기" aria-label="이 홀 특이사항(40자)" enterkeyhint="done">' +
       '<div class="q9">' + HN_Q.map(function (w) { return '<button type="button" data-act="plOq" data-v="' + esc(w) + '">' + esc(w) + '</button>'; }).join('') + '</div>' +
-      '<button type="button" class="btn" data-act="plHnSave">넣기</button><button type="button" class="btn g" data-act="plHnSlope">' + (caN(c, i) ? '주의 표시 고치기(오르막 · OB …)' : '주의 표시 넣기(오르막 · OB …)') + '</button>');
+      '<button type="button" class="btn" data-act="plHnSave">넣기</button>' + (SIMPLE ? '' : '<button type="button" class="btn g" data-act="plHnSlope">' + (caN(c, i) ? '주의 표시 고치기(오르막 · OB …)' : '주의 표시 넣기(오르막 · OB …)') + '</button>'));
     var t = $('#plO', sh); if (t) { if (!r.o) setTimeout(function () { t.focus(); }, 200); t.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); LZ.act.plHnSave(); } }); }
   };
   LZ.act.plHnSlope = function () { LZ.act.plHnSave(); setTimeout(function () { LZ.act.plSlope(); }, 60); };
   LZ.act.plHnSave = function () { var t = $('#plO'); if (!t || !ED) return; var v = t.value.replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '').slice(0, 40); if (v !== (ED.r.o || '')) { ED.r.o = v; ED.dirty = true; } LZ.closeSheet(); rep(); };
   LZ.act.plOq = function (el, w) { var o = $('#plO'); if (!o) return; o.value = ((o.value ? o.value + ' · ' : '') + w).slice(0, 40); };
+  function noteD() { return LZ.cur().name === 'play' && ED ? ED.d : (CUR && CUR.d) || null; }
   LZ.act.plCnote = function () {
-    if (!ED) return; var cur = ED.d.cnote || '';
-    var sh = LZ.sheet('<h2>코스 전체 특이사항</h2><p class="muted" style="margin-top:0">' + esc(ED.d.course.name) + ' · 어느 홀에서나 위에 보여요 · 나만 봐요</p>' +
+    var D0 = noteD(); if (!D0) return; var cur = D0.cnote || '';
+    var sh = LZ.sheet('<h2>코스 전체 특이사항</h2><p class="muted" style="margin-top:0">' + esc(D0.course.name) + ' · 어느 홀에서나 위에 보여요 · 나만 봐요</p>' +
       '<textarea id="cnIn" class="in" rows="2" maxlength="60" placeholder="예: 공이 많이 튐 · 평소보다 5~10m 적게 치기">' + esc(cur) + '</textarea>' +
       '<div class="q9">' + CN_Q.map(function (w) { return '<button type="button" data-act="plCnQ" data-v="' + esc(w) + '">' + esc(w) + '</button>'; }).join('') + '</div>' +
       '<button type="button" class="btn" data-act="plCnSave">저장</button>' + (cur ? '<button type="button" class="btn g" data-act="plCnSave" data-v="del">지우기</button>' : ''));
@@ -546,7 +549,8 @@
   LZ.act.plCnQ = function (el, w) { var t = $('#cnIn'); if (!t) return; t.value = ((t.value ? t.value + ' · ' : '') + w).slice(0, 60); };
   LZ.act.plCnSave = async function (el, v) {
     var t = $('#cnIn'), text = v === 'del' ? '' : (t ? t.value : '');
-    try { var r = await LZ.api('cnoteSet', { cid: ED.d.course.id, text: text }); ED.d.cnote = r.cnote; LZ.closeSheet(); rep(); LZ.toast(r.cnote ? '코스 전체 특이사항을 저장했어요' : '지웠어요', 2000); }
+    var D0 = noteD(); if (!D0) return;
+    try { var r = await LZ.api('cnoteSet', { cid: D0.course.id, text: text }); D0.cnote = r.cnote; if (CUR && CUR.d && CUR.d.course.id === D0.course.id) CUR.d.cnote = r.cnote; LZ.closeSheet(); if (LZ.cur().name === 'play') rep(); else LZ.redraw(); LZ.toast(r.cnote ? '코스 전체 특이사항을 저장했어요' : '지웠어요', 2000); }
     catch (e) { LZ.toast(LZ.errText(e), 4000); }
   };
   function playFix() {
@@ -570,8 +574,8 @@
     root = root || $('#app');
     root.innerHTML = playHdr() + '<div class="wrap play3 play2 v9play">' + playBody() + '</div>' + playFix();
     var ez = easyOn() && !ED.empty; document.body.classList.toggle('easy9', ez); document.body.classList.toggle('easyx', ez && EASYX);
-    if (ez) { var am = root.querySelector('.v9play .aim'); if (am) am.insertAdjacentHTML('afterend', '<button type="button" class="more9e" data-act="plMoreEz">' + (EASYX ? '− 접기' : '＋ 더 보기 <small>끊어치기 · 지난 값 · 클럽 팁 · 방향 기준</small>') + '</button>'); }
-    var tp = ED.d && ED.d.tips; if (tp && !ED.empty) { var tw = root.querySelector('.v9play'); if (tw) tw.insertAdjacentHTML('afterbegin', '<button type="button" class="tip9c" data-act="plTips">' + LZ.ic('bulb') + '<b>클럽 팁</b>' + (tp[ED.i] ? '<span>' + tp[ED.i] + '</span>' : '<small>첫 팁 남기기</small>') + '</button>'); }   // v9.3
+    if (ez) { var am = root.querySelector('.v9play .act9r'); if (am) am.insertAdjacentHTML('beforeend', '<button type="button" class="more9e" data-act="plMoreEz">' + (EASYX ? '− 접기' : '방향 기준 바꾸기 <small>첫화면 · 홀컵 · 직접</small>') + '</button>'); }
+    var tp = !SIMPLE && ED.d && ED.d.tips; if (tp && !ED.empty) { var tw = root.querySelector('.v9play'); if (tw) tw.insertAdjacentHTML('afterbegin', '<button type="button" class="tip9c" data-act="plTips">' + LZ.ic('bulb') + '<b>클럽 팁</b>' + (tp[ED.i] ? '<span>' + tp[ED.i] + '</span>' : '<small>첫 팁 남기기</small>') + '</button>'); }   // v9.3
     fitPad();
     if (!ED.empty) setTimeout(playCoach, 450);
     var o = $('#plO'); if (o) o.addEventListener('input', function () { ED.r.o = o.value; ED.dirty = true; var t = $('.nrow .tx'); if (t) { t.innerHTML = o.value ? hiNote(o.value) : '없음'; t.classList.toggle('e', !o.value); } var ps = $('.pfix .pst'); if (ps) { ps.textContent = '● 고침 · “다음”을 누르면 저장'; ps.classList.add('no'); } });
@@ -1122,21 +1126,20 @@
         '<p class="hint">18홀이에요. 파 · 거리는 플레이하며 홀마다 넣어요. 이름 · 난이도 · 파 · 거리는 다른 회원님도 고칠 수 있고, 오류를 바로잡으면 포인트가 있어요. 공개 여부는 내 수첩에서 코스마다 정해요.</p>' +
         '<div class="row2"><button type="button" class="btn g" data-act="rnBack">‹ 이름</button><button type="button" class="btn" data-act="rnSave">등록</button></div></div>';
     }
-    root.innerHTML = LZ.hdr('새 코스 등록', { back: true }) + '<div class="wrap reg9"><div class="steps" aria-label="2단계 중 ' + step + '단계"><i class="' + (step === 1 ? 'on' : 'ok') + '">1 이름</i><i class="' + (step === 2 ? 'on' : '') + '">2 기준</i></div>' + body + '</div>';
+    root.innerHTML = LZ.hdr('새 코스 등록', { back: true }) + '<div class="wrap reg9">' + body + (step === 1 ? '<p class="hint">등록하면 바로 1홀로 가요. 파 · 거리는 홀마다 스크린에 나온 대로 넣어요.</p>' : '') + '</div>';
     var b = $('#rnBase'); if (b) { var gh = $('#rnGh'), cs = getComputedStyle(b); gh.style.font = cs.font; gh.style.letterSpacing = cs.letterSpacing; gh.style.paddingLeft = (parseFloat(cs.paddingLeft) + parseFloat(cs.borderLeftWidth)) + 'px'; rnGhost(); b.addEventListener('input', function () { RN.base = b.value; rnLook(); }); b.addEventListener('compositionend', function () { RN.base = b.value; rnLook(); }); b.addEventListener('keydown', function (e) { if (e.key === 'Enter') b.blur(); }); }
     var ow = $('#rnOwn'); if (ow) ow.addEventListener('input', function () { RN.own = ow.value; rnDup(); rnUpd(2); });
     LZ.guard = { dirty: function () { return !!RN.base && !RN.saved; }, ask: async function () { return LZ.confirm('나갈까요?', '적던 내용이 사라져요.', '나가기', 'r'); } };
   }
   /** 이름 칸 아래(파크골프장 붙이기 · 조합)만 */
   function rnDyn1() {
-    return '<div class="list1 tgl"><span><b>“파크골프장” 붙이기</b></span>' + LZ.sw(RN.pk, 'rnPk') + '</div>' +
-      '<label class="lb">조합</label><div class="seg s cmb" role="group" aria-label="코스 조합">' + COMBO.concat(['own']).map(function (k) { var tk = RN.taken.indexOf(k) >= 0; return '<button type="button" class="' + (RN.cb === k ? 'on' : '') + (tk ? ' tk' : '') + '" data-act="rnCb" data-v="' + k + '"' + (tk ? ' aria-label="' + k + ' · 이미 있어요"' : '') + '>' + (k === 'own' ? '직접' : k) + (tk ? '<small>있음</small>' : '') + '</button>'; }).join('') + '</div>';
+    return '<label class="lb">코스 조합 <span class="muted">스크린에 나온 대로</span></label><div class="seg s cmb" role="group" aria-label="코스 조합">' + COMBO.concat(['own']).map(function (k) { var tk = RN.taken.indexOf(k) >= 0; return '<button type="button" class="' + (RN.cb === k ? 'on' : '') + (tk ? ' tk' : '') + '" data-act="rnCb" data-v="' + k + '"' + (tk ? ' aria-label="' + k + ' · 이미 있어요"' : '') + '>' + (k === 'own' ? '직접' : k) + (tk ? '<small>있음</small>' : '') + '</button>'; }).join('') + '</div>';
   }
   /** 등록할 이름 · 이미 있는 코스 · 다음 단추 */
   function rnDyn2() {
     var nm = rnName(), same = RN.same || [];
     return (same.length ? '<div class="kwrow"><b class="sm">이미 있는 코스 · 가져오기</b></div><div class="list rnsame">' + same.map(function (c) { return '<button type="button" class="li" data-act="rnTake" data-v="' + esc(c.id) + '"><span class="t"><b>' + esc(c.name) + '</b><span>' + LZ.stars(c.stars) + '</span></span><span class="go">가져오기</span></button>'; }).join('') + '</div>' : '') +
-      '<button type="button" class="btn" data-act="rnNext"' + (nm && !RN.dupId ? '' : ' disabled') + '>다음 ›</button>';
+      '<button type="button" class="btn rnok9" data-act="rnSave"' + (nm && !RN.dupId ? '' : ' disabled') + '>' + (nm ? '“' + esc(nm) + '” 등록' : '등록') + '</button>';
   }
   /** 이름 칸은 그대로 두고 아래만 고쳐 그려요(글자판 · 한글 조합이 끊기지 않게) */
   function rnUpd(which) {
@@ -1178,7 +1181,8 @@
     try { await LZ.api('courseAdd', { id: id }); RN.saved = true; LZ.cacheSet('courses2', null); LZ.toast('내 수첩에 담았어요'); LZ.go('holes', { id: id, fresh: 1 }, { replace: true, skipGuard: true }); } catch (e) { LZ.toast(LZ.errText(e), 4500); }
   };
   LZ.act.rnSave = async function () {
-    var nm = rnName(); LZ.busy(true, '등록 중…');
+    var nm = rnName(); if (!nm || nm.length < 2) { LZ.toast('구장 이름을 넣어 주세요'); return; } if (RN.dupId) return LZ.act.rnTake(null, RN.dupId);
+    LZ.busy(true, '등록 중…');
     try {
       var r = await LZ.api('regCourse', { name: nm, stars: RN.stars, g: RN.g, h: RN.h }, { retry: 0 });
       LZ.busy(false); RN.saved = true; LZ.cacheSet('courses2', null); CUR.id = ''; CUR.key = '';
